@@ -67,6 +67,8 @@ data class TabMeasure(
     val timeSignatureNumerator: Int = 4,
     val timeSignatureDenominator: Int = 4,
     val tempoBpm: Int? = null,
+    val palmMute: Boolean = false,
+    val palmMuteLabel: String? = null,
     val beats: List<TabBeat> = emptyList(),
 )
 
@@ -76,6 +78,8 @@ data class TabTrack(
     val instrumentType: InstrumentType = InstrumentType.GUITAR,
     val stringCount: Int = instrumentType.defaultStringCount,
     val stringLabels: List<String> = instrumentType.defaultStringLabels,
+    val tuningName: String = "Drop C",
+    val tuningNotes: List<String> = listOf("D4", "A3", "F3", "C3", "G2", "C2"),
     val volume: Float = 1.0f,    // 0.0f..1.0f
     val pan: Float = 0.0f,       // -1.0f..1.0f
     val midiProgram: Int = instrumentType.defaultMidiProgram,
@@ -86,11 +90,13 @@ data class TabTrack(
 
 data class TabScore(
     val id: String = UUID.randomUUID().toString(),
-    val title: String = "Untitled Project",
-    val artist: String = "Unknown Artist",
-    val tempo: Int = 120,
+    val title: String = "Dark Clouds",
+    val artist: String = "Adept",
+    val revisionDate: String = "26.06.2018",
+    val tempo: Int = 140,
     val timeSignatureNumerator: Int = 4,
     val timeSignatureDenominator: Int = 4,
     val tracks: List<TabTrack> = emptyList(),
     val rawAsciiContent: String? = null,
+    val originalAudioUrl: String? = null,
 )

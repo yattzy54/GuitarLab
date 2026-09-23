@@ -491,47 +491,124 @@ class TabViewModel @Inject constructor(
     }
 
     private fun createSampleScore(): TabScore {
-        return TabScore(
-            title = "Guitar Lab Multitrack",
-            artist = "GuitarLab",
-            tempo = 120,
-            tracks = listOf(
-                TabTrack(
-                    name = "Guitar",
-                    instrumentType = InstrumentType.GUITAR,
-                    measures = createSampleMeasures(),
-                ),
-                TabTrack(
-                    name = "Bass",
-                    instrumentType = InstrumentType.BASS,
-                    measures = listOf(
-                        TabMeasure(
-                            number = 1,
-                            beats = listOf(
-                                TabBeat(notes = listOf(TabNote(3, 0)), startBeat = 0f),
-                                TabBeat(notes = listOf(TabNote(3, 0)), startBeat = 1f),
-                                TabBeat(notes = listOf(TabNote(2, 2)), startBeat = 2f),
-                                TabBeat(notes = listOf(TabNote(2, 3)), startBeat = 3f),
-                            ),
-                        ),
-                    ),
-                ),
-                TabTrack(
-                    name = "Drums",
-                    instrumentType = InstrumentType.DRUMS,
-                    measures = listOf(
-                        TabMeasure(
-                            number = 1,
-                            beats = listOf(
-                                TabBeat(notes = listOf(TabNote(4, 0), TabNote(1, 0)), startBeat = 0f),
-                                TabBeat(notes = listOf(TabNote(1, 0)), startBeat = 0.5f),
-                                TabBeat(notes = listOf(TabNote(2, 0), TabNote(1, 0)), startBeat = 1.0f),
-                                TabBeat(notes = listOf(TabNote(1, 0)), startBeat = 1.5f),
-                            ),
-                        ),
-                    ),
-                ),
+        val dropCTuningNotes = listOf("D4", "A3", "F3", "C3", "G2", "C2")
+        val dropCLabels = listOf("d", "A", "F", "C", "G", "C")
+
+        val m1 = TabMeasure(
+            number = 1,
+            palmMute = true,
+            palmMuteLabel = "P.M. ------------------------------------|",
+            beats = listOf(
+                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0)), durationType = NoteDuration.SIXTEENTH),
+                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.SIXTEENTH),
+                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.SIXTEENTH),
+                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0)), durationType = NoteDuration.SIXTEENTH),
+                TabBeat(notes = listOf(TabNote(3, 3, effect = NoteEffect.SLIDE)), durationType = NoteDuration.EIGHTH),
+                TabBeat(notes = listOf(TabNote(3, 5)), durationType = NoteDuration.EIGHTH),
+                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.SIXTEENTH),
+                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.SIXTEENTH),
+            )
+        )
+
+        val m2 = TabMeasure(
+            number = 2,
+            palmMute = true,
+            palmMuteLabel = "P.M. ------------------------------------|",
+            beats = listOf(
+                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0)), durationType = NoteDuration.SIXTEENTH),
+                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.SIXTEENTH),
+                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.SIXTEENTH),
+                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0)), durationType = NoteDuration.SIXTEENTH),
+                TabBeat(notes = listOf(TabNote(3, 7, effect = NoteEffect.VIBRATO)), durationType = NoteDuration.QUARTER),
+                TabBeat(notes = listOf(TabNote(3, 5)), durationType = NoteDuration.EIGHTH),
+                TabBeat(notes = listOf(TabNote(3, 3)), durationType = NoteDuration.EIGHTH),
+            )
+        )
+
+        val m3 = TabMeasure(
+            number = 3,
+            palmMute = true,
+            palmMuteLabel = "P.M. ------------------------------------|",
+            beats = listOf(
+                TabBeat(notes = listOf(TabNote(5, 8), TabNote(4, 8)), durationType = NoteDuration.EIGHTH),
+                TabBeat(notes = listOf(TabNote(5, 8)), durationType = NoteDuration.SIXTEENTH),
+                TabBeat(notes = listOf(TabNote(5, 8)), durationType = NoteDuration.SIXTEENTH),
+                TabBeat(notes = listOf(TabNote(5, 7), TabNote(4, 7)), durationType = NoteDuration.EIGHTH),
+                TabBeat(notes = listOf(TabNote(5, 7)), durationType = NoteDuration.SIXTEENTH),
+                TabBeat(notes = listOf(TabNote(5, 7)), durationType = NoteDuration.SIXTEENTH),
+                TabBeat(notes = listOf(TabNote(5, 5), TabNote(4, 5)), durationType = NoteDuration.QUARTER),
+            )
+        )
+
+        val m4 = TabMeasure(
+            number = 4,
+            palmMute = false,
+            beats = listOf(
+                TabBeat(notes = listOf(TabNote(2, 7, effect = NoteEffect.BEND)), durationType = NoteDuration.QUARTER),
+                TabBeat(notes = listOf(TabNote(2, 7)), durationType = NoteDuration.EIGHTH),
+                TabBeat(notes = listOf(TabNote(2, 5, effect = NoteEffect.VIBRATO)), durationType = NoteDuration.QUARTER),
+                TabBeat(notes = listOf(TabNote(3, 7)), durationType = NoteDuration.EIGHTH),
+                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0)), durationType = NoteDuration.QUARTER),
+            )
+        )
+
+        val guitarTrack1 = TabTrack(
+            name = "Overdriven Guitar / Guitar 1",
+            instrumentType = InstrumentType.GUITAR,
+            tuningName = "Drop C",
+            stringLabels = dropCLabels,
+            tuningNotes = dropCTuningNotes,
+            measures = listOf(m1, m2, m3, m4),
+            volume = 0.9f
+        )
+
+        val guitarTrack2 = TabTrack(
+            name = "Rhythm Guitar / Guitar 2",
+            instrumentType = InstrumentType.GUITAR,
+            tuningName = "Drop C",
+            stringLabels = dropCLabels,
+            tuningNotes = dropCTuningNotes,
+            measures = listOf(m1, m2, m3, m4),
+            volume = 0.8f
+        )
+
+        val bassTrack = TabTrack(
+            name = "Bass Guitar",
+            instrumentType = InstrumentType.BASS,
+            tuningName = "Drop C (Bass)",
+            stringCount = 4,
+            stringLabels = listOf("F", "C", "G", "C"),
+            tuningNotes = listOf("F2", "C2", "G1", "C1"),
+            measures = listOf(
+                TabMeasure(number = 1, beats = listOf(TabBeat(notes = listOf(TabNote(3, 0)), durationType = NoteDuration.QUARTER))),
+                TabMeasure(number = 2, beats = listOf(TabBeat(notes = listOf(TabNote(3, 0)), durationType = NoteDuration.QUARTER))),
+                TabMeasure(number = 3, beats = listOf(TabBeat(notes = listOf(TabNote(3, 8)), durationType = NoteDuration.QUARTER))),
+                TabMeasure(number = 4, beats = listOf(TabBeat(notes = listOf(TabNote(3, 7)), durationType = NoteDuration.QUARTER))),
             ),
+            volume = 0.85f
+        )
+
+        val drumTrack = TabTrack(
+            name = "Drumkit",
+            instrumentType = InstrumentType.DRUMS,
+            tuningName = "Standard Percussion",
+            stringCount = 5,
+            stringLabels = listOf("CC", "HH", "SD", "TM", "BD"),
+            measures = listOf(
+                TabMeasure(number = 1, beats = listOf(TabBeat(notes = listOf(TabNote(4, 0), TabNote(1, 0)), durationType = NoteDuration.EIGHTH))),
+                TabMeasure(number = 2, beats = listOf(TabBeat(notes = listOf(TabNote(4, 0), TabNote(2, 0)), durationType = NoteDuration.EIGHTH))),
+                TabMeasure(number = 3, beats = listOf(TabBeat(notes = listOf(TabNote(4, 0), TabNote(1, 0)), durationType = NoteDuration.EIGHTH))),
+                TabMeasure(number = 4, beats = listOf(TabBeat(notes = listOf(TabNote(4, 0), TabNote(2, 0)), durationType = NoteDuration.EIGHTH))),
+            ),
+            volume = 0.95f
+        )
+
+        return TabScore(
+            title = "Dark Clouds",
+            artist = "Adept",
+            revisionDate = "26.06.2018",
+            tempo = 140,
+            tracks = listOf(guitarTrack1, guitarTrack2, bassTrack, drumTrack)
         )
     }
 }
