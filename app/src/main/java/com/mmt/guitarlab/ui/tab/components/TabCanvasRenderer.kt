@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mmt.guitarlab.domain.model.NoteDuration
 import com.mmt.guitarlab.domain.model.NoteEffect
+import com.mmt.guitarlab.domain.model.InstrumentType
 import com.mmt.guitarlab.domain.model.TabTrack
 
 /**
@@ -45,8 +46,13 @@ fun TabCanvasRenderer(
     modifier: Modifier = Modifier,
 ) {
     val textMeasurer = rememberTextMeasurer()
-    val stringCount = track.stringCount.coerceAtLeast(4)
-    val stringLabels = track.stringLabels.ifEmpty { listOf("e", "B", "G", "D", "A", "E") }
+    val isDrums = track.instrumentType == InstrumentType.DRUMS
+    val stringCount = if (isDrums) 5 else track.stringCount.coerceAtLeast(4)
+    val stringLabels = if (isDrums) {
+        listOf("CC", "HH", "T1", "SD", "BD")
+    } else {
+        track.stringLabels.ifEmpty { listOf("e", "B", "G", "D", "A", "E") }
+    }
 
     val density = LocalDensity.current
     // Generous string spacing ensuring fret badges never collide
@@ -236,31 +242,54 @@ fun TabCanvasRenderer(
                     )
                 }
 
-                // Draw string names (e, B, G, D, A, E) on the left margin, aligned with string lines
-                for (sIdx in 0 until stringCount) {
-                    val label = stringLabels.getOrElse(sIdx) { "" }
-                    val stringY = stringsStartY + sIdx * stringSpacing
-                    val labelLayout = textMeasurer.measure(
-                        text = label,
-                        style = TextStyle(
-                            color = Color(0xFFFBBF24),
-                            fontSize = 12.sp,
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Bold,
+                // In Guitar Pro 8 Drums: Percussion Clef (two vertical thick bars) on the left
+                if (isDrums) {
+                    val clefTopY = stringsStartY + 4f
+                    val clefBottomY = stringsStartY + (stringCount - 1) * stringSpacing - 4f
+                    drawLine(
+                        color = Color(0xFFFBBF24),
+                        start = Offset(16f, clefTopY),
+                        end = Offset(16f, clefBottomY),
+                        strokeWidth = 3.5f,
+                    )
+                    drawLine(
+                        color = Color(0xFFFBBF24),
+                        start = Offset(22f, clefTopY),
+                        end = Offset(22f, clefBottomY),
+                        strokeWidth = 3.5f,
+                    )
+                } else {
+                    // Draw string names (e, B, G, D, A, E) on the left margin, aligned with string lines
+                    for (sIdx in 0 until stringCount) {
+                        val label = stringLabels.getOrElse(sIdx) { "" }
+                        val stringY = stringsStartY + sIdx * stringSpacing
+                        val labelLayout = textMeasurer.measure(
+                            text = label,
+                            style = TextStyle(
+                                color = Color(0xFFFBBF24),
+                                fontSize = 12.sp,
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
+                            )
                         )
-                    )
-                    drawText(
-                        textLayoutResult = labelLayout,
-                        topLeft = Offset(14f, stringY - labelLayout.size.height / 2f),
-                    )
+                        drawText(
+                            textLayoutResult = labelLayout,
+                            topLeft = Offset(14f, stringY - labelLayout.size.height / 2f),
+                        )
+                    }
                 }
 
-                // Horizontal wire lines
+                // Horizontal staff/tab lines (In GP8, 5 uniform staff lines for drums, gauge thickness for guitar)
                 for (sIdx in 0 until stringCount) {
                     val stringY = stringsStartY + sIdx * stringSpacing
-                    val thickness = ((stringCount - sIdx) * 0.45f).coerceAtLeast(1f)
+                    val thickness = if (isDrums) 1.2f else ((stringCount - sIdx) * 0.45f).coerceAtLeast(1f)
+                    val lineColor = if (isDrums) {
+                        if (isMeasureActive) Color(0xFF64748B) else Color(0xFF475569)
+                    } else {
+                        if (isMeasureActive) Color(0xFF52525B) else Color(0xFF3F3F46)
+                    }
                     drawLine(
-                        color = if (isMeasureActive) Color(0xFF52525B) else Color(0xFF3F3F46),
+                        color = lineColor,
                         start = Offset(leftMargin, stringY),
                         end = Offset(width - rightMargin, stringY),
                         strokeWidth = thickness,
@@ -310,63 +339,93 @@ fun TabCanvasRenderer(
                             )
                         }
 
-                        // Draw notes on strings
+                        // Draw notes on strings / percussion lines (Guitar Pro 8 Drum notation or Guitar frets)
                         beat.notes.forEach { note ->
                             if (note.stringIndex in 0 until stringCount) {
                                 val noteY = stringsStartY + note.stringIndex * stringSpacing
-                                val fretText = when (note.effect) {
-                                    NoteEffect.DEAD_NOTE -> "X"
-                                    NoteEffect.SLIDE -> "${note.fret}/"
-                                    NoteEffect.BEND -> "${note.fret}b"
-                                    NoteEffect.VIBRATO -> "${note.fret}~"
-                                    else -> note.fret.toString()
+
+                                if (isDrums) {
+                                    // CLASSIC GUITAR PRO 8 DRUM NOTATION:
+                                    // Line 0 (Crash / Ride) & Line 1 (Hi-Hat): Cross '×' Notehead
+                                    // Line 2 (Snare) & Line 3 (Tom) & Line 4 (Bass Drum): Solid Oval Notehead
+                                    val isCymbal = note.stringIndex <= 1
+                                    val noteColor = if (isBeatActive) Color(0xFF10B981) else Color(0xFFF4F4F5)
+
+                                    if (isCymbal) {
+                                        val crossR = 6f
+                                        drawLine(
+                                            color = noteColor,
+                                            start = Offset(beatCenterX - crossR, noteY - crossR),
+                                            end = Offset(beatCenterX + crossR, noteY + crossR),
+                                            strokeWidth = 2.5f,
+                                        )
+                                        drawLine(
+                                            color = noteColor,
+                                            start = Offset(beatCenterX - crossR, noteY + crossR),
+                                            end = Offset(beatCenterX + crossR, noteY - crossR),
+                                            strokeWidth = 2.5f,
+                                        )
+                                    } else {
+                                        drawOval(
+                                            color = noteColor,
+                                            topLeft = Offset(beatCenterX - 6.5f, noteY - 5f),
+                                            size = Size(13f, 10f),
+                                        )
+                                        drawOval(
+                                            color = if (isBeatActive) Color(0xFF34D399) else Color(0xFFE2E8F0),
+                                            topLeft = Offset(beatCenterX - 4.5f, noteY - 3.5f),
+                                            size = Size(5f, 4f),
+                                        )
+                                    }
+                                } else {
+                                    // Standard guitar / bass fret numbers
+                                    val fretText = when (note.effect) {
+                                        NoteEffect.DEAD_NOTE -> "X"
+                                        NoteEffect.SLIDE -> "${note.fret}/"
+                                        NoteEffect.BEND -> "${note.fret}b"
+                                        NoteEffect.VIBRATO -> "${note.fret}~"
+                                        else -> note.fret.toString()
+                                    }
+                                    val textLayout = textMeasurer.measure(
+                                        text = fretText,
+                                        style = TextStyle(
+                                            fontSize = if (isBeatActive) 13.sp else 12.sp,
+                                            fontFamily = FontFamily.Monospace,
+                                            fontWeight = FontWeight.Black,
+                                        )
+                                    )
+                                    val fretBoxWidth = (textLayout.size.width + 12).toFloat()
+                                    val fretBoxHeight = (textLayout.size.height + 4).toFloat().coerceAtMost(stringSpacing - 4f)
+                                    drawRoundRect(
+                                        color = if (isBeatActive) Color(0xFF10B981) else Color(0xFF18181B),
+                                        topLeft = Offset(beatCenterX - fretBoxWidth / 2f, noteY - fretBoxHeight / 2f),
+                                        size = Size(fretBoxWidth, fretBoxHeight),
+                                        cornerRadius = CornerRadius(6f, 6f),
+                                    )
+                                    drawRoundRect(
+                                        color = if (isBeatActive) Color(0xFF34D399) else Color(0xFF3F3F46),
+                                        topLeft = Offset(beatCenterX - fretBoxWidth / 2f, noteY - fretBoxHeight / 2f),
+                                        size = Size(fretBoxWidth, fretBoxHeight),
+                                        cornerRadius = CornerRadius(6f, 6f),
+                                        style = Stroke(width = 1.2f),
+                                    )
+                                    val fretTextX = (beatCenterX - textLayout.size.width / 2f).coerceIn(0f, (width - textLayout.size.width).coerceAtLeast(0f))
+                                    val fretTextLayout = textMeasurer.measure(
+                                        text = fretText,
+                                        style = TextStyle(
+                                            color = if (isBeatActive) Color(0xFF09090B) else Color(0xFFF4F4F5),
+                                            fontSize = if (isBeatActive) 13.sp else 12.sp,
+                                            fontFamily = FontFamily.Monospace,
+                                            fontWeight = FontWeight.Black,
+                                        )
+                                    )
+                                    drawText(
+                                        textLayoutResult = fretTextLayout,
+                                        topLeft = Offset(fretTextX, noteY - fretTextLayout.size.height / 2f)
+                                    )
                                 }
-
-                                val textLayout = textMeasurer.measure(
-                                    text = fretText,
-                                    style = TextStyle(
-                                        fontSize = if (isBeatActive) 13.sp else 12.sp,
-                                        fontFamily = FontFamily.Monospace,
-                                        fontWeight = FontWeight.Black,
-                                    )
-                                )
-
-                                val fretBoxWidth = (textLayout.size.width + 12).toFloat()
-                                val fretBoxHeight = (textLayout.size.height + 4).toFloat().coerceAtMost(stringSpacing - 4f)
-
-                                // Fret background badge: masks horizontal string line cleanly behind fret digit
-                                drawRoundRect(
-                                    color = if (isBeatActive) Color(0xFF10B981) else Color(0xFF18181B),
-                                    topLeft = Offset(beatCenterX - fretBoxWidth / 2f, noteY - fretBoxHeight / 2f),
-                                    size = Size(fretBoxWidth, fretBoxHeight),
-                                    cornerRadius = CornerRadius(6f, 6f),
-                                )
-                                drawRoundRect(
-                                    color = if (isBeatActive) Color(0xFF34D399) else Color(0xFF3F3F46),
-                                    topLeft = Offset(beatCenterX - fretBoxWidth / 2f, noteY - fretBoxHeight / 2f),
-                                    size = Size(fretBoxWidth, fretBoxHeight),
-                                    cornerRadius = CornerRadius(6f, 6f),
-                                    style = Stroke(width = 1.2f),
-                                )
-
-                                // Text
-                                val fretTextX = (beatCenterX - textLayout.size.width / 2f).coerceIn(0f, (width - textLayout.size.width).coerceAtLeast(0f))
-                                val fretTextLayout = textMeasurer.measure(
-                                    text = fretText,
-                                    style = TextStyle(
-                                        color = if (isBeatActive) Color(0xFF09090B) else Color(0xFFF4F4F5),
-                                        fontSize = if (isBeatActive) 13.sp else 12.sp,
-                                        fontFamily = FontFamily.Monospace,
-                                        fontWeight = FontWeight.Black,
-                                    )
-                                )
-                                drawText(
-                                    textLayoutResult = fretTextLayout,
-                                    topLeft = Offset(fretTextX, noteY - fretTextLayout.size.height / 2f)
-                                )
                             }
                         }
-
                         // Rhythm Stem & Beam below strings
                         val stemStartY = stringsStartY + (stringCount - 1) * stringSpacing + 8f
                         val stemEndY = stemStartY + 18f
