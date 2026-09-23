@@ -268,7 +268,6 @@ fun ChordScaleScreen(viewModel: FretboardViewModel = hiltViewModel()) {
 }
 
 @Composable
-@Composable
 fun RealisticFretboardCanvas(
     stringCount: Int,
     tuningNotes: List<com.mmt.guitarlab.domain.model.TuningNote>,
