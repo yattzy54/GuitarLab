@@ -56,9 +56,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mmt.guitarlab.domain.model.MetronomeConfig
 import com.mmt.guitarlab.domain.model.TimeSignature
-import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Switch

@@ -225,7 +225,7 @@ fun TunerScreen(viewModel: TunerViewModel = hiltViewModel()) {
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Icon(
-                    imageVector = Icons.Default.GraphicEq,
+                    imageVector = Icons.Default.MusicNote,
                     contentDescription = "Хроматический тюнер",
                     tint = if (isChromaticMode) ElectricAmber else StudioTextMuted,
                     modifier = Modifier.size(18.dp),
