@@ -1,7 +1,7 @@
 import React from 'react';
 import { ModalBottomSheet } from './ModalBottomSheet';
 import { TabTrackInfo } from '../../../types/tabPlayer';
-import { Volume2, VolumeX, Check, Eye } from 'lucide-react';
+import { Eye, Check } from 'lucide-react';
 
 interface MixerSheetProps {
   isOpen: boolean;
@@ -28,89 +28,82 @@ export const MixerSheet: React.FC<MixerSheetProps> = ({
     <ModalBottomSheet
       isOpen={isOpen}
       onClose={onClose}
-      title="Микшер инструментов и дорожек"
-      subtitle="Выбор активной партии для просмотра табов и баланс громкости"
+      title="Микшер инструментов"
+      subtitle="Компактная консоль дорожек (не более 100px в ширину)"
     >
-      <div className="space-y-3">
+      {/* Compact channel strips with horizontal scrolling */}
+      <div className="flex items-start space-x-2.5 overflow-x-auto pb-4 pt-1 px-0.5 scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
         {(tracks || []).map((track) => {
           const isActive = track.id === activeTrackId;
-
           return (
             <div
               key={track.id}
-              className={`p-3.5 rounded-2xl border transition-all ${
+              className={`w-[92px] shrink-0 p-2 rounded-xl border flex flex-col items-center transition-all ${
                 isActive
-                  ? 'bg-zinc-800/90 border-amber-500/50 shadow-md ring-1 ring-amber-500/30'
-                  : 'bg-zinc-950/60 border-zinc-800 hover:border-zinc-700'
+                  ? 'bg-zinc-800/95 border-amber-500/80 shadow-md ring-1 ring-amber-500/40'
+                  : 'bg-zinc-950/80 border-zinc-800/90 hover:border-zinc-700'
               }`}
             >
-              {/* Top row: Track info & View Tab button */}
-              <div className="flex items-center justify-between gap-3 mb-2.5">
-                <div className="min-w-0">
-                  <div className="flex items-center space-x-2">
-                    <h4 className="text-sm font-bold text-white truncate">{track.name}</h4>
-                    {isActive && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                        АКТИВНАЯ
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-[11px] text-zinc-400 font-mono mt-0.5">
-                    {track.instrument} · {track.tuningName}
-                  </div>
-                </div>
+              {/* Channel title */}
+              <h4 className="text-[11px] font-bold text-white truncate w-full text-center" title={track.name}>
+                {track.name}
+              </h4>
+              <span className="text-[9px] text-zinc-500 font-mono truncate w-full text-center mt-0.5">
+                {track.tuningName || track.instrument}
+              </span>
 
-                {/* Show tab button */}
-                {!isActive && (
-                  <button
-                    onClick={() => onSelectActiveTrack(track.id)}
-                    className="px-2.5 py-1 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-zinc-200 border border-zinc-700 flex items-center space-x-1.5 transition-colors shrink-0"
-                  >
-                    <Eye className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Показать таб</span>
-                  </button>
-                )}
-              </div>
+              {/* View Tab switch button */}
+              <button
+                onClick={() => onSelectActiveTrack(track.id)}
+                className={`w-full mt-2 py-1 rounded-md text-[10px] font-bold flex items-center justify-center space-x-1 transition-colors ${
+                  isActive
+                    ? 'bg-amber-500 text-zinc-950 font-black'
+                    : 'bg-zinc-800/90 text-zinc-300 hover:bg-zinc-700'
+                }`}
+              >
+                {isActive ? <span>ТАБ ✓</span> : <span>Таб</span>}
+              </button>
 
-              {/* Volume Slider and Mute / Solo controls */}
-              <div className="flex items-center space-x-3 pt-1 border-t border-zinc-800/60">
+              {/* Mute & Solo row */}
+              <div className="flex items-center space-x-1.5 w-full mt-2">
                 <button
                   onClick={() => onToggleTrackMute(track.id)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold font-mono transition-colors ${
+                  className={`flex-1 py-1 rounded-md text-[10px] font-mono font-black transition-colors ${
                     track.isMuted
                       ? 'bg-rose-600 text-white'
-                      : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                      : 'bg-zinc-800/80 text-zinc-400 hover:text-white'
                   }`}
                 >
-                  MUTE
+                  M
                 </button>
-
                 <button
                   onClick={() => onToggleTrackSolo(track.id)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold font-mono transition-colors ${
+                  className={`flex-1 py-1 rounded-md text-[10px] font-mono font-black transition-colors ${
                     track.isSolo
-                      ? 'bg-amber-500 text-zinc-950 font-black'
-                      : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-zinc-800/80 text-zinc-400 hover:text-white'
                   }`}
                 >
-                  SOLO
+                  S
                 </button>
+              </div>
 
-                <div className="flex-1 flex items-center space-x-2">
-                  <Volume2 className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-                  <input
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.05}
-                    value={track.volume}
-                    onChange={(e) => onUpdateTrackVolume(track.id, parseFloat(e.target.value))}
-                    className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                  />
-                  <span className="text-[11px] font-mono text-zinc-400 w-8 text-right">
-                    {Math.round(track.volume * 100)}%
-                  </span>
-                </div>
+              {/* Volume percentage */}
+              <span className="text-[10px] font-mono font-bold text-amber-400 mt-2">
+                {Math.round(track.volume * 100)}%
+              </span>
+
+              {/* Compact Volume slider */}
+              <div className="w-full mt-1">
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={track.volume}
+                  onChange={(e) => onUpdateTrackVolume(track.id, parseFloat(e.target.value))}
+                  className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                />
               </div>
             </div>
           );
