@@ -61,7 +61,7 @@ class FretboardViewModel @Inject constructor(
 
     fun selectTuning(id: String) {
         viewModelScope.launch {
-            tuningRepository.setSelectedTuningId(id)
+            tuningRepository.selectTuning(id)
         }
     }
 
