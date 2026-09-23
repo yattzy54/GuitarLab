@@ -13,6 +13,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,12 +23,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Repeat
@@ -145,8 +148,31 @@ fun SongsterrTabPlayerScreen(
     var isMoreOpen by remember { mutableStateOf(false) }
     val moreSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    // High-precision viewport tracking: ensures active bar never disappears past bottom edge
+    // Responsive viewport tracking: auto-scrolls on instrument change and playback progress
     val localDensity = LocalDensity.current
+
+    // Immediate scroll when active track is changed or when song is loaded
+    LaunchedEffect(selectedTrackIndex) {
+        if (activeTrack.measures.isNotEmpty()) {
+            val stringCount = if (activeTrack.instrumentType == com.mmt.guitarlab.domain.model.InstrumentType.DRUMS) 5 else activeTrack.stringCount.coerceAtLeast(4)
+            val stringSpacing = with(localDensity) { 24.dp.toPx() }
+            val topPadding = with(localDensity) { 40.dp.toPx() }
+            val stemHeight = with(localDensity) { 28.dp.toPx() }
+            val measureBottomPadding = with(localDensity) { 20.dp.toPx() }
+            val measureTotalHeightPx = topPadding + (stringCount - 1) * stringSpacing + stemHeight + measureBottomPadding
+
+            val activeBarTop = 16f + currentMeasureIndex * measureTotalHeightPx
+            val viewportHeight = scrollState.viewportSize.toFloat()
+            if (viewportHeight > 0) {
+                val targetScroll = (activeBarTop - viewportHeight * 0.2f).toInt().coerceAtLeast(0)
+                scrollState.animateScrollTo(targetScroll)
+            } else {
+                scrollState.scrollTo(activeBarTop.toInt().coerceAtLeast(0))
+            }
+        }
+    }
+
+    // Auto-scrolls as playback advances to subsequent measures
     LaunchedEffect(currentMeasureIndex, isPlaying) {
         if (isPlaying && activeTrack.measures.isNotEmpty()) {
             val stringCount = if (activeTrack.instrumentType == com.mmt.guitarlab.domain.model.InstrumentType.DRUMS) 5 else activeTrack.stringCount.coerceAtLeast(4)
@@ -156,24 +182,22 @@ fun SongsterrTabPlayerScreen(
             val measureBottomPadding = with(localDensity) { 20.dp.toPx() }
             val measureTotalHeightPx = topPadding + (stringCount - 1) * stringSpacing + stemHeight + measureBottomPadding
 
-            val activeBarTop = currentMeasureIndex * measureTotalHeightPx
+            val activeBarTop = 16f + currentMeasureIndex * measureTotalHeightPx
             val activeBarBottom = activeBarTop + measureTotalHeightPx
 
             val viewportHeight = scrollState.viewportSize.toFloat()
             if (viewportHeight > 0) {
                 val currentScroll = scrollState.value.toFloat()
-                // If active bar approaches or reaches the bottom of viewport (leaving safe margin above bottom bar), scroll smoothly so it remains fully visible
-                val bottomSafetyMargin = with(localDensity) { 120.dp.toPx() }
+                val bottomSafetyMargin = with(localDensity) { 130.dp.toPx() }
                 if (activeBarBottom > currentScroll + viewportHeight - bottomSafetyMargin) {
-                    val targetScroll = (activeBarBottom - viewportHeight + bottomSafetyMargin + with(localDensity) { 40.dp.toPx() }).toInt()
+                    val targetScroll = (activeBarBottom - viewportHeight + bottomSafetyMargin).toInt()
                     scrollState.animateScrollTo(targetScroll.coerceAtLeast(0))
-                } else if (activeBarTop < currentScroll) {
-                    // Also guard against scrolling up
-                    scrollState.animateScrollTo(activeBarTop.toInt().coerceAtLeast(0))
+                } else if (activeBarTop < currentScroll + 20f) {
+                    val targetScroll = (activeBarTop - 20f).toInt().coerceAtLeast(0)
+                    scrollState.animateScrollTo(targetScroll)
                 }
             } else {
-                // Fallback before first layout pass
-                val targetScroll = (currentMeasureIndex * measureTotalHeightPx - 100f).toInt().coerceAtLeast(0)
+                val targetScroll = activeBarTop.toInt().coerceAtLeast(0)
                 scrollState.animateScrollTo(targetScroll)
             }
         }
@@ -311,6 +335,59 @@ fun SongsterrTabPlayerScreen(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     )
+                }
+            }
+
+            // QUICK INSTRUMENT SWITCHER BAR
+            if (score.tracks.size > 1) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF11141B))
+                        .border(1.dp, Color(0xFF1E2636))
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    score.tracks.forEachIndexed { idx, trk ->
+                        val isSelected = idx == selectedTrackIndex
+                        val icon = when (trk.instrumentType) {
+                            com.mmt.guitarlab.domain.model.InstrumentType.DRUMS -> Icons.Default.MusicNote
+                            com.mmt.guitarlab.domain.model.InstrumentType.BASS,
+                            com.mmt.guitarlab.domain.model.InstrumentType.BASS_5 -> Icons.Default.GraphicEq
+                            else -> Icons.Default.MusicNote
+                        }
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isSelected) Color(0xFF1B382B) else Color(0xFF181D26))
+                                .border(
+                                    width = if (isSelected) 1.5.dp else 1.dp,
+                                    color = if (isSelected) Color(0xFF10B981) else Color(0xFF2B3648),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .clickable {
+                                    viewModel.selectTrack(idx)
+                                }
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = trk.name,
+                                tint = if (isSelected) Color(0xFF34D399) else Color(0xFF94A3B8),
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = trk.name,
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) Color.White else Color(0xFF94A3B8)
+                            )
+                        }
+                    }
                 }
             }
 

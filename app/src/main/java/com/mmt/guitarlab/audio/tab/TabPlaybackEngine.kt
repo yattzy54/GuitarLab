@@ -55,21 +55,26 @@ class TabPlaybackEngine @Inject constructor() {
         startMeasureIndex: Int = 0,
         startBeatIndex: Int = 0,
     ) {
-        stop()
+        playbackJob?.cancel()
+        playbackJob = null
         _isPlaying.value = true
+
+        val clampedTrackIdx = activeTrackIndex.coerceIn(0, score.tracks.lastIndex.coerceAtLeast(0))
+        val primaryTrack = score.tracks.getOrNull(clampedTrackIdx) ?: score.tracks.firstOrNull() ?: return
+        val totalMeasures = primaryTrack.measures.size.coerceAtLeast(score.tracks.maxOfOrNull { it.measures.size } ?: 0)
+        if (totalMeasures == 0) {
+            _isPlaying.value = false
+            return
+        }
+
+        val initialM = startMeasureIndex.coerceIn(0, totalMeasures - 1)
+        _currentMeasureIndex.value = initialM
+        _currentBeatIndex.value = startBeatIndex.coerceAtLeast(0)
 
         playbackJob = scope.launch(Dispatchers.Default) {
             val soloTracks = score.tracks.filter { it.isSolo }
             val playableTracks = if (soloTracks.isNotEmpty()) soloTracks else score.tracks.filter { !it.isMuted }
             if (playableTracks.isEmpty()) {
-                _isPlaying.value = false
-                return@launch
-            }
-
-            val primaryTrack = score.tracks.getOrNull(activeTrackIndex) ?: playableTracks.first()
-            val maxMeasuresInTracks = score.tracks.maxOfOrNull { it.measures.size } ?: 0
-            val totalMeasures = if (primaryTrack.measures.isNotEmpty()) primaryTrack.measures.size else maxMeasuresInTracks
-            if (totalMeasures == 0) {
                 _isPlaying.value = false
                 return@launch
             }
@@ -100,12 +105,11 @@ class TabPlaybackEngine @Inject constructor() {
                     .setTransferMode(AudioTrack.MODE_STREAM)
                     .build()
             }.getOrNull()
-
             audioTrack?.play()
 
             try {
                 val tempo = score.tempo.coerceIn(30, 320)
-                var currentM = startMeasureIndex.coerceIn(0, totalMeasures - 1)
+                var currentM = initialM
                 var currentB = startBeatIndex
 
                 while (isActive && currentM < totalMeasures) {
@@ -119,45 +123,80 @@ class TabPlaybackEngine @Inject constructor() {
 
                     _currentMeasureIndex.value = currentM
 
-                    val maxBeatsInMeasure = playableTracks.maxOfOrNull {
-                        it.measures.getOrNull(currentM)?.beats?.size ?: 0
-                    } ?: 0
+                    // Select active measure beats to drive timing and display
+                    val activeMeasure = primaryTrack.measures.getOrNull(currentM)
+                    val candidateBeats = activeMeasure?.beats?.takeIf { it.isNotEmpty() }
+                        ?: playableTracks.firstNotNullOfOrNull { it.measures.getOrNull(currentM)?.beats?.takeIf { b -> b.isNotEmpty() } }
+                        ?: emptyList()
 
-                    if (maxBeatsInMeasure == 0) {
+                    if (candidateBeats.isEmpty()) {
+                        _currentBeatIndex.value = 0
+                        val speed = _speedMultiplier.value.coerceIn(0.25f, 2.5f)
+                        val barSeconds = (60.0 / (tempo * speed)) * 4.0
+                        val delayMs = (barSeconds * 1000).toLong()
+                        kotlinx.coroutines.delay(delayMs)
                         currentM++
                         currentB = 0
                         continue
                     }
 
-                    while (isActive && currentB < maxBeatsInMeasure) {
-                        _currentBeatIndex.value = currentB
-
-                        // Determine beat duration in beats
-                        val representativeBeat = playableTracks.firstNotNullOfOrNull {
-                            it.measures.getOrNull(currentM)?.beats?.getOrNull(currentB)
-                        }
-                        val durationBeats = representativeBeat?.durationBeats ?: when (representativeBeat?.durationType) {
+                    // Normalize beats with accurate startBeat and durationBeats
+                    var accumulatedStart = 0f
+                    val normalizedBeats = candidateBeats.mapIndexed { idx, beat ->
+                        val dur = if (beat.durationBeats > 0f) beat.durationBeats else when (beat.durationType) {
                             NoteDuration.WHOLE -> 4.0f
                             NoteDuration.HALF -> 2.0f
                             NoteDuration.QUARTER -> 1.0f
                             NoteDuration.EIGHTH -> 0.5f
                             NoteDuration.SIXTEENTH -> 0.25f
-                            else -> 0.5f
+                            NoteDuration.THIRTY_SECOND -> 0.125f
                         }
+                        val start = if (beat.startBeat > 0f || idx == 0) beat.startBeat else accumulatedStart
+                        accumulatedStart = start + dur
+                        beat.copy(startBeat = start, durationBeats = dur)
+                    }
 
+                    val initialBeatIdx = currentB.coerceIn(0, normalizedBeats.lastIndex)
+                    currentB = 0 // reset for subsequent measures
+
+                    for (bIdx in initialBeatIdx until normalizedBeats.size) {
+                        if (!isActive) break
+                        _currentBeatIndex.value = bIdx
+                        val beat = normalizedBeats[bIdx]
+                        val durationBeats = beat.durationBeats.coerceIn(0.0625f, 4.0f)
                         val speed = _speedMultiplier.value.coerceIn(0.25f, 2.5f)
-                        val beatSeconds = (60.0 / (tempo * speed)) * durationBeats.coerceIn(0.125f, 4.0f)
-                        val numSamples = (sampleRate * beatSeconds).toInt().coerceIn(1024, sampleRate * 3)
-
+                        val beatSeconds = (60.0 / (tempo * speed)) * durationBeats
+                        val numSamples = (sampleRate * beatSeconds).toInt().coerceIn(512, sampleRate * 3)
                         val mixBuffer = FloatArray(numSamples)
 
-                        // Synthesize all notes in this beat across all playable tracks
+                        // 1. Synthesize active track with prominent volume
+                        val primaryVol = primaryTrack.volume.coerceIn(0f, 1f) * 1.15f
+                        val activeBeatInPrimary = primaryTrack.measures.getOrNull(currentM)?.beats?.getOrNull(bIdx)
+                            ?: primaryTrack.measures.getOrNull(currentM)?.beats?.firstOrNull {
+                                kotlin.math.abs(it.startBeat - beat.startBeat) < 0.05f
+                            }
+                        if (activeBeatInPrimary != null) {
+                            activeBeatInPrimary.notes.forEach { note ->
+                                synthesizeNoteIntoMix(primaryTrack, note, mixBuffer, numSamples, primaryVol, startOffset = 0)
+                            }
+                        }
+
+                        // 2. Synthesize accompaniment playable tracks that start in this beat window
+                        val beatStart = beat.startBeat
+                        val beatEnd = beatStart + durationBeats
                         playableTracks.forEach { track ->
-                            val beat = track.measures.getOrNull(currentM)?.beats?.getOrNull(currentB)
-                            if (beat != null && beat.notes.isNotEmpty()) {
-                                val trackVol = track.volume.coerceIn(0f, 1f)
-                                beat.notes.forEach { note ->
-                                    synthesizeNoteIntoMix(track, note, mixBuffer, numSamples, trackVol)
+                            if (track.id != primaryTrack.id) {
+                                val otherMeasure = track.measures.getOrNull(currentM)
+                                val otherVol = track.volume.coerceIn(0f, 1f) * 0.85f
+                                otherMeasure?.beats?.forEach { otherBeat ->
+                                    val otherStart = otherBeat.startBeat
+                                    if (otherStart >= beatStart - 0.02f && otherStart < beatEnd - 0.02f) {
+                                        val offsetRatio = ((otherStart - beatStart) / durationBeats).coerceIn(0f, 0.95f)
+                                        val offsetSample = (offsetRatio * numSamples).toInt()
+                                        otherBeat.notes.forEach { note ->
+                                            synthesizeNoteIntoMix(track, note, mixBuffer, numSamples, otherVol, startOffset = offsetSample)
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -179,11 +218,8 @@ class TabPlaybackEngine @Inject constructor() {
                             // Fallback delay if AudioTrack cannot be built on device
                             kotlinx.coroutines.delay((beatSeconds * 1000).toLong())
                         }
-
-                        currentB++
                     }
 
-                    currentB = 0
                     currentM++
 
                     // Check if looped
@@ -201,43 +237,89 @@ class TabPlaybackEngine @Inject constructor() {
         }
     }
 
+    private fun getOpenStringFrequency(track: TabTrack, stringIndex: Int): Float {
+        val noteName = track.tuningNotes.getOrNull(stringIndex)
+        if (!noteName.isNullOrBlank()) {
+            val freq = pitchNameToFrequency(noteName)
+            if (freq > 20f) return freq
+        }
+        return when (track.instrumentType) {
+            InstrumentType.BASS, InstrumentType.BASS_5 -> {
+                val defaults = floatArrayOf(98.00f, 73.42f, 55.00f, 41.20f, 30.87f)
+                defaults.getOrElse(stringIndex) { 41.20f }
+            }
+            InstrumentType.UKULELE -> {
+                val defaults = floatArrayOf(440.00f, 329.63f, 261.63f, 392.00f)
+                defaults.getOrElse(stringIndex) { 261.63f }
+            }
+            InstrumentType.KEYBOARD -> {
+                val defaults = floatArrayOf(523.25f, 392.00f, 329.63f, 261.63f, 196.00f, 130.81f)
+                defaults.getOrElse(stringIndex) { 261.63f }
+            }
+            else -> {
+                val defaults = floatArrayOf(329.63f, 246.94f, 196.00f, 146.83f, 110.00f, 82.41f, 61.74f, 46.25f)
+                defaults.getOrElse(stringIndex) { 110.00f }
+            }
+        }
+    }
+
+    private fun pitchNameToFrequency(pitch: String): Float {
+        val regex = Regex("([A-Ga-g][#b]?)(-?[0-9]+)")
+        val match = regex.matchEntire(pitch.trim()) ?: return 0f
+        val notePart = match.groupValues[1].uppercase()
+        val octavePart = match.groupValues[2].toIntOrNull() ?: 4
+        val semitone = when (notePart) {
+            "C" -> 0
+            "C#", "DB" -> 1
+            "D" -> 2
+            "D#", "EB" -> 3
+            "E" -> 4
+            "F" -> 5
+            "F#", "GB" -> 6
+            "G" -> 7
+            "G#", "AB" -> 8
+            "A" -> 9
+            "A#", "BB" -> 10
+            "B" -> 11
+            else -> 0
+        }
+        val midiNote = (octavePart + 1) * 12 + semitone
+        return (440.0 * 2.0.pow((midiNote - 69) / 12.0)).toFloat()
+    }
+
     private fun synthesizeNoteIntoMix(
         track: TabTrack,
         note: TabNote,
         mix: FloatArray,
         numSamples: Int,
         trackVol: Float,
+        startOffset: Int = 0,
     ) {
         val velocityGain = (note.velocity.coerceIn(20, 127) / 127f) * trackVol
 
         when (track.instrumentType) {
             InstrumentType.DRUMS -> {
-                synthesizeDrumHit(note.stringIndex, mix, numSamples, velocityGain)
+                synthesizeDrumHit(note.stringIndex, mix, numSamples, velocityGain, startOffset)
             }
             InstrumentType.BASS, InstrumentType.BASS_5 -> {
-                val baseNotes = floatArrayOf(98.00f, 73.42f, 55.00f, 41.20f, 30.87f)
-                val base = baseNotes.getOrElse(note.stringIndex) { 41.20f }
+                val base = getOpenStringFrequency(track, note.stringIndex)
                 val freq = base * 2.0f.pow(note.fret / 12.0f)
-                synthesizeBassTone(freq, mix, numSamples, velocityGain, note.effect)
+                synthesizeBassTone(freq, mix, numSamples, velocityGain, note.effect, startOffset)
             }
             InstrumentType.UKULELE -> {
-                val baseNotes = floatArrayOf(440.00f, 329.63f, 261.63f, 392.00f)
-                val base = baseNotes.getOrElse(note.stringIndex) { 261.63f }
+                val base = getOpenStringFrequency(track, note.stringIndex)
                 val freq = base * 2.0f.pow(note.fret / 12.0f)
-                synthesizePluckTone(freq, mix, numSamples, velocityGain, note.effect, decaySpeed = 7.0f)
+                synthesizePluckTone(freq, mix, numSamples, velocityGain, note.effect, decaySpeed = 7.0f, startOffset = startOffset)
             }
             InstrumentType.KEYBOARD -> {
-                val baseNotes = floatArrayOf(523.25f, 392.00f, 329.63f, 261.63f, 196.00f, 130.81f)
-                val base = baseNotes.getOrElse(note.stringIndex) { 261.63f }
+                val base = getOpenStringFrequency(track, note.stringIndex)
                 val freq = base * 2.0f.pow(note.fret / 12.0f)
-                synthesizePianoTone(freq, mix, numSamples, velocityGain)
+                synthesizePianoTone(freq, mix, numSamples, velocityGain, startOffset)
             }
             else -> {
-                // GUITAR, GUITAR_7, GUITAR_8
-                val baseNotes = floatArrayOf(329.63f, 246.94f, 196.00f, 146.83f, 110.00f, 82.41f, 61.74f, 46.25f)
-                val base = baseNotes.getOrElse(note.stringIndex) { 110.00f }
+                val base = getOpenStringFrequency(track, note.stringIndex)
                 val freq = base * 2.0f.pow(note.fret / 12.0f)
-                synthesizePluckTone(freq, mix, numSamples, velocityGain, note.effect, decaySpeed = 4.2f)
+                synthesizePluckTone(freq, mix, numSamples, velocityGain, note.effect, decaySpeed = 4.2f, startOffset = startOffset)
             }
         }
     }
@@ -254,36 +336,32 @@ class TabPlaybackEngine @Inject constructor() {
         gain: Float,
         effect: NoteEffect,
         decaySpeed: Float,
+        startOffset: Int = 0,
     ) {
         val fundamental = frequencyHz.coerceIn(40.0f, 2500.0f)
         val periodSamples = (sampleRate / fundamental).toInt().coerceIn(8, 2048)
         val isMuted = effect == NoteEffect.DEAD_NOTE
         val effectiveGain = if (isMuted) gain * 0.35f else gain
 
-        // Karplus-Strong circular buffer initialized with shaped pick excitation impulse
         val ringBuffer = FloatArray(periodSamples)
         for (i in 0 until periodSamples) {
-            // Triangular / shaped pick excitation with subtle pick noise
             val pickPhase = (i.toFloat() / periodSamples) * 2f - 1f
             val pickNoise = (random.nextFloat() * 2f - 1f) * 0.35f
             ringBuffer[i] = (1f - Math.abs(pickPhase) * 0.7f + pickNoise)
         }
 
-        // Damping factor: palm mute decays rapidly, normal note sustains smoothly
         val feedbackDamping = if (isMuted) 0.88f else (0.992f - (decaySpeed * 0.0015f)).coerceIn(0.97f, 0.996f)
         var bufferIdx = 0
         var prevSample = 0f
 
-        for (i in 0 until numSamples) {
+        for (i in startOffset until numSamples) {
             val currentVal = ringBuffer[bufferIdx]
-            // Low-pass filter (averaging adjacent samples) simulates high-frequency string loss
             val filtered = (currentVal + prevSample) * 0.5f
             prevSample = currentVal
             ringBuffer[bufferIdx] = filtered * feedbackDamping
 
-            // Subtle body harmonic warmth and subtle pick attack
-            val t = i.toFloat() / sampleRate
-            val pickTransient = if (i < 120) (1f - i / 120f) * 0.25f * (random.nextFloat() * 2f - 1f) else 0f
+            val t = (i - startOffset).toFloat() / sampleRate
+            val pickTransient = if (i - startOffset < 120) (1f - (i - startOffset) / 120f) * 0.25f * (random.nextFloat() * 2f - 1f) else 0f
             val bodyWarmth = kotlin.math.sin(2.0 * PI * (fundamental * 2.0) * t).toFloat() * 0.08f
 
             val output = (filtered + pickTransient + bodyWarmth) * effectiveGain
@@ -306,6 +384,7 @@ class TabPlaybackEngine @Inject constructor() {
         numSamples: Int,
         gain: Float,
         effect: NoteEffect,
+        startOffset: Int = 0,
     ) {
         val fundamental = frequencyHz.coerceIn(25.0f, 600.0f)
         val periodSamples = (sampleRate / fundamental).toInt().coerceIn(16, 4096)
@@ -322,14 +401,13 @@ class TabPlaybackEngine @Inject constructor() {
         var bufferIdx = 0
         var prevSample = 0f
 
-        for (i in 0 until numSamples) {
+        for (i in startOffset until numSamples) {
             val currentVal = ringBuffer[bufferIdx]
             val filtered = (currentVal * 0.6f + prevSample * 0.4f)
             prevSample = currentVal
             ringBuffer[bufferIdx] = filtered * feedbackDamping
 
-            val t = i.toFloat() / sampleRate
-            // Rich sub-harmonic + round magnetic pickup warmth
+            val t = (i - startOffset).toFloat() / sampleRate
             val subHarmonic = kotlin.math.sin(2.0 * PI * fundamental * t).toFloat() * 0.45f * kotlin.math.exp(-2.5f * t)
             val output = (filtered * 0.7f + subHarmonic) * effectiveGain
             mix[i] += output
@@ -347,12 +425,14 @@ class TabPlaybackEngine @Inject constructor() {
         mix: FloatArray,
         numSamples: Int,
         gain: Float,
+        startOffset: Int = 0,
     ) {
         val twoPiF = 2.0 * PI * frequencyHz / sampleRate
-        for (i in 0 until numSamples) {
-            val t = i.toFloat() / sampleRate
+        for (i in startOffset until numSamples) {
+            val relIdx = i - startOffset
+            val t = relIdx.toFloat() / sampleRate
             val decay = exp(-3.2 * t)
-            val s = sin(twoPiF * i) + 0.35 * sin(twoPiF * i * 2.0) + 0.18 * sin(twoPiF * i * 3.0) + 0.08 * sin(twoPiF * i * 4.0)
+            val s = sin(twoPiF * relIdx) + 0.35 * sin(twoPiF * relIdx * 2.0) + 0.18 * sin(twoPiF * relIdx * 3.0) + 0.08 * sin(twoPiF * relIdx * 4.0)
             mix[i] += (s * decay * gain * 0.85f).toFloat()
         }
     }
@@ -370,9 +450,11 @@ class TabPlaybackEngine @Inject constructor() {
         mix: FloatArray,
         numSamples: Int,
         gain: Float,
+        startOffset: Int = 0,
     ) {
-        for (i in 0 until numSamples) {
-            val t = i.toDouble() / sampleRate
+        for (i in startOffset until numSamples) {
+            val relIdx = i - startOffset
+            val t = relIdx.toDouble() / sampleRate
             val sampleVal: Double = when (drumIndex) {
                 0 -> {
                     // Crash Cymbal: Dense shimmering metallic cluster + long decay
@@ -395,7 +477,6 @@ class TabPlaybackEngine @Inject constructor() {
                     val bodyDecay = exp(-18.0 * t)
                     val bodyFreq = 195.0 * exp(-28.0 * t) + 135.0
                     val bodyTone = sin(2.0 * PI * bodyFreq * t) * 0.65
-
                     val wireDecay = exp(-15.0 * t)
                     val wireNoise = (random.nextDouble() * 2.0 - 1.0) * 0.85
                     (bodyTone * bodyDecay + wireNoise * wireDecay) * 0.95
@@ -409,7 +490,7 @@ class TabPlaybackEngine @Inject constructor() {
                 }
                 else -> {
                     // Kick Drum (Bass Drum): Sub-bass punch (135Hz -> 42Hz) + acoustic click beater
-                    val click = if (i < 80) (1.0 - i / 80.0) * sin(2.0 * PI * 3400.0 * t) * 0.7 else 0.0
+                    val click = if (relIdx < 80) (1.0 - relIdx / 80.0) * sin(2.0 * PI * 3400.0 * t) * 0.7 else 0.0
                     val pitchDrop = 135.0 * exp(-35.0 * t) + 42.0
                     val subDecay = exp(-10.5 * t)
                     val punch = sin(2.0 * PI * pitchDrop * t) * subDecay * 1.35

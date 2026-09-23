@@ -131,12 +131,39 @@ class TabViewModel @Inject constructor(
     }
 
     fun selectTrack(index: Int) {
-        _selectedTrackIndex.value = index
         val currentScore = _score.value ?: return
-        if (isPlaying.value) {
-            // Re-sync playback engine with the new active track without stopping audio
-            playbackEngine.play(currentScore, index, _selectedMeasureIndex.value, _selectedBeatIndex.value)
+        val clampedIdx = index.coerceIn(0, currentScore.tracks.lastIndex.coerceAtLeast(0))
+        _selectedTrackIndex.value = clampedIdx
+
+        // Unmute target track so it is always audible
+        val tracks = currentScore.tracks.toMutableList()
+        val targetTrack = tracks[clampedIdx]
+        var scoreUpdated = false
+        if (targetTrack.isMuted) {
+            tracks[clampedIdx] = targetTrack.copy(isMuted = false)
+            scoreUpdated = true
         }
+        val hasSoloOther = tracks.any { it.id != targetTrack.id && it.isSolo }
+        if (hasSoloOther && !targetTrack.isSolo) {
+            tracks[clampedIdx] = tracks[clampedIdx].copy(isSolo = true)
+            scoreUpdated = true
+        }
+        if (scoreUpdated) {
+            _score.value = currentScore.copy(tracks = tracks)
+        }
+
+        // Get current playback position to keep track synchronized
+        val curM = playbackEngine.currentMeasureIndex.value
+        val curB = playbackEngine.currentBeatIndex.value
+
+        // Switch playback engine to the new active track and immediately start/continue playback
+        val activeScore = _score.value ?: currentScore
+        playbackEngine.play(
+            score = activeScore,
+            activeTrackIndex = clampedIdx,
+            startMeasureIndex = curM,
+            startBeatIndex = curB,
+        )
     }
 
     fun toggleMuteTrack(index: Int) {
@@ -570,19 +597,20 @@ class TabViewModel @Inject constructor(
         val dropCTuningNotes = listOf("D4", "A3", "F3", "C3", "G2", "C2")
         val dropCLabels = listOf("d", "A", "F", "C", "G", "C")
 
+        // Guitar 1 (Lead): 4 complete 4/4 measures (8 eighth notes = 4.0 beats each)
         val m1 = TabMeasure(
             number = 1,
             palmMute = true,
             palmMuteLabel = "P.M. ------------------------------------|",
             beats = listOf(
-                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0)), durationType = NoteDuration.SIXTEENTH),
-                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.SIXTEENTH),
-                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.SIXTEENTH),
-                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0)), durationType = NoteDuration.SIXTEENTH),
-                TabBeat(notes = listOf(TabNote(3, 3, effect = NoteEffect.SLIDE)), durationType = NoteDuration.EIGHTH),
-                TabBeat(notes = listOf(TabNote(3, 5)), durationType = NoteDuration.EIGHTH),
-                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.SIXTEENTH),
-                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.SIXTEENTH),
+                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0)), durationType = NoteDuration.EIGHTH, startBeat = 0.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.EIGHTH, startBeat = 0.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0)), durationType = NoteDuration.EIGHTH, startBeat = 1.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.EIGHTH, startBeat = 1.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 3, effect = NoteEffect.SLIDE)), durationType = NoteDuration.EIGHTH, startBeat = 2.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 5)), durationType = NoteDuration.EIGHTH, startBeat = 2.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.EIGHTH, startBeat = 3.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.EIGHTH, startBeat = 3.5f, durationBeats = 0.5f),
             )
         )
 
@@ -591,13 +619,14 @@ class TabViewModel @Inject constructor(
             palmMute = true,
             palmMuteLabel = "P.M. ------------------------------------|",
             beats = listOf(
-                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0)), durationType = NoteDuration.SIXTEENTH),
-                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.SIXTEENTH),
-                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.SIXTEENTH),
-                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0)), durationType = NoteDuration.SIXTEENTH),
-                TabBeat(notes = listOf(TabNote(3, 7, effect = NoteEffect.VIBRATO)), durationType = NoteDuration.QUARTER),
-                TabBeat(notes = listOf(TabNote(3, 5)), durationType = NoteDuration.EIGHTH),
-                TabBeat(notes = listOf(TabNote(3, 3)), durationType = NoteDuration.EIGHTH),
+                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0)), durationType = NoteDuration.EIGHTH, startBeat = 0.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.EIGHTH, startBeat = 0.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.EIGHTH, startBeat = 1.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0)), durationType = NoteDuration.EIGHTH, startBeat = 1.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 7, effect = NoteEffect.VIBRATO)), durationType = NoteDuration.EIGHTH, startBeat = 2.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 7)), durationType = NoteDuration.EIGHTH, startBeat = 2.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 5)), durationType = NoteDuration.EIGHTH, startBeat = 3.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 3)), durationType = NoteDuration.EIGHTH, startBeat = 3.5f, durationBeats = 0.5f),
             )
         )
 
@@ -606,13 +635,14 @@ class TabViewModel @Inject constructor(
             palmMute = true,
             palmMuteLabel = "P.M. ------------------------------------|",
             beats = listOf(
-                TabBeat(notes = listOf(TabNote(5, 8), TabNote(4, 8)), durationType = NoteDuration.EIGHTH),
-                TabBeat(notes = listOf(TabNote(5, 8)), durationType = NoteDuration.SIXTEENTH),
-                TabBeat(notes = listOf(TabNote(5, 8)), durationType = NoteDuration.SIXTEENTH),
-                TabBeat(notes = listOf(TabNote(5, 7), TabNote(4, 7)), durationType = NoteDuration.EIGHTH),
-                TabBeat(notes = listOf(TabNote(5, 7)), durationType = NoteDuration.SIXTEENTH),
-                TabBeat(notes = listOf(TabNote(5, 7)), durationType = NoteDuration.SIXTEENTH),
-                TabBeat(notes = listOf(TabNote(5, 5), TabNote(4, 5)), durationType = NoteDuration.QUARTER),
+                TabBeat(notes = listOf(TabNote(5, 8), TabNote(4, 8)), durationType = NoteDuration.EIGHTH, startBeat = 0.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 8)), durationType = NoteDuration.EIGHTH, startBeat = 0.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 8), TabNote(4, 8)), durationType = NoteDuration.EIGHTH, startBeat = 1.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 8)), durationType = NoteDuration.EIGHTH, startBeat = 1.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 7), TabNote(4, 7)), durationType = NoteDuration.EIGHTH, startBeat = 2.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 7)), durationType = NoteDuration.EIGHTH, startBeat = 2.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 5), TabNote(4, 5)), durationType = NoteDuration.EIGHTH, startBeat = 3.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 5)), durationType = NoteDuration.EIGHTH, startBeat = 3.5f, durationBeats = 0.5f),
             )
         )
 
@@ -620,11 +650,14 @@ class TabViewModel @Inject constructor(
             number = 4,
             palmMute = false,
             beats = listOf(
-                TabBeat(notes = listOf(TabNote(2, 7, effect = NoteEffect.BEND)), durationType = NoteDuration.QUARTER),
-                TabBeat(notes = listOf(TabNote(2, 7)), durationType = NoteDuration.EIGHTH),
-                TabBeat(notes = listOf(TabNote(2, 5, effect = NoteEffect.VIBRATO)), durationType = NoteDuration.QUARTER),
-                TabBeat(notes = listOf(TabNote(3, 7)), durationType = NoteDuration.EIGHTH),
-                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0)), durationType = NoteDuration.QUARTER),
+                TabBeat(notes = listOf(TabNote(2, 7, effect = NoteEffect.BEND)), durationType = NoteDuration.EIGHTH, startBeat = 0.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(2, 7)), durationType = NoteDuration.EIGHTH, startBeat = 0.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(2, 5, effect = NoteEffect.VIBRATO)), durationType = NoteDuration.EIGHTH, startBeat = 1.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(2, 5)), durationType = NoteDuration.EIGHTH, startBeat = 1.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 7)), durationType = NoteDuration.EIGHTH, startBeat = 2.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 7)), durationType = NoteDuration.EIGHTH, startBeat = 2.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0)), durationType = NoteDuration.EIGHTH, startBeat = 3.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0)), durationType = NoteDuration.EIGHTH, startBeat = 3.5f, durationBeats = 0.5f),
             )
         )
 
@@ -638,14 +671,126 @@ class TabViewModel @Inject constructor(
             volume = 0.9f
         )
 
+        // Guitar 2 (Rhythm): Heavy Drop C powerchords & chugs
+        val g2m1 = TabMeasure(
+            number = 1,
+            palmMute = true,
+            beats = listOf(
+                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0), TabNote(3, 0)), durationType = NoteDuration.EIGHTH, startBeat = 0.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.EIGHTH, startBeat = 0.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0)), durationType = NoteDuration.EIGHTH, startBeat = 1.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.EIGHTH, startBeat = 1.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0)), durationType = NoteDuration.EIGHTH, startBeat = 2.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.EIGHTH, startBeat = 2.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 3), TabNote(4, 3)), durationType = NoteDuration.EIGHTH, startBeat = 3.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 5), TabNote(4, 5)), durationType = NoteDuration.EIGHTH, startBeat = 3.5f, durationBeats = 0.5f),
+            )
+        )
+        val g2m2 = TabMeasure(
+            number = 2,
+            palmMute = true,
+            beats = listOf(
+                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0)), durationType = NoteDuration.EIGHTH, startBeat = 0.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.EIGHTH, startBeat = 0.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0)), durationType = NoteDuration.EIGHTH, startBeat = 1.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.EIGHTH, startBeat = 1.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0)), durationType = NoteDuration.EIGHTH, startBeat = 2.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.EIGHTH, startBeat = 2.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 7), TabNote(4, 7)), durationType = NoteDuration.EIGHTH, startBeat = 3.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 5), TabNote(4, 5)), durationType = NoteDuration.EIGHTH, startBeat = 3.5f, durationBeats = 0.5f),
+            )
+        )
+        val g2m3 = TabMeasure(
+            number = 3,
+            palmMute = true,
+            beats = listOf(
+                TabBeat(notes = listOf(TabNote(5, 8), TabNote(4, 8)), durationType = NoteDuration.EIGHTH, startBeat = 0.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 8)), durationType = NoteDuration.EIGHTH, startBeat = 0.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 8), TabNote(4, 8)), durationType = NoteDuration.EIGHTH, startBeat = 1.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 8)), durationType = NoteDuration.EIGHTH, startBeat = 1.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 7), TabNote(4, 7)), durationType = NoteDuration.EIGHTH, startBeat = 2.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 7)), durationType = NoteDuration.EIGHTH, startBeat = 2.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 5), TabNote(4, 5)), durationType = NoteDuration.EIGHTH, startBeat = 3.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 5)), durationType = NoteDuration.EIGHTH, startBeat = 3.5f, durationBeats = 0.5f),
+            )
+        )
+        val g2m4 = TabMeasure(
+            number = 4,
+            palmMute = false,
+            beats = listOf(
+                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0)), durationType = NoteDuration.EIGHTH, startBeat = 0.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 0)), durationType = NoteDuration.EIGHTH, startBeat = 0.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 3), TabNote(4, 3)), durationType = NoteDuration.EIGHTH, startBeat = 1.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 3)), durationType = NoteDuration.EIGHTH, startBeat = 1.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 2), TabNote(4, 2)), durationType = NoteDuration.EIGHTH, startBeat = 2.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 2)), durationType = NoteDuration.EIGHTH, startBeat = 2.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0)), durationType = NoteDuration.EIGHTH, startBeat = 3.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(5, 0), TabNote(4, 0)), durationType = NoteDuration.EIGHTH, startBeat = 3.5f, durationBeats = 0.5f),
+            )
+        )
+
         val guitarTrack2 = TabTrack(
             name = "Rhythm Guitar / Guitar 2",
             instrumentType = InstrumentType.GUITAR,
             tuningName = "Drop C",
             stringLabels = dropCLabels,
             tuningNotes = dropCTuningNotes,
-            measures = listOf(m1, m2, m3, m4),
-            volume = 0.8f
+            measures = listOf(g2m1, g2m2, g2m3, g2m4),
+            volume = 0.85f
+        )
+
+        // Bass: 4 complete measures in Drop C (string 3 = low C)
+        val bm1 = TabMeasure(
+            number = 1,
+            beats = listOf(
+                TabBeat(notes = listOf(TabNote(3, 0)), durationType = NoteDuration.EIGHTH, startBeat = 0.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 0)), durationType = NoteDuration.EIGHTH, startBeat = 0.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 0)), durationType = NoteDuration.EIGHTH, startBeat = 1.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 0)), durationType = NoteDuration.EIGHTH, startBeat = 1.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 3)), durationType = NoteDuration.EIGHTH, startBeat = 2.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 5)), durationType = NoteDuration.EIGHTH, startBeat = 2.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 0)), durationType = NoteDuration.EIGHTH, startBeat = 3.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 0)), durationType = NoteDuration.EIGHTH, startBeat = 3.5f, durationBeats = 0.5f),
+            )
+        )
+        val bm2 = TabMeasure(
+            number = 2,
+            beats = listOf(
+                TabBeat(notes = listOf(TabNote(3, 0)), durationType = NoteDuration.EIGHTH, startBeat = 0.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 0)), durationType = NoteDuration.EIGHTH, startBeat = 0.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 0)), durationType = NoteDuration.EIGHTH, startBeat = 1.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 0)), durationType = NoteDuration.EIGHTH, startBeat = 1.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 7)), durationType = NoteDuration.EIGHTH, startBeat = 2.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 7)), durationType = NoteDuration.EIGHTH, startBeat = 2.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 5)), durationType = NoteDuration.EIGHTH, startBeat = 3.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 3)), durationType = NoteDuration.EIGHTH, startBeat = 3.5f, durationBeats = 0.5f),
+            )
+        )
+        val bm3 = TabMeasure(
+            number = 3,
+            beats = listOf(
+                TabBeat(notes = listOf(TabNote(3, 8)), durationType = NoteDuration.EIGHTH, startBeat = 0.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 8)), durationType = NoteDuration.EIGHTH, startBeat = 0.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 8)), durationType = NoteDuration.EIGHTH, startBeat = 1.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 8)), durationType = NoteDuration.EIGHTH, startBeat = 1.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 7)), durationType = NoteDuration.EIGHTH, startBeat = 2.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 7)), durationType = NoteDuration.EIGHTH, startBeat = 2.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 5)), durationType = NoteDuration.EIGHTH, startBeat = 3.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 5)), durationType = NoteDuration.EIGHTH, startBeat = 3.5f, durationBeats = 0.5f),
+            )
+        )
+        val bm4 = TabMeasure(
+            number = 4,
+            beats = listOf(
+                TabBeat(notes = listOf(TabNote(3, 0)), durationType = NoteDuration.EIGHTH, startBeat = 0.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 0)), durationType = NoteDuration.EIGHTH, startBeat = 0.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 3)), durationType = NoteDuration.EIGHTH, startBeat = 1.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 3)), durationType = NoteDuration.EIGHTH, startBeat = 1.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 2)), durationType = NoteDuration.EIGHTH, startBeat = 2.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 2)), durationType = NoteDuration.EIGHTH, startBeat = 2.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 0)), durationType = NoteDuration.EIGHTH, startBeat = 3.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 0)), durationType = NoteDuration.EIGHTH, startBeat = 3.5f, durationBeats = 0.5f),
+            )
         )
 
         val bassTrack = TabTrack(
@@ -655,13 +800,63 @@ class TabViewModel @Inject constructor(
             stringCount = 4,
             stringLabels = listOf("F", "C", "G", "C"),
             tuningNotes = listOf("F2", "C2", "G1", "C1"),
-            measures = listOf(
-                TabMeasure(number = 1, beats = listOf(TabBeat(notes = listOf(TabNote(3, 0)), durationType = NoteDuration.QUARTER))),
-                TabMeasure(number = 2, beats = listOf(TabBeat(notes = listOf(TabNote(3, 0)), durationType = NoteDuration.QUARTER))),
-                TabMeasure(number = 3, beats = listOf(TabBeat(notes = listOf(TabNote(3, 8)), durationType = NoteDuration.QUARTER))),
-                TabMeasure(number = 4, beats = listOf(TabBeat(notes = listOf(TabNote(3, 7)), durationType = NoteDuration.QUARTER))),
-            ),
-            volume = 0.85f
+            measures = listOf(bm1, bm2, bm3, bm4),
+            volume = 0.95f
+        )
+
+        // Drumkit: 4 complete rock groove measures (8 eighth-note beats per measure)
+        // 0: Crash, 1: Hi-Hat, 2: Snare, 3: Tom, 4: Bass Drum (Kick)
+        val dm1 = TabMeasure(
+            number = 1,
+            beats = listOf(
+                TabBeat(notes = listOf(TabNote(4, 0), TabNote(0, 0)), durationType = NoteDuration.EIGHTH, startBeat = 0.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(1, 0)), durationType = NoteDuration.EIGHTH, startBeat = 0.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(2, 0), TabNote(1, 0)), durationType = NoteDuration.EIGHTH, startBeat = 1.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(1, 0)), durationType = NoteDuration.EIGHTH, startBeat = 1.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(4, 0), TabNote(1, 0)), durationType = NoteDuration.EIGHTH, startBeat = 2.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(4, 0), TabNote(1, 0)), durationType = NoteDuration.EIGHTH, startBeat = 2.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(2, 0), TabNote(1, 0)), durationType = NoteDuration.EIGHTH, startBeat = 3.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(1, 0)), durationType = NoteDuration.EIGHTH, startBeat = 3.5f, durationBeats = 0.5f),
+            )
+        )
+        val dm2 = TabMeasure(
+            number = 2,
+            beats = listOf(
+                TabBeat(notes = listOf(TabNote(4, 0), TabNote(1, 0)), durationType = NoteDuration.EIGHTH, startBeat = 0.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(1, 0)), durationType = NoteDuration.EIGHTH, startBeat = 0.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(2, 0), TabNote(1, 0)), durationType = NoteDuration.EIGHTH, startBeat = 1.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(1, 0)), durationType = NoteDuration.EIGHTH, startBeat = 1.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(4, 0), TabNote(1, 0)), durationType = NoteDuration.EIGHTH, startBeat = 2.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(4, 0), TabNote(1, 0)), durationType = NoteDuration.EIGHTH, startBeat = 2.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(2, 0), TabNote(1, 0)), durationType = NoteDuration.EIGHTH, startBeat = 3.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(1, 0)), durationType = NoteDuration.EIGHTH, startBeat = 3.5f, durationBeats = 0.5f),
+            )
+        )
+        val dm3 = TabMeasure(
+            number = 3,
+            beats = listOf(
+                TabBeat(notes = listOf(TabNote(4, 0), TabNote(0, 0)), durationType = NoteDuration.EIGHTH, startBeat = 0.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(1, 0)), durationType = NoteDuration.EIGHTH, startBeat = 0.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(2, 0), TabNote(1, 0)), durationType = NoteDuration.EIGHTH, startBeat = 1.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(1, 0)), durationType = NoteDuration.EIGHTH, startBeat = 1.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(4, 0), TabNote(1, 0)), durationType = NoteDuration.EIGHTH, startBeat = 2.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(4, 0)), durationType = NoteDuration.EIGHTH, startBeat = 2.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(2, 0), TabNote(1, 0)), durationType = NoteDuration.EIGHTH, startBeat = 3.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(2, 0)), durationType = NoteDuration.EIGHTH, startBeat = 3.5f, durationBeats = 0.5f),
+            )
+        )
+        val dm4 = TabMeasure(
+            number = 4,
+            beats = listOf(
+                TabBeat(notes = listOf(TabNote(4, 0), TabNote(0, 0)), durationType = NoteDuration.EIGHTH, startBeat = 0.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(1, 0)), durationType = NoteDuration.EIGHTH, startBeat = 0.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(2, 0), TabNote(1, 0)), durationType = NoteDuration.EIGHTH, startBeat = 1.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 0)), durationType = NoteDuration.EIGHTH, startBeat = 1.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(3, 0)), durationType = NoteDuration.EIGHTH, startBeat = 2.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(2, 0)), durationType = NoteDuration.EIGHTH, startBeat = 2.5f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(4, 0), TabNote(0, 0)), durationType = NoteDuration.EIGHTH, startBeat = 3.0f, durationBeats = 0.5f),
+                TabBeat(notes = listOf(TabNote(4, 0)), durationType = NoteDuration.EIGHTH, startBeat = 3.5f, durationBeats = 0.5f),
+            )
         )
 
         val drumTrack = TabTrack(
@@ -670,13 +865,8 @@ class TabViewModel @Inject constructor(
             tuningName = "Standard Percussion",
             stringCount = 5,
             stringLabels = listOf("CC", "HH", "SD", "TM", "BD"),
-            measures = listOf(
-                TabMeasure(number = 1, beats = listOf(TabBeat(notes = listOf(TabNote(4, 0), TabNote(1, 0)), durationType = NoteDuration.EIGHTH))),
-                TabMeasure(number = 2, beats = listOf(TabBeat(notes = listOf(TabNote(4, 0), TabNote(2, 0)), durationType = NoteDuration.EIGHTH))),
-                TabMeasure(number = 3, beats = listOf(TabBeat(notes = listOf(TabNote(4, 0), TabNote(1, 0)), durationType = NoteDuration.EIGHTH))),
-                TabMeasure(number = 4, beats = listOf(TabBeat(notes = listOf(TabNote(4, 0), TabNote(2, 0)), durationType = NoteDuration.EIGHTH))),
-            ),
-            volume = 0.95f
+            measures = listOf(dm1, dm2, dm3, dm4),
+            volume = 1.0f
         )
 
         return TabScore(
