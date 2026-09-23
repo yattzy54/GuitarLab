@@ -621,7 +621,8 @@ fun SongsterrTabPlayerScreen(
             }
         )
     }
-}    // 6. Song Catalog Sheet
+
+    // 6. Song Catalog Sheet
     if (isCatalogOpen) {
         SongCatalogBottomSheet(
             sheetState = catalogSheetState,

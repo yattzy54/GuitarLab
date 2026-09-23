@@ -1,11 +1,12 @@
+
+package com.mmt.guitarlab.domain.model
+
 enum class MetronomeSound(val label: String) {
     WOODBLOCK("Woodblock"),
     DIGITAL_BEEP("Digital Beep"),
     MECHANICAL_CLICK("Mechanical"),
     COWBELL("Cowbell"),
 }
-
-package com.mmt.guitarlab.domain.model
 
 enum class TimeSignature(
     val beatsPerBar: Int,
