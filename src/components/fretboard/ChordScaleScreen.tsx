@@ -110,24 +110,7 @@ export const ChordScaleScreen: React.FC<ChordScaleScreenProps> = ({ activeTuning
           </div>
 
           {/* Mode Switcher */}
-          <div className="flex items-center space-x-2">
-            <StudioPill
-              label="Explorer"
-              selected={mode === 'CHORD_SCALE_FINDER'}
-              onClick={() => setMode('CHORD_SCALE_FINDER')}
-              icon={Grid}
-              accent="amber"
-              size="sm"
-            />
-            <StudioPill
-              label="Reverse Finder"
-              selected={mode === 'REVERSE_LOOKUP'}
-              onClick={() => setMode('REVERSE_LOOKUP')}
-              icon={Search}
-              accent="teal"
-              size="sm"
-            />
-          </div>
+
         </div>
       </StudioCard>
 

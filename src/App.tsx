@@ -7,6 +7,7 @@ import { MetronomeScreen } from './components/metronome/MetronomeScreen';
 import { AutoSpeedTrainerScreen } from './components/metronome/AutoSpeedTrainerScreen';
 import { TabViewerScreen } from './components/tab/TabViewerScreen';
 import { ChordScaleScreen } from './components/fretboard/ChordScaleScreen';
+import { ReverseChordFinderScreen } from './components/fretboard/ReverseChordFinderScreen';
 import { SlowDownerScreen } from './components/practice/SlowDownerScreen';
 import { RiffRecorderScreen } from './components/practice/RiffRecorderScreen';
 import { PracticeTrackerScreen } from './components/practice/PracticeTrackerScreen';
@@ -129,6 +130,11 @@ export default function App() {
         {currentRoute === 'fretboard' && (
           <div className="pb-24 sm:pb-10">
             <ChordScaleScreen activeTuning={activeTuning} />
+          </div>
+        )}
+        {currentRoute === 'reverse_chord' && (
+          <div className="pb-24 sm:pb-10">
+            <ReverseChordFinderScreen activeTuning={activeTuning} />
           </div>
         )}
 

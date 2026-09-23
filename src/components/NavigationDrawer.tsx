@@ -21,6 +21,7 @@ export type AppDestination =
   | 'trainer'
   | 'tabs'
   | 'fretboard'
+  | 'reverse_chord'
   | 'slowdowner'
   | 'recorder'
   | 'tracker';
@@ -71,10 +72,17 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     id: 'fretboard',
-    title: 'Fretboard & Chords',
-    subtitle: 'Scales & Reverse Chord Lookup',
+    title: 'Гриф & Гаммы',
+    subtitle: 'Исследователь гамм и аккордов на грифе',
     icon: Grid,
     accent: 'amber',
+  },
+  {
+    id: 'reverse_chord',
+    title: 'Reverse Chord Finder',
+    subtitle: 'Распознавание аккорда по зажатым ладам',
+    icon: Search,
+    accent: 'teal',
   },
   {
     id: 'slowdowner',
