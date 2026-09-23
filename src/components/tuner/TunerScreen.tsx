@@ -356,7 +356,7 @@ export const TunerScreen: React.FC<TunerScreenProps> = ({
 
           {/* Strings Grid */}
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
-            {activeTuning.notes.map((note, index) => {
+            {(activeTuning?.notes || []).map((note, index) => {
               const isPlaying = playingStringIndex === index;
               const isTarget = closestString?.stringNumber === note.stringNumber && detectedPitch;
               return (

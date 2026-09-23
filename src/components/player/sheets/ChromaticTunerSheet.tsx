@@ -10,15 +10,15 @@ import { midiToHz } from '../../../data/defaultTunings';
 interface ChromaticTunerSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  targetTuningName: string;
-  targetTuningNotes: string[]; // e.g. ["D4", "A3", "F3", "C3", "G2", "C2"]
+  targetTuningName?: string;
+  targetTuningNotes?: string[]; // e.g. ["D4", "A3", "F3", "C3", "G2", "C2"]
 }
 
 export const ChromaticTunerSheet: React.FC<ChromaticTunerSheetProps> = ({
   isOpen,
   onClose,
-  targetTuningName,
-  targetTuningNotes,
+  targetTuningName = 'Standard E',
+  targetTuningNotes = ['E4', 'B3', 'G3', 'D3', 'A2', 'E2'],
 }) => {
   const [isListening, setIsListening] = useState(false);
   const [detectedPitch, setDetectedPitch] = useState<DetectedPitch | null>(null);
@@ -146,7 +146,7 @@ export const ChromaticTunerSheet: React.FC<ChromaticTunerSheetProps> = ({
           </span>
         </div>
         <div className="text-xs font-mono text-zinc-300">
-          {targetTuningNotes.map((n) => n.replace(/[0-9]/g, '')).join(' · ')}
+          {(targetTuningNotes || []).map((n) => n.replace(/[0-9]/g, '')).join(' · ')}
         </div>
       </div>
 
@@ -280,7 +280,7 @@ export const ChromaticTunerSheet: React.FC<ChromaticTunerSheetProps> = ({
           Настройка на слух (Струны {targetTuningName})
         </label>
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-          {targetTuningNotes.map((note, idx) => {
+          {(targetTuningNotes || []).map((note, idx) => {
             const isPlayingThis = playingNoteIndex === idx;
             return (
               <button

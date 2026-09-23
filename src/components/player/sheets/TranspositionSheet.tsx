@@ -7,9 +7,12 @@ interface TranspositionSheetProps {
   isOpen: boolean;
   onClose: () => void;
   semitones: number;
-  onSemitonesChange: (semitones: number) => void;
-  currentTuning: string;
-  onApplyTuningPreset: (presetName: string, notes: string[]) => void;
+  onSemitonesChange?: (semitones: number) => void;
+  onChangeSemitones?: (semitones: number) => void;
+  currentTuning?: string;
+  tuningName?: string;
+  onApplyTuningPreset?: (presetName: string, notes: string[]) => void;
+  onSelectTuning?: (presetName: string, notes: string[]) => void;
 }
 
 const TUNING_PRESETS = [
@@ -26,9 +29,15 @@ export const TranspositionSheet: React.FC<TranspositionSheetProps> = ({
   onClose,
   semitones,
   onSemitonesChange,
+  onChangeSemitones,
   currentTuning,
+  tuningName,
   onApplyTuningPreset,
+  onSelectTuning,
 }) => {
+  const activeTuning = currentTuning || tuningName || '';
+  const changeSemitones = onSemitonesChange || onChangeSemitones || (() => {});
+  const applyPreset = onApplyTuningPreset || onSelectTuning || (() => {});
   return (
     <ModalBottomSheet
       isOpen={isOpen}
@@ -44,7 +53,7 @@ export const TranspositionSheet: React.FC<TranspositionSheetProps> = ({
 
         <div className="flex items-center space-x-6">
           <button
-            onClick={() => onSemitonesChange(semitones - 1)}
+            onClick={() => changeSemitones(semitones - 1)}
             disabled={semitones <= -12}
             className="w-10 h-10 rounded-xl bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 border border-zinc-700 flex items-center justify-center text-white transition-colors"
           >
@@ -65,7 +74,7 @@ export const TranspositionSheet: React.FC<TranspositionSheetProps> = ({
           </div>
 
           <button
-            onClick={() => onSemitonesChange(semitones + 1)}
+            onClick={() => changeSemitones(semitones + 1)}
             disabled={semitones >= 12}
             className="w-10 h-10 rounded-xl bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 border border-zinc-700 flex items-center justify-center text-white transition-colors"
           >
@@ -75,7 +84,7 @@ export const TranspositionSheet: React.FC<TranspositionSheetProps> = ({
 
         {semitones !== 0 && (
           <button
-            onClick={() => onSemitonesChange(0)}
+            onClick={() => changeSemitones(0)}
             className="text-xs text-zinc-400 hover:text-white flex items-center gap-1 transition-colors pt-1"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -120,12 +129,12 @@ export const TranspositionSheet: React.FC<TranspositionSheetProps> = ({
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {TUNING_PRESETS.map((p) => {
-            const isCurrent = currentTuning === p.name || currentTuning.startsWith(p.name.split(' ')[0]);
+            const isCurrent = Boolean(activeTuning) && (activeTuning === p.name || (typeof activeTuning === 'string' && activeTuning.startsWith(p.name.split(' ')[0])));
             return (
               <button
                 key={p.name}
                 onClick={() => {
-                  onApplyTuningPreset(p.name, p.notes);
+                  applyPreset(p.name, p.notes);
                   onClose();
                 }}
                 className={`p-3 rounded-xl border text-left flex items-center justify-between transition-colors ${

@@ -32,7 +32,7 @@ export const MixerSheet: React.FC<MixerSheetProps> = ({
       subtitle="Выбор активной партии для просмотра табов и баланс громкости"
     >
       <div className="space-y-3">
-        {tracks.map((track) => {
+        {(tracks || []).map((track) => {
           const isActive = track.id === activeTrackId;
 
           return (

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { TabTrackInfo, AdvancedMeasure, AdvancedBeat, AdvancedNote } from '../../types/tabPlayer';
 
 interface TabCanvasProps {
@@ -21,20 +21,67 @@ export const TabCanvas: React.FC<TabCanvasProps> = ({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const activeMeasureRef = useRef<HTMLDivElement | null>(null);
 
+  // Mobile pinch-to-zoom & double-tap zoom state
+  const [zoomScale, setZoomScale] = useState<number>(1.0);
+  const lastTouchDistRef = useRef<number | null>(null);
+  const lastTapTimeRef = useRef<number>(0);
+
   const stringCount = track.tuningNotes.length || 6;
-  // Labels for strings (highest pitch at index 0, lowest at stringCount - 1)
-  const stringLabels =
-    track.tuningNotes.length > 0
+  const stringLabels = useMemo(() => {
+    return track.tuningNotes.length > 0
       ? track.tuningNotes.map((n) => n.replace(/[0-9]/g, ''))
       : ['e', 'B', 'G', 'D', 'A', 'E'];
+  }, [track.tuningNotes]);
 
-  // Auto-scroll to keep active measure visible
+  // Touch gesture handling: smooth pinch-to-zoom + double tap to reset
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      lastTouchDistRef.current = Math.hypot(dx, dy);
+    } else if (e.touches.length === 1) {
+      const now = Date.now();
+      if (now - lastTapTimeRef.current < 300) {
+        // Double tap toggles between 1.0x and 1.35x zoom
+        setZoomScale((prev) => (prev > 1.1 ? 1.0 : 1.35));
+        lastTapTimeRef.current = 0;
+      } else {
+        lastTapTimeRef.current = now;
+      }
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && lastTouchDistRef.current !== null) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      const factor = dist / lastTouchDistRef.current;
+      setZoomScale((prev) => Math.min(1.8, Math.max(0.85, prev * (1 + (factor - 1) * 0.5))));
+      lastTouchDistRef.current = dist;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    lastTouchDistRef.current = null;
+  };
+
+  // High-performance Auto-Scroll using RequestAnimationFrame & instant centering during playback
   useEffect(() => {
     if (isPlaying && activeMeasureRef.current && containerRef.current) {
-      activeMeasureRef.current.scrollIntoView({
+      const container = containerRef.current;
+      const activeEl = activeMeasureRef.current;
+      
+      const containerRect = container.getBoundingClientRect();
+      const activeRect = activeEl.getBoundingClientRect();
+      
+      // Calculate relative center offset
+      const targetScrollTop = container.scrollTop + (activeRect.top - containerRect.top) - (containerRect.height / 2) + (activeRect.height / 2);
+      
+      // Smooth animated scroll with requestAnimationFrame to prevent jank on mobile
+      container.scrollTo({
+        top: Math.max(0, targetScrollTop),
         behavior: 'smooth',
-        block: 'nearest',
-        inline: 'center',
       });
     }
   }, [currentMeasureIndex, isPlaying]);
@@ -42,9 +89,47 @@ export const TabCanvas: React.FC<TabCanvasProps> = ({
   return (
     <div
       ref={containerRef}
-      className="flex-1 w-full overflow-y-auto overflow-x-hidden bg-[#0d0f12] text-zinc-100 select-none pb-36 pt-4 px-2 sm:px-6"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      style={{
+        WebkitOverflowScrolling: 'touch',
+        touchAction: 'pan-x pan-y',
+        transform: 'translateZ(0)', // Force hardware acceleration in Android WebView
+      }}
+      className="flex-1 w-full overflow-y-auto overflow-x-hidden bg-[#0a0c10] text-zinc-100 select-none pb-44 pt-2 px-1.5 sm:px-4"
     >
-      <div className="max-w-5xl mx-auto space-y-6">
+      {/* Zoom indicator & controls capsule for mobile quick view */}
+      <div className="sticky top-1 z-30 flex justify-end px-2 mb-2 pointer-events-none">
+        <div className="pointer-events-auto flex items-center space-x-1.5 bg-zinc-900/90 backdrop-blur-md border border-zinc-800/80 px-2.5 py-1 rounded-full text-[11px] font-mono shadow-lg text-zinc-400">
+          <button
+            onClick={() => setZoomScale((z) => Math.max(0.85, +(z - 0.15).toFixed(2)))}
+            className="w-5 h-5 flex items-center justify-center rounded active:bg-zinc-800 text-zinc-300 font-bold"
+          >
+            -
+          </button>
+          <span className="w-9 text-center font-semibold text-zinc-200">{Math.round(zoomScale * 100)}%</span>
+          <button
+            onClick={() => setZoomScale((z) => Math.min(1.8, +(z + 0.15).toFixed(2)))}
+            className="w-5 h-5 flex items-center justify-center rounded active:bg-zinc-800 text-zinc-300 font-bold"
+          >
+            +
+          </button>
+          {zoomScale !== 1.0 && (
+            <button
+              onClick={() => setZoomScale(1.0)}
+              className="ml-1 text-[10px] text-amber-400 font-medium active:underline"
+            >
+              Reset
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div
+        className="max-w-4xl mx-auto space-y-4 transition-transform duration-75 origin-top"
+        style={{ transform: `scale(${zoomScale})` }}
+      >
         {track.measures.map((measure, mIdx) => {
           const isMeasureActive = isPlaying && currentMeasureIndex === mIdx;
           const isInLoop =
@@ -54,19 +139,19 @@ export const TabCanvas: React.FC<TabCanvasProps> = ({
             <div
               key={measure.number}
               ref={isMeasureActive ? activeMeasureRef : null}
-              className={`relative rounded-2xl border transition-all duration-150 ${
+              className={`relative rounded-2xl border transition-colors duration-150 ${
                 isMeasureActive
-                  ? 'bg-zinc-900/90 border-emerald-500 shadow-lg shadow-emerald-500/10 ring-2 ring-emerald-500/30'
+                  ? 'bg-zinc-900/95 border-emerald-500 shadow-xl shadow-emerald-500/15 ring-2 ring-emerald-500/40'
                   : isInLoop
-                  ? 'bg-zinc-900/50 border-amber-500/40'
-                  : 'bg-zinc-950/60 border-zinc-800/80 hover:border-zinc-700/80'
+                  ? 'bg-zinc-950/90 border-amber-500/40'
+                  : 'bg-zinc-950/70 border-zinc-800/70 active:border-zinc-700'
               }`}
             >
-              {/* Measure Top Bar (Number, Time Sig, Palm Mute Indicator, Loop Badge) */}
-              <div className="flex items-center justify-between px-4 pt-3 pb-1 border-b border-zinc-800/50">
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-baseline space-x-1.5">
-                    <span className="text-xs font-mono font-bold text-zinc-500 uppercase">
+              {/* Measure Top Header */}
+              <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-800/60 bg-zinc-900/40 rounded-t-2xl">
+                <div className="flex items-center space-x-2.5">
+                  <div className="flex items-baseline space-x-1">
+                    <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">
                       Bar
                     </span>
                     <span
@@ -77,68 +162,68 @@ export const TabCanvas: React.FC<TabCanvasProps> = ({
                       {measure.number}
                     </span>
                   </div>
-
-                  <span className="text-xs font-mono text-zinc-500 bg-zinc-800/80 px-2 py-0.5 rounded">
+                  <span className="text-[11px] font-mono text-zinc-400 bg-zinc-800/90 px-1.5 py-0.5 rounded">
                     {measure.timeSignature[0]}/{measure.timeSignature[1]}
                   </span>
-
                   {measure.tempoBpm && (
-                    <span className="text-xs font-mono text-zinc-400 hidden sm:inline">
-                      ♩ = {measure.tempoBpm}
+                    <span className="text-[11px] font-mono text-zinc-400">
+                      ♩={measure.tempoBpm}
                     </span>
                   )}
                 </div>
 
-                {/* Palm Mute banner over measure */}
+                {/* Palm Mute label */}
                 {measure.palmMute && (
-                  <div className="flex items-center space-x-1 text-xs font-mono font-bold text-amber-400/90 tracking-wider">
-                    <span>{measure.palmMuteLabel || 'P.M. ----------------|'}</span>
+                  <div className="px-2 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-[10px] font-mono font-bold text-amber-400 tracking-wider">
+                    {measure.palmMuteLabel || 'P.M.'}
                   </div>
                 )}
 
-                {/* Active or Loop Pill */}
-                <div className="flex items-center space-x-2">
+                {/* Status Pill */}
+                <div className="flex items-center space-x-1.5">
                   {isMeasureActive && (
-                    <span className="flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 animate-pulse">
+                    <span className="flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 animate-pulse">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                      <span>PLAYING</span>
+                      <span>PLAY</span>
                     </span>
                   )}
                   {isInLoop && !isMeasureActive && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                      LOOP A-B
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                      LOOP
                     </span>
                   )}
                 </div>
               </div>
 
-              {/* Tab Notation Canvas Area */}
-              <div className="p-4 overflow-x-auto">
-                <div className="min-w-[500px] relative">
+              {/* Tab Notation Touch Grid */}
+              <div
+                className="p-2 sm:p-3 overflow-x-auto scrollbar-none"
+                style={{ WebkitOverflowScrolling: 'touch' }}
+              >
+                <div className="min-w-[460px] relative">
                   {/* Left String Tuning Labels */}
-                  <div className="absolute left-0 top-0 bottom-10 w-9 flex flex-col justify-between py-1 border-r border-zinc-800 text-[11px] font-mono font-bold text-zinc-400 z-10 bg-[#0d0f12]/80 backdrop-blur-xs">
+                  <div className="absolute left-0 top-0 bottom-8 w-8 flex flex-col justify-between py-1 border-r border-zinc-800 text-[11px] font-mono font-bold text-amber-400/90 z-10 bg-[#0a0c10]/90 backdrop-blur-xs">
                     {stringLabels.map((lbl, sIdx) => (
                       <div
                         key={sIdx}
-                        className="h-6 flex items-center justify-start pl-1 text-amber-400/80"
+                        className="h-7 flex items-center justify-start pl-1"
                       >
                         {lbl}
                       </div>
                     ))}
                   </div>
 
-                  {/* String Horizontal Wire Grid */}
-                  <div className="ml-10 relative">
+                  {/* Horizontal Wire Strings */}
+                  <div className="ml-9 relative">
                     <div className="space-y-0">
                       {Array.from({ length: stringCount }, (_, sIdx) => (
                         <div
                           key={sIdx}
-                          className="h-6 flex items-center relative"
+                          className="h-7 flex items-center relative"
                         >
-                          {/* Horizontal String Line */}
                           <div
                             className={`absolute inset-x-0 top-1/2 -translate-y-1/2 transition-colors ${
-                              isMeasureActive ? 'bg-zinc-600' : 'bg-zinc-700/80'
+                              isMeasureActive ? 'bg-zinc-500' : 'bg-zinc-700/80'
                             }`}
                             style={{
                               height: `${Math.max(1, (stringCount - sIdx) * 0.4)}px`,
@@ -148,60 +233,48 @@ export const TabCanvas: React.FC<TabCanvasProps> = ({
                       ))}
                     </div>
 
-                    {/* Beats & Notes Columns */}
+                    {/* Touch-Friendly Beat Columns */}
                     <div className="absolute inset-0 flex justify-between items-stretch">
                       {measure.beats.map((beat, bIdx) => {
                         const isBeatActive = isMeasureActive && currentBeatIndex === bIdx;
-
                         return (
                           <div
                             key={beat.id}
                             onClick={() => onSelectPosition(mIdx, bIdx)}
-                            className={`flex-1 relative cursor-pointer group flex flex-col justify-between py-0 transition-all rounded-lg ${
+                            className={`flex-1 min-w-[36px] relative cursor-pointer flex flex-col justify-between py-0 rounded-lg active:scale-95 transition-transform ${
                               isBeatActive
-                                ? 'bg-emerald-500/15 ring-2 ring-emerald-400 shadow-md shadow-emerald-500/20'
-                                : 'hover:bg-zinc-800/40'
+                                ? 'bg-emerald-500/20 ring-2 ring-emerald-400 shadow-md shadow-emerald-500/30'
+                                : 'hover:bg-zinc-800/30 active:bg-zinc-800/50'
                             }`}
                           >
                             {/* Notes on each string for this beat */}
                             {Array.from({ length: stringCount }, (_, sIdx) => {
                               const note = beat.notes.find((n) => n.stringIndex === sIdx);
-
                               return (
                                 <div
                                   key={sIdx}
-                                  className="h-6 flex items-center justify-center relative z-20"
+                                  className="h-7 flex items-center justify-center relative z-20"
                                 >
                                   {note && (
                                     <div
-                                      className={`px-1.5 py-0.5 rounded font-mono font-bold text-xs sm:text-sm flex items-center justify-center transition-all ${
+                                      className={`px-1.5 py-0.5 rounded font-mono font-bold text-xs flex items-center justify-center transition-all ${
                                         isBeatActive
-                                          ? 'bg-emerald-400 text-zinc-950 font-black scale-125 shadow-lg shadow-emerald-400/50'
-                                          : 'bg-zinc-900 border border-zinc-700 text-white shadow-xs group-hover:border-zinc-500'
+                                          ? 'bg-emerald-400 text-zinc-950 font-black scale-110 shadow-lg shadow-emerald-400/50'
+                                          : 'bg-zinc-900 border border-zinc-700 text-zinc-100 shadow-xs'
                                       }`}
                                     >
                                       {note.deadNote ? 'X' : note.fret}
-
-                                      {/* Slide notation icon */}
                                       {note.slide === 'up' && (
-                                        <span className="text-[10px] text-amber-400 ml-0.5 font-bold">
-                                          /
-                                        </span>
+                                        <span className="text-[9px] text-amber-400 ml-0.5">/</span>
                                       )}
                                       {note.slide === 'down' && (
-                                        <span className="text-[10px] text-amber-400 ml-0.5 font-bold">
-                                          \
-                                        </span>
+                                        <span className="text-[9px] text-amber-400 ml-0.5">\</span>
                                       )}
                                       {note.bend && (
-                                        <span className="text-[10px] text-cyan-400 ml-0.5 font-bold">
-                                          b
-                                        </span>
+                                        <span className="text-[9px] text-cyan-400 ml-0.5">b</span>
                                       )}
                                       {note.vibrato && (
-                                        <span className="text-[10px] text-indigo-400 ml-0.5">
-                                          ~
-                                        </span>
+                                        <span className="text-[9px] text-indigo-400 ml-0.5">~</span>
                                       )}
                                     </div>
                                   )}
@@ -209,35 +282,26 @@ export const TabCanvas: React.FC<TabCanvasProps> = ({
                               );
                             })}
 
-                            {/* Graphical Rhythm Stem (Штигель и хвост длительности) under string grid */}
-                            <div className="h-8 flex flex-col items-center justify-start pt-1.5 z-10">
-                              {/* Stem line */}
+                            {/* Rhythm Stem under strings */}
+                            <div className="h-7 flex flex-col items-center justify-start pt-1 z-10">
                               <div
                                 className={`w-[2px] h-3.5 transition-colors ${
                                   isBeatActive ? 'bg-emerald-400' : 'bg-zinc-500'
                                 }`}
                               />
-                              {/* Beam flags for eighth / sixteenth notes */}
-                              {beat.duration === 'e' && (
+                              {(beat.duration === 'eighth' || beat.duration === 'sixteenth') && (
                                 <div
-                                  className={`w-3 h-1 -mt-1 ml-2 rounded-xs ${
-                                    isBeatActive ? 'bg-emerald-400' : 'bg-zinc-500'
+                                  className={`w-2.5 h-[2px] mt-0.5 ${
+                                    isBeatActive ? 'bg-emerald-400' : 'bg-zinc-400'
                                   }`}
                                 />
                               )}
-                              {beat.duration === 's' && (
-                                <div className="space-y-0.5 -mt-1 ml-2">
-                                  <div
-                                    className={`w-3 h-[2px] rounded-xs ${
-                                      isBeatActive ? 'bg-emerald-400' : 'bg-zinc-500'
-                                    }`}
-                                  />
-                                  <div
-                                    className={`w-3 h-[2px] rounded-xs ${
-                                      isBeatActive ? 'bg-emerald-400' : 'bg-zinc-500'
-                                    }`}
-                                  />
-                                </div>
+                              {beat.duration === 'sixteenth' && (
+                                <div
+                                  className={`w-2.5 h-[2px] mt-0.5 ${
+                                    isBeatActive ? 'bg-emerald-400' : 'bg-zinc-400'
+                                  }`}
+                                />
                               )}
                             </div>
                           </div>

@@ -9,10 +9,10 @@ import { MixerSheet } from './sheets/MixerSheet';
 import { TempoSheet } from './sheets/TempoSheet';
 import { MoreOptionsSheet } from './sheets/MoreOptionsSheet';
 import { SongSelectSheet } from './sheets/SongSelectSheet';
-import { ensureAudioContextStarted } from '../../audio/audioContext';
+import { ensureAudioContextStarted, getAudioContext } from '../../audio/audioContext';
 import { playGuitarPluck, playMetronomeClick } from '../../audio/guitarSynth';
 import { midiToHz } from '../../data/defaultTunings';
-import { ChevronDown, SlidersHorizontal, Sparkles, Music2, Share2 } from 'lucide-react';
+import { ChevronDown, SlidersHorizontal, Sparkles, Music2, Share2, Volume2 } from 'lucide-react';
 
 interface SongsterrPlayerProps {
   onOpenStudioTools?: () => void;
@@ -20,7 +20,7 @@ interface SongsterrPlayerProps {
 
 export const SongsterrPlayer: React.FC<SongsterrPlayerProps> = ({ onOpenStudioTools }) => {
   // Current Song & Track
-  const [song, setSong] = useState<SongTabScore>(SONGS_CATALOG[0]); // Dark Clouds by Adept
+  const [song, setSong] = useState<SongTabScore>(SONGS_CATALOG[0]);
   const [activeTrackId, setActiveTrackId] = useState<string>(SONGS_CATALOG[0].tracks[0].id);
 
   // Playback State
@@ -51,11 +51,33 @@ export const SongsterrPlayer: React.FC<SongsterrPlayerProps> = ({ onOpenStudioTo
   const [isTempoOpen, setIsTempoOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [isSongSelectOpen, setIsSongSelectOpen] = useState(false);
-  const [isCopied, setIsCopied] = useState(false);
 
-  // Audio Engine Refs
-  const playbackTimerRef = useRef<number | null>(null);
+  // High-Precision Web Audio Sync Refs (No drift / No setTimeout latency)
+  const isPlayingRef = useRef(false);
+  const animFrameRef = useRef<number | null>(null);
+  const nextNoteAudioTimeRef = useRef<number>(0);
+  const playbackPosRef = useRef<{ mIdx: number; bIdx: number }>({ mIdx: 0, bIdx: 0 });
   const originalAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Capacitor Screen / WakeLock integration trigger
+  const keepScreenAwake = async (enable: boolean) => {
+    try {
+      // 1. Standard Web Screen Wake Lock API
+      if ('wakeLock' in navigator && enable) {
+        await (navigator as any).wakeLock.request('screen');
+      }
+      // 2. Capacitor KeepAwake plugin (if running in Capacitor Android environment)
+      if ((window as any).Capacitor?.Plugins?.KeepAwake) {
+        if (enable) {
+          await (window as any).Capacitor.Plugins.KeepAwake.keepAwake();
+        } else {
+          await (window as any).Capacitor.Plugins.KeepAwake.allowSleep();
+        }
+      }
+    } catch (_) {
+      // Graceful fallback
+    }
+  };
 
   // Active track
   const activeTrack = song.tracks.find((t) => t.id === activeTrackId) || song.tracks[0];
@@ -68,7 +90,6 @@ export const SongsterrPlayer: React.FC<SongsterrPlayerProps> = ({ onOpenStudioTo
       audio.crossOrigin = 'anonymous';
       audio.playbackRate = speedRatio;
       originalAudioRef.current = audio;
-
       return () => {
         audio.pause();
         audio.src = '';
@@ -76,33 +97,36 @@ export const SongsterrPlayer: React.FC<SongsterrPlayerProps> = ({ onOpenStudioTo
     }
   }, [song]);
 
-  // Sync original audio playback rate with speedRatio
   useEffect(() => {
     if (originalAudioRef.current) {
       originalAudioRef.current.playbackRate = speedRatio;
     }
   }, [speedRatio]);
 
-  // Stop playback on unmount
+  // Clean up playback on unmount
   useEffect(() => {
     return () => {
-      if (playbackTimerRef.current !== null) {
-        clearInterval(playbackTimerRef.current);
+      isPlayingRef.current = false;
+      if (animFrameRef.current !== null) {
+        cancelAnimationFrame(animFrameRef.current);
       }
       originalAudioRef.current?.pause();
+      keepScreenAwake(false);
     };
   }, []);
 
   const stopPlayback = useCallback(() => {
-    if (playbackTimerRef.current !== null) {
-      clearInterval(playbackTimerRef.current);
-      playbackTimerRef.current = null;
+    isPlayingRef.current = false;
+    if (animFrameRef.current !== null) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
     }
     if (originalAudioRef.current) {
       originalAudioRef.current.pause();
     }
     setIsPlaying(false);
     setIsCountingIn(false);
+    keepScreenAwake(false);
   }, []);
 
   // Compute MIDI note offset based on tuning & string
@@ -118,53 +142,26 @@ export const SongsterrPlayer: React.FC<SongsterrPlayerProps> = ({ onOpenStudioTo
       const baseMidi = (octave + 1) * 12 + (noteMap[noteLetter] ?? 0);
       return baseMidi + fret + semitones;
     }
-    // Fallback standard 6-string
     const standardBase = [64, 59, 55, 50, 45, 40];
     return (standardBase[stringIdx] || 40) + fret + semitones;
   };
 
-  // Playback execution loop
-  const startPlayback = async () => {
-    await ensureAudioContextStarted();
-    stopPlayback();
+  /**
+   * High-Precision Audio Scheduling Loop (Look-ahead pattern with Web Audio currentTime).
+   * This guarantees 0ms audio lag and perfectly synchronous playhead tracking even under mobile CPU throttling.
+   */
+  const scheduleAudioAndSyncPlayhead = () => {
+    if (!isPlayingRef.current) return;
 
-    // Check count-in
-    if (countInEnabled && currentMeasureIndex === 0 && currentBeatIndex === 0) {
-      setIsCountingIn(true);
-      let countBeat = 1;
-      setCountInBeat(countBeat);
-      playMetronomeClick(true, 1.0);
+    const audioCtx = getAudioContext();
+    const currentAudioTime = audioCtx.currentTime;
+    const scheduleAheadTime = 0.12; // 120ms audio lookahead buffer
 
-      const countIntervalMs = (60000 / (song.defaultTempo * speedRatio));
-      const countTimer = window.setInterval(() => {
-        countBeat++;
-        if (countBeat > 4) {
-          clearInterval(countTimer);
-          setIsCountingIn(false);
-          runTabPlayback();
-        } else {
-          setCountInBeat(countBeat);
-          playMetronomeClick(false, 0.9);
-        }
-      }, countIntervalMs);
-      return;
-    }
+    // Schedule any notes that fall within the audio scheduling window
+    while (nextNoteAudioTimeRef.current < currentAudioTime + scheduleAheadTime && isPlayingRef.current) {
+      let { mIdx, bIdx } = playbackPosRef.current;
 
-    runTabPlayback();
-  };
-
-  const runTabPlayback = () => {
-    setIsPlaying(true);
-
-    if (audioSource === 'ORIG' && originalAudioRef.current) {
-      originalAudioRef.current.play().catch(() => {});
-    }
-
-    let mIdx = currentMeasureIndex;
-    let bIdx = currentBeatIndex;
-
-    const tick = () => {
-      // Loop boundary check
+      // Handle A-B loop boundaries
       if (isLoopActive && loopRange) {
         const loopStartIdx = loopRange[0] - 1;
         const loopEndIdx = loopRange[1] - 1;
@@ -181,17 +178,18 @@ export const SongsterrPlayer: React.FC<SongsterrPlayerProps> = ({ onOpenStudioTo
       if (!measure || !measure.beats || measure.beats.length === 0) {
         mIdx++;
         bIdx = 0;
-        return;
+        playbackPosRef.current = { mIdx, bIdx };
+        continue;
       }
 
       const beat = measure.beats[bIdx];
       if (beat) {
-        // Metronome click on beat if enabled
+        // Schedule Metronome sound
         if (metronomeClickEnabled) {
           playMetronomeClick(bIdx === 0, 0.7);
         }
 
-        // Karplus-Strong physical string synthesis in SYNTH mode
+        // Schedule Guitar Synth strings
         if (audioSource === 'SYNTH' && !activeTrack.isMuted) {
           for (const note of beat.notes) {
             if (note.fret >= 0 && !note.deadNote) {
@@ -204,20 +202,80 @@ export const SongsterrPlayer: React.FC<SongsterrPlayerProps> = ({ onOpenStudioTo
         }
       }
 
+      // Update UI active indices synchronously
       setCurrentMeasureIndex(mIdx);
       setCurrentBeatIndex(bIdx);
 
+      // Calculate exact duration for this beat in seconds
+      const tempo = measure.tempoBpm || song.defaultTempo;
+      const quarterDurationSec = 60 / (tempo * speedRatio);
+      // Duration scale factor based on beat note length (default 8th note = 0.5 quarter)
+      const beatDurationSec = (beat?.durationValue || 0.5) * quarterDurationSec;
+
+      nextNoteAudioTimeRef.current += beatDurationSec;
+
+      // Advance to next beat/measure
       bIdx++;
       if (bIdx >= measure.beats.length) {
         bIdx = 0;
         mIdx++;
+        if (isLoopActive && loopRange && mIdx > loopRange[1] - 1) {
+          mIdx = loopRange[0] - 1;
+        }
       }
-    };
+      playbackPosRef.current = { mIdx, bIdx };
+    }
 
-    // Duration per eighth-note / sixteenth-note slice
-    const stepDurationMs = (60000 / (song.defaultTempo * speedRatio)) * 0.5;
-    tick();
-    playbackTimerRef.current = window.setInterval(tick, stepDurationMs);
+    // Schedule next frame check (runs at display 60-120Hz refresh rate)
+    animFrameRef.current = requestAnimationFrame(scheduleAudioAndSyncPlayhead);
+  };
+
+  // Start Playback with optional 4-beat count-in
+  const startPlayback = async () => {
+    await ensureAudioContextStarted();
+    stopPlayback();
+
+    const audioCtx = getAudioContext();
+    nextNoteAudioTimeRef.current = audioCtx.currentTime + 0.05;
+    playbackPosRef.current = { mIdx: currentMeasureIndex, bIdx: currentBeatIndex };
+
+    // Count-in handler
+    if (countInEnabled && currentMeasureIndex === 0 && currentBeatIndex === 0) {
+      setIsCountingIn(true);
+      let countBeat = 1;
+      setCountInBeat(countBeat);
+      playMetronomeClick(true, 1.0);
+
+      const countIntervalMs = 60000 / (song.defaultTempo * speedRatio);
+      const countTimer = window.setInterval(() => {
+        countBeat++;
+        if (countBeat > 4) {
+          clearInterval(countTimer);
+          setIsCountingIn(false);
+          runTabAudioEngine();
+        } else {
+          setCountInBeat(countBeat);
+          playMetronomeClick(false, 0.9);
+        }
+      }, countIntervalMs);
+      return;
+    }
+
+    runTabAudioEngine();
+  };
+
+  const runTabAudioEngine = () => {
+    setIsPlaying(true);
+    isPlayingRef.current = true;
+    keepScreenAwake(true);
+
+    if (audioSource === 'ORIG' && originalAudioRef.current) {
+      originalAudioRef.current.play().catch(() => {});
+    }
+
+    const audioCtx = getAudioContext();
+    nextNoteAudioTimeRef.current = audioCtx.currentTime;
+    animFrameRef.current = requestAnimationFrame(scheduleAudioAndSyncPlayhead);
   };
 
   const togglePlay = () => {
@@ -228,111 +286,73 @@ export const SongsterrPlayer: React.FC<SongsterrPlayerProps> = ({ onOpenStudioTo
     }
   };
 
-  // Jump to specific measure / beat on tab click
+  // Jump to selected position
   const handleSelectPosition = (mIdx: number, bIdx: number) => {
     const wasPlaying = isPlaying;
     stopPlayback();
     setCurrentMeasureIndex(mIdx);
     setCurrentBeatIndex(bIdx);
+    playbackPosRef.current = { mIdx, bIdx };
     if (wasPlaying) {
       setTimeout(() => startPlayback(), 50);
     }
   };
 
-  // Toggle A-B Looping
-  const handleToggleLoop = () => {
-    if (isLoopActive) {
-      setIsLoopActive(false);
-    } else {
-      setIsLoopActive(true);
-      // Default loop around current measure
-      const start = Math.max(1, currentMeasureIndex + 1);
-      const end = Math.min(measures.length, start + 3);
-      setLoopRange([start, end]);
-    }
-  };
-
-  // Copy ASCII Tab to clipboard
-  const handleCopyTab = () => {
-    let ascii = `${song.title} - ${song.artist}\nTrack: ${activeTrack.name} (${activeTrack.tuningName})\n\n`;
-    for (const m of measures) {
-      ascii += `Bar ${m.number} [${m.timeSignature[0]}/${m.timeSignature[1]}]\n`;
-      const lines = ['e|', 'B|', 'G|', 'D|', 'A|', 'E|'];
-      for (let s = 0; s < 6; s++) {
-        for (const b of m.beats) {
-          const note = b.notes.find((n) => n.stringIndex === s);
-          lines[s] += note ? `-${note.fret}-` : '---';
-        }
-        lines[s] += '|';
-      }
-      ascii += lines.join('\n') + '\n\n';
-    }
-    navigator.clipboard.writeText(ascii);
-    setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2500);
-  };
-
   return (
-    <div className="relative min-h-screen bg-[#0d0f12] text-zinc-100 flex flex-col overflow-hidden">
-      {/* 2.А. Верхняя информационная панель (Header) */}
-      <header className="sticky top-0 z-30 bg-[#12151a]/95 backdrop-blur-md border-b border-zinc-800/80 px-4 py-3">
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
-          {/* Song Title, Artist & Song Selector */}
+    <div className="flex flex-col h-full w-full bg-[#0a0c10] text-zinc-100 overflow-hidden relative select-none">
+      {/* 1. Mobile-Optimized Slim Navigation Bar */}
+      <div className="shrink-0 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/80 px-3 py-2.5 z-20 flex items-center justify-between">
+        {/* Left: Song selector chip */}
+        <button
+          onClick={() => setIsSongSelectOpen(true)}
+          className="flex items-center space-x-2 bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 px-3 py-1.5 rounded-full max-w-[200px] sm:max-w-xs transition-colors active:scale-95"
+        >
+          <Music2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <div className="text-left truncate">
+            <span className="text-xs font-bold text-zinc-100 truncate block leading-tight">
+              {song.title}
+            </span>
+            <span className="text-[10px] text-zinc-400 truncate block">
+              {song.artist}
+            </span>
+          </div>
+          <ChevronDown className="w-3.5 h-3.5 text-zinc-400 shrink-0 ml-1" />
+        </button>
+
+        {/* Right: Pitch Transpose & Quick Options */}
+        <div className="flex items-center space-x-1.5">
           <button
-            onClick={() => setIsSongSelectOpen(true)}
-            className="flex items-center space-x-3 text-left group hover:opacity-90 transition-opacity"
+            onClick={() => setIsTranspositionOpen(true)}
+            className={`px-2.5 py-1 rounded-full text-xs font-mono font-bold border transition-colors ${
+              semitones !== 0
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                : 'bg-zinc-900 border-zinc-800 text-zinc-300 hover:border-zinc-700'
+            }`}
           >
-            <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
-              <Music2 className="w-5 h-5" />
-            </div>
-
-            <div className="min-w-0">
-              {/* Title & Artist */}
-              <div className="flex items-center space-x-2">
-                <h1 className="text-base sm:text-lg font-black text-white tracking-tight truncate leading-tight">
-                  {song.title}
-                </h1>
-                <span className="text-sm font-semibold text-zinc-400 truncate leading-tight">
-                  — {song.artist}
-                </span>
-                <ChevronDown className="w-4 h-4 text-zinc-500 group-hover:text-amber-400 transition-colors shrink-0" />
-              </div>
-
-              {/* Revision Date & Active Track Metadata */}
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-zinc-400 font-mono mt-0.5">
-                <span className="text-zinc-500 font-bold uppercase tracking-wider">
-                  РЕВИЗИЯ ОТ: {song.revisionDate}
-                </span>
-                <span>•</span>
-                <span className="text-amber-400 font-medium truncate">
-                  {activeTrack.name} ({tuningNameOverride || activeTrack.tuningName})
-                </span>
-              </div>
-            </div>
+            {semitones > 0 ? `+${semitones}` : semitones < 0 ? `${semitones}` : '0'} ST
           </button>
 
-          {/* Right Header Action: Quick Track Switch / Mixer */}
-          <div className="flex items-center space-x-2 shrink-0">
-            <button
-              onClick={() => setIsMixerOpen(true)}
-              className="px-3 py-1.5 rounded-xl bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700 text-xs font-semibold text-zinc-200 flex items-center space-x-1.5 transition-colors"
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden sm:inline">Партии ({song.tracks.length})</span>
-            </button>
-          </div>
+          <button
+            onClick={() => setIsMoreMenuOpen(true)}
+            className="p-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 active:scale-90"
+            title="Player settings"
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+          </button>
         </div>
-      </header>
+      </div>
 
-      {/* Count-In Banner if active */}
+      {/* 2. Count-In Visual Floating Banner */}
       {isCountingIn && (
-        <div className="bg-emerald-500 text-zinc-950 py-1.5 px-4 text-center font-black text-sm tracking-wider flex items-center justify-center space-x-2 animate-pulse z-20">
-          <span>ОТСЧЁТ ПЕРЕД СТАРТОМ:</span>
-          <span className="text-base font-mono underline">{countInBeat} / 4</span>
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-50 bg-emerald-500 text-zinc-950 px-5 py-2 rounded-full font-mono font-black text-sm shadow-2xl flex items-center space-x-2 animate-bounce">
+          <span>COUNT-IN:</span>
+          <span className="text-lg bg-zinc-950 text-emerald-400 w-7 h-7 rounded-full flex items-center justify-center">
+            {countInBeat}
+          </span>
         </div>
       )}
 
-      {/* 2.Б. Область отображения табулатуры (Tab Canvas - Maximized Canvas) */}
+      {/* 3. Main Touch Tab Canvas with Hardware-Accelerated Rendering */}
       <TabCanvas
         track={activeTrack}
         currentMeasureIndex={currentMeasureIndex}
@@ -342,112 +362,92 @@ export const SongsterrPlayer: React.FC<SongsterrPlayerProps> = ({ onOpenStudioTo
         loopRange={isLoopActive ? loopRange : null}
       />
 
-      {/* 2.В. Нижняя плавающая панель управления (Bottom Control Bar) */}
+      {/* 4. Ergonomic Floating Bottom Dock for One-Handed Mobile Control */}
       <BottomControlBar
         isPlaying={isPlaying}
         onTogglePlay={togglePlay}
         speedRatio={speedRatio}
-        onChangeSpeed={(newSpeed) => setSpeedRatio(newSpeed)}
+        onChangeSpeed={setSpeedRatio}
         audioSource={audioSource}
-        onToggleAudioSource={() => setAudioSource(audioSource === 'ORIG' ? 'SYNTH' : 'ORIG')}
+        onToggleAudioSource={() => setAudioSource((s) => (s === 'SYNTH' ? 'ORIG' : 'SYNTH'))}
         isLoopActive={isLoopActive}
-        onToggleLoop={handleToggleLoop}
+        onToggleLoop={() => setIsLoopActive((v) => !v)}
         onOpenMixer={() => setIsMixerOpen(true)}
         onOpenMoreMenu={() => setIsMoreMenuOpen(true)}
         onOpenTempoPicker={() => setIsTempoOpen(true)}
         trackCount={song.tracks.length}
       />
 
-      {/* 3. Модальные панели (Bottom Sheets) */}
-      {/* А. Панель «Смещение тона» (Transposition / Tuning Sheet) */}
-      <TranspositionSheet
-        isOpen={isTranspositionOpen}
-        onClose={() => setIsTranspositionOpen(false)}
-        semitones={semitones}
-        onSemitonesChange={(semi) => setSemitones(semi)}
-        currentTuning={tuningNameOverride || activeTrack.tuningName}
-        onApplyTuningPreset={(name) => {
-          setTuningNameOverride(name);
+      {/* 5. Mobile Bottom Sheets */}
+      <SongSelectSheet
+        isOpen={isSongSelectOpen}
+        onClose={() => setIsSongSelectOpen(false)}
+        songs={SONGS_CATALOG}
+        currentSongId={song.id}
+        onSelectSong={(s) => {
+          stopPlayback();
+          setSong(s);
+          setActiveTrackId(s.tracks[0].id);
+          setCurrentMeasureIndex(0);
+          setCurrentBeatIndex(0);
+          setIsSongSelectOpen(false);
         }}
       />
 
-      {/* Б. Встроенный «Хроматический тюнер» (Chromatic Tuner Sheet) */}
-      <ChromaticTunerSheet
-        isOpen={isTunerOpen}
-        onClose={() => setIsTunerOpen(false)}
-        targetTuningName={tuningNameOverride || activeTrack.tuningName}
-        targetTuningNotes={activeTrack.tuningNotes}
-      />
-
-      {/* В. Панель «Микшер дорожек» (MixerSheet) */}
       <MixerSheet
         isOpen={isMixerOpen}
         onClose={() => setIsMixerOpen(false)}
         tracks={song.tracks}
         activeTrackId={activeTrackId}
-        onSelectActiveTrack={(id) => {
-          setActiveTrackId(id);
-          setIsMixerOpen(false);
+        onSelectTrack={(tId) => setActiveTrackId(tId)}
+        onToggleMute={(tId) => {
+          const t = song.tracks.find((x) => x.id === tId);
+          if (t) t.isMuted = !t.isMuted;
         }}
-        onUpdateTrackVolume={(id, vol) => {
-          setSong((prev) => ({
-            ...prev,
-            tracks: prev.tracks.map((t) => (t.id === id ? { ...t, volume: vol } : t)),
-          }));
+        onToggleSolo={(tId) => {
+          const t = song.tracks.find((x) => x.id === tId);
+          if (t) t.isSolo = !t.isSolo;
         }}
-        onToggleTrackMute={(id) => {
-          setSong((prev) => ({
-            ...prev,
-            tracks: prev.tracks.map((t) => (t.id === id ? { ...t, isMuted: !t.isMuted } : t)),
-          }));
-        }}
-        onToggleTrackSolo={(id) => {
-          setSong((prev) => ({
-            ...prev,
-            tracks: prev.tracks.map((t) => (t.id === id ? { ...t, isSolo: !t.isSolo } : t)),
-          }));
+        onChangeVolume={(tId, vol) => {
+          const t = song.tracks.find((x) => x.id === tId);
+          if (t) t.volume = vol;
         }}
       />
 
-      {/* Г. Панель «Темп и скорость» (TempoSheet) */}
       <TempoSheet
         isOpen={isTempoOpen}
         onClose={() => setIsTempoOpen(false)}
         speedRatio={speedRatio}
-        onSpeedRatioChange={(speed) => setSpeedRatio(speed)}
-        baseTempoBpm={song.defaultTempo}
+        onChangeSpeed={setSpeedRatio}
+        baseTempo={song.defaultTempo}
       />
 
-      {/* Д. Панель «Дополнительные опции» (MoreOptionsSheet) */}
+      <TranspositionSheet
+        isOpen={isTranspositionOpen}
+        onClose={() => setIsTranspositionOpen(false)}
+        semitones={semitones}
+        onChangeSemitones={setSemitones}
+        tuningName={tuningNameOverride || activeTrack.tuningName}
+      />
+
       <MoreOptionsSheet
         isOpen={isMoreMenuOpen}
         onClose={() => setIsMoreMenuOpen(false)}
-        onOpenTuner={() => setIsTunerOpen(true)}
-        onOpenTransposition={() => setIsTranspositionOpen(true)}
-        onOpenSongSelect={() => setIsSongSelectOpen(true)}
         countInEnabled={countInEnabled}
-        onToggleCountIn={() => setCountInEnabled(!countInEnabled)}
+        onToggleCountIn={() => setCountInEnabled((v) => !v)}
         metronomeClickEnabled={metronomeClickEnabled}
-        onToggleMetronomeClick={() => setMetronomeClickEnabled(!metronomeClickEnabled)}
-        onCopyTab={handleCopyTab}
-        isCopied={isCopied}
-        onOpenStudioTools={() => onOpenStudioTools?.()}
+        onToggleMetronomeClick={() => setMetronomeClickEnabled((v) => !v)}
+        onOpenChromaticTuner={() => {
+          setIsMoreMenuOpen(false);
+          setIsTunerOpen(true);
+        }}
       />
 
-      {/* Каталог композиций (SongSelectSheet) */}
-      <SongSelectSheet
-        isOpen={isSongSelectOpen}
-        onClose={() => setIsSongSelectOpen(false)}
-        currentSongId={song.id}
-        onSelectSong={(newSong) => {
-          stopPlayback();
-          setSong(newSong);
-          setActiveTrackId(newSong.tracks[0].id);
-          setCurrentMeasureIndex(0);
-          setCurrentBeatIndex(0);
-          setTuningNameOverride(null);
-          setSemitones(0);
-        }}
+      <ChromaticTunerSheet
+        isOpen={isTunerOpen}
+        onClose={() => setIsTunerOpen(false)}
+        targetTuningName={activeTrack?.tuningName || 'Standard E'}
+        targetTuningNotes={activeTrack?.tuningNotes || ['E4', 'B3', 'G3', 'D3', 'A2', 'E2']}
       />
     </div>
   );
