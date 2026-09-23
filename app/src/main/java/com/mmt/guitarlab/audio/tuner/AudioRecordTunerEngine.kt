@@ -1,10 +1,11 @@
 package com.mmt.guitarlab.audio.tuner
 
-import android.annotation.SuppressLint
 import android.Manifest
+import android.annotation.SuppressLint
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.os.Build
 import android.os.Process
 import androidx.annotation.RequiresPermission
 import com.mmt.guitarlab.domain.audio.TunerEngine
@@ -24,6 +25,8 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.abs
+import kotlin.math.sqrt
 
 @Singleton
 class AudioRecordTunerEngine @Inject constructor() : TunerEngine {
@@ -43,6 +46,7 @@ class AudioRecordTunerEngine @Inject constructor() : TunerEngine {
 
     @Volatile
     private var a4Hz = 440f
+
     private val running = AtomicBoolean(false)
     private var job: Job? = null
 
@@ -88,47 +92,85 @@ class AudioRecordTunerEngine @Inject constructor() : TunerEngine {
             _isRunning.value = false
             return
         }
-        val readSize = maxOf(minBuf, FRAME_SIZE)
-        val recorder = try {
-            AudioRecord(
-                MediaRecorder.AudioSource.VOICE_RECOGNITION,
-                sampleRate,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                readSize * 2,
-            )
-        } catch (_: SecurityException) {
-            running.set(false)
-            _isRunning.value = false
-            return
-        }
-        if (recorder.state != AudioRecord.STATE_INITIALIZED) {
-            recorder.release()
+
+        val recorder = createAudioRecord(sampleRate, minBuf) ?: run {
             running.set(false)
             _isRunning.value = false
             return
         }
 
         val yin = YinPitchDetector(sampleRate, FRAME_SIZE)
-        val pcm = ShortArray(FRAME_SIZE)
-        val floats = FloatArray(FRAME_SIZE)
+        val hopSize = 1024
+        val pcmChunk = ShortArray(hopSize)
+        val slidingBuffer = FloatArray(FRAME_SIZE)
+        val normalizedBuffer = FloatArray(FRAME_SIZE)
+
+        var lastValidPitch: DetectedPitch? = null
+        var lastValidTime = 0L
+
         recorder.startRecording()
         try {
             while (running.get() && scope.isActive) {
-                val n = recorder.read(pcm, 0, FRAME_SIZE)
-                if (n < FRAME_SIZE) continue
-                for (i in 0 until FRAME_SIZE) {
-                    floats[i] = pcm[i] / 32768f
+                val n = recorder.read(pcmChunk, 0, hopSize)
+                if (n < hopSize) continue
+
+                // Shift sliding buffer left by hopSize and insert new samples at end
+                System.arraycopy(slidingBuffer, hopSize, slidingBuffer, 0, FRAME_SIZE - hopSize)
+                val baseIdx = FRAME_SIZE - hopSize
+                for (i in 0 until hopSize) {
+                    slidingBuffer[baseIdx + i] = pcmChunk[i] / 32768f
                 }
-                if (rms(floats) < RMS_GATE) {
-                    _pitch.value = null
+
+                // Compute RMS and Peak for silence detection and pre-amplification
+                var sumSq = 0f
+                var maxAbs = 0f
+                for (i in 0 until FRAME_SIZE) {
+                    val s = slidingBuffer[i]
+                    sumSq += s * s
+                    val a = abs(s)
+                    if (a > maxAbs) maxAbs = a
+                }
+                val currentRms = sqrt(sumSq / FRAME_SIZE)
+
+                // High-sensitivity gate for quiet unplugged electric guitars
+                if (currentRms < RMS_GATE || maxAbs < 0.0003f) {
+                    val now = System.currentTimeMillis()
+                    if (now - lastValidTime > SUSTAIN_HOLD_MS) {
+                        _pitch.value = null
+                    }
                     continue
                 }
-                val (hz, clarity) = yin.detect(floats)
-                if (hz in 20f..1500f && clarity > 0.65f) {
-                    _pitch.value = PitchMath.fromFrequency(hz, a4Hz, clarity)
+
+                // Adaptive gain boosting: boosts quiet guitar signals into optimal range
+                val gain = (0.75f / maxAbs).coerceIn(1.0f, 80.0f)
+                for (i in 0 until FRAME_SIZE) {
+                    normalizedBuffer[i] = (slidingBuffer[i] * gain).coerceIn(-1.0f, 1.0f)
+                }
+
+                val (hz, clarity) = yin.detect(normalizedBuffer)
+                val now = System.currentTimeMillis()
+
+                // Wide range (30Hz for Low B bass / drop tunings to 1500Hz high frets)
+                // Relaxed clarity threshold (0.42f) for rich electric harmonics & decay
+                if (hz in 30f..1500f && clarity >= 0.42f) {
+                    val rawPitch = PitchMath.fromFrequency(hz, a4Hz, clarity)
+                    if (rawPitch != null) {
+                        // Temporal smoothing for rock-solid needle stability
+                        val smoothedCents = if (lastValidPitch != null && lastValidPitch.midiNote == rawPitch.midiNote) {
+                            lastValidPitch.cents * 0.70f + rawPitch.cents * 0.30f
+                        } else {
+                            rawPitch.cents
+                        }
+
+                        val stablePitch = rawPitch.copy(cents = smoothedCents)
+                        lastValidPitch = stablePitch
+                        lastValidTime = now
+                        _pitch.value = stablePitch
+                    }
                 } else {
-                    _pitch.value = null
+                    if (now - lastValidTime > SUSTAIN_HOLD_MS) {
+                        _pitch.value = null
+                    }
                 }
             }
         } finally {
@@ -139,10 +181,64 @@ class AudioRecordTunerEngine @Inject constructor() : TunerEngine {
         }
     }
 
-    private fun rms(samples: FloatArray): Float {
-        var sum = 0f
-        for (s in samples) sum += s * s
-        return kotlin.math.sqrt(sum / samples.size)
+    @SuppressLint("MissingPermission")
+    private fun createAudioRecord(sampleRate: Int, minBuf: Int): AudioRecord? {
+        val readSize = maxOf(minBuf, FRAME_SIZE)
+
+        // 1. Try UNPROCESSED (Android 7.0+ API 24): Raw sound without voice filters
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            try {
+                val record = AudioRecord(
+                    MediaRecorder.AudioSource.UNPROCESSED,
+                    sampleRate,
+                    AudioFormat.CHANNEL_IN_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT,
+                    readSize * 2,
+                )
+                if (record.state == AudioRecord.STATE_INITIALIZED) {
+                    return record
+                } else {
+                    record.release()
+                }
+            } catch (_: Throwable) {
+                // Fallback to MIC
+            }
+        }
+
+        // 2. Standard MIC: raw microphone audio without speech high-pass filter
+        try {
+            val record = AudioRecord(
+                MediaRecorder.AudioSource.MIC,
+                sampleRate,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT,
+                readSize * 2,
+            )
+            if (record.state == AudioRecord.STATE_INITIALIZED) {
+                return record
+            } else {
+                record.release()
+            }
+        } catch (_: Throwable) {
+            // Fallback to DEFAULT
+        }
+
+        // 3. Fallback to DEFAULT
+        return try {
+            val record = AudioRecord(
+                MediaRecorder.AudioSource.DEFAULT,
+                sampleRate,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT,
+                readSize * 2,
+            )
+            if (record.state == AudioRecord.STATE_INITIALIZED) record else {
+                record.release()
+                null
+            }
+        } catch (_: Throwable) {
+            null
+        }
     }
 
     private fun pickSampleRate(): Int {
@@ -160,6 +256,9 @@ class AudioRecordTunerEngine @Inject constructor() : TunerEngine {
 
     companion object {
         private const val FRAME_SIZE = 4096
-        private const val RMS_GATE = 0.008f
+        // Ultra-sensitive RMS gate for quiet unplugged electric guitar (~0.0004f)
+        private const val RMS_GATE = 0.0004f
+        // Keep needle stable for 320ms during string vibration decay
+        private const val SUSTAIN_HOLD_MS = 320L
     }
 }
