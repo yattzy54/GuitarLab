@@ -130,7 +130,38 @@ fun TabViewerScreen(viewModel: TabViewModel = hiltViewModel()) {
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    var selectedTabMode by remember { mutableStateOf(0) }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        TabRow(
+            selectedTabIndex = selectedTabMode,
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.primary,
+        ) {
+            Tab(
+                selected = selectedTabMode == 0,
+                onClick = { selectedTabMode = 0 },
+                text = { Text("Songsterr Player", fontWeight = FontWeight.Bold) },
+                icon = { Icon(Icons.Default.PlayArrow, contentDescription = null) },
+            )
+            Tab(
+                selected = selectedTabMode == 1,
+                onClick = { selectedTabMode = 1 },
+                text = { Text("Tab Editor & Studio", fontWeight = FontWeight.Bold) },
+                icon = { Icon(Icons.Default.Tune, contentDescription = null) },
+            )
+        }
+
+        if (selectedTabMode == 0) {
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                SongsterrTabPlayerScreen(viewModel = viewModel)
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -437,6 +468,8 @@ fun TabViewerScreen(viewModel: TabViewModel = hiltViewModel()) {
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
+            }
+        }
     }
 
     if (showMixerDialog) {

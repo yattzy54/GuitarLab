@@ -16,7 +16,6 @@ import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.SlowMotionVideo
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Timeline
@@ -25,7 +24,6 @@ import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.GridOn
 import androidx.compose.material.icons.outlined.LibraryMusic
 import androidx.compose.material.icons.outlined.Mic
-import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material.icons.outlined.SlowMotionVideo
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.Timeline
@@ -52,7 +50,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -64,8 +61,6 @@ import com.mmt.guitarlab.ui.practice.ChordScaleScreen
 import com.mmt.guitarlab.ui.practice.PracticeTrackerScreen
 import com.mmt.guitarlab.ui.practice.RiffRecorderScreen
 import com.mmt.guitarlab.ui.practice.SlowDownerScreen
-import com.mmt.guitarlab.ui.tab.SongsterrTabPlayerScreen
-import com.mmt.guitarlab.ui.tab.TabViewModel
 import com.mmt.guitarlab.ui.tab.TabViewerScreen
 import com.mmt.guitarlab.ui.tuner.TunerScreen
 import kotlinx.coroutines.launch
@@ -76,11 +71,10 @@ enum class AppDest(
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector,
 ) {
-    Player("player", "Songsterr Tab Player", Icons.Filled.PlayCircle, Icons.Outlined.PlayCircle),
     Tuner("tuner", "Guitar Tuner", Icons.Filled.GraphicEq, Icons.Outlined.GraphicEq),
     Metronome("metronome", "Metronome", Icons.Filled.Timer, Icons.Outlined.Timer),
     Trainer("trainer", "Auto-Speed Trainer", Icons.Filled.Speed, Icons.Outlined.Speed),
-    Tabs("tabs", "Tablature Suite", Icons.Filled.LibraryMusic, Icons.Outlined.LibraryMusic),
+    Tabs("tabs", "Tablature & MIDI Suite", Icons.Filled.LibraryMusic, Icons.Outlined.LibraryMusic),
     Fretboard("fretboard", "Fretboard & Chords", Icons.Filled.GridOn, Icons.Outlined.GridOn),
     SlowDowner("slowdowner", "Audio Slow-Downer", Icons.Filled.SlowMotionVideo, Icons.Outlined.SlowMotionVideo),
     Recorder("recorder", "Riff Quick Recorder", Icons.Filled.Mic, Icons.Outlined.Mic),
@@ -92,10 +86,12 @@ enum class AppDest(
 fun GuitarLabApp() {
     val navController = rememberNavController()
     val backStack by navController.currentBackStackEntryAsState()
-    val currentRoute = backStack?.destination?.route ?: AppDest.Player.route
+    val currentRoute = backStack?.destination?.route ?: AppDest.Tuner.route
+
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    val currentDest = AppDest.entries.find { it.route == currentRoute } ?: AppDest.Player
+
+    val currentDest = AppDest.entries.find { it.route == currentRoute } ?: AppDest.Tuner
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -165,41 +161,34 @@ fun GuitarLabApp() {
     ) {
         Scaffold(
             topBar = {
-                // When in Songsterr player, keep top bar minimal or let player own header
-                if (currentRoute != AppDest.Player.route) {
-                    CenterAlignedTopAppBar(
-                        title = {
-                            Text(
-                                text = currentDest.title,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
+                CenterAlignedTopAppBar(
+                    title = {
+                        Text(
+                            text = currentDest.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Open Menu",
+                                tint = MaterialTheme.colorScheme.primary,
                             )
-                        },
-                        navigationIcon = {
-                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                Icon(
-                                    imageVector = Icons.Default.Menu,
-                                    contentDescription = "Open Menu",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                )
-                            }
-                        },
-                        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                        ),
-                    )
-                }
+                        }
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                    ),
+                )
             },
         ) { padding ->
             NavHost(
                 navController = navController,
-                startDestination = AppDest.Player.route,
-                modifier = if (currentRoute == AppDest.Player.route) Modifier else Modifier.padding(padding),
+                startDestination = AppDest.Tuner.route,
+                modifier = Modifier.padding(padding),
             ) {
-                composable(AppDest.Player.route) {
-                    val tabViewModel: TabViewModel = hiltViewModel()
-                    SongsterrTabPlayerScreen(viewModel = tabViewModel)
-                }
                 composable(AppDest.Tuner.route) { TunerScreen() }
                 composable(AppDest.Metronome.route) { MetronomeScreen() }
                 composable(AppDest.Trainer.route) { AutoSpeedTrainerScreen() }
