@@ -51,6 +51,26 @@ export const SongsterrPlayer: React.FC<SongsterrPlayerProps> = ({ onOpenStudioTo
   const [isTempoOpen, setIsTempoOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [isSongSelectOpen, setIsSongSelectOpen] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleCopyTab = () => {
+    let ascii = `${song.title} - ${song.artist} (${activeTrack.name})\n\n`;
+    for (const m of activeTrack.measures) {
+      ascii += `Measure ${m.number} [${m.timeSignature[0]}/${m.timeSignature[1]}]\n`;
+      const lines = ['e|', 'B|', 'G|', 'D|', 'A|', 'E|'];
+      for (let s = 0; s < 6; s++) {
+        for (const b of m.beats) {
+          const note = b.notes.find((n) => n.stringIndex === s);
+          lines[s] += note ? `-${note.fret}-` : '---';
+        }
+        lines[s] += '|';
+      }
+      ascii += lines.join('\n') + '\n\n';
+    }
+    navigator.clipboard.writeText(ascii);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2500);
+  };
 
   // High-Precision Web Audio Sync Refs (No drift / No setTimeout latency)
   const isPlayingRef = useRef(false);
@@ -379,38 +399,32 @@ export const SongsterrPlayer: React.FC<SongsterrPlayerProps> = ({ onOpenStudioTo
       />
 
       {/* 5. Mobile Bottom Sheets */}
-      <SongSelectSheet
-        isOpen={isSongSelectOpen}
-        onClose={() => setIsSongSelectOpen(false)}
-        songs={SONGS_CATALOG}
-        currentSongId={song.id}
-        onSelectSong={(s) => {
-          stopPlayback();
-          setSong(s);
-          setActiveTrackId(s.tracks[0].id);
-          setCurrentMeasureIndex(0);
-          setCurrentBeatIndex(0);
-          setIsSongSelectOpen(false);
-        }}
-      />
-
       <MixerSheet
         isOpen={isMixerOpen}
         onClose={() => setIsMixerOpen(false)}
         tracks={song.tracks}
         activeTrackId={activeTrackId}
-        onSelectTrack={(tId) => setActiveTrackId(tId)}
-        onToggleMute={(tId) => {
-          const t = song.tracks.find((x) => x.id === tId);
-          if (t) t.isMuted = !t.isMuted;
+        onSelectActiveTrack={(id: string) => {
+          setActiveTrackId(id);
+          setIsMixerOpen(false);
         }}
-        onToggleSolo={(tId) => {
-          const t = song.tracks.find((x) => x.id === tId);
-          if (t) t.isSolo = !t.isSolo;
+        onUpdateTrackVolume={(id: string, vol: number) => {
+          setSong((prev) => ({
+            ...prev,
+            tracks: prev.tracks.map((t) => (t.id === id ? { ...t, volume: vol } : t)),
+          }));
         }}
-        onChangeVolume={(tId, vol) => {
-          const t = song.tracks.find((x) => x.id === tId);
-          if (t) t.volume = vol;
+        onToggleTrackMute={(id: string) => {
+          setSong((prev) => ({
+            ...prev,
+            tracks: prev.tracks.map((t) => (t.id === id ? { ...t, isMuted: !t.isMuted } : t)),
+          }));
+        }}
+        onToggleTrackSolo={(id: string) => {
+          setSong((prev) => ({
+            ...prev,
+            tracks: prev.tracks.map((t) => (t.id === id ? { ...t, isSolo: !t.isSolo } : t)),
+          }));
         }}
       />
 
@@ -418,8 +432,8 @@ export const SongsterrPlayer: React.FC<SongsterrPlayerProps> = ({ onOpenStudioTo
         isOpen={isTempoOpen}
         onClose={() => setIsTempoOpen(false)}
         speedRatio={speedRatio}
-        onChangeSpeed={setSpeedRatio}
-        baseTempo={song.defaultTempo}
+        onSpeedRatioChange={(speed: number) => setSpeedRatio(speed)}
+        baseTempoBpm={song.defaultTempo}
       />
 
       <TranspositionSheet
@@ -433,13 +447,31 @@ export const SongsterrPlayer: React.FC<SongsterrPlayerProps> = ({ onOpenStudioTo
       <MoreOptionsSheet
         isOpen={isMoreMenuOpen}
         onClose={() => setIsMoreMenuOpen(false)}
+        onOpenTuner={() => setIsTunerOpen(true)}
+        onOpenTransposition={() => setIsTranspositionOpen(true)}
+        onOpenSongSelect={() => setIsSongSelectOpen(true)}
         countInEnabled={countInEnabled}
-        onToggleCountIn={() => setCountInEnabled((v) => !v)}
+        onToggleCountIn={() => setCountInEnabled(!countInEnabled)}
         metronomeClickEnabled={metronomeClickEnabled}
-        onToggleMetronomeClick={() => setMetronomeClickEnabled((v) => !v)}
-        onOpenChromaticTuner={() => {
-          setIsMoreMenuOpen(false);
-          setIsTunerOpen(true);
+        onToggleMetronomeClick={() => setMetronomeClickEnabled(!metronomeClickEnabled)}
+        onCopyTab={handleCopyTab}
+        isCopied={isCopied}
+        onOpenStudioTools={() => onOpenStudioTools?.()}
+      />
+
+      <SongSelectSheet
+        isOpen={isSongSelectOpen}
+        onClose={() => setIsSongSelectOpen(false)}
+        currentSongId={song.id}
+        onSelectSong={(newSong) => {
+          stopPlayback();
+          setSong(newSong);
+          setActiveTrackId(newSong.tracks[0].id);
+          setCurrentMeasureIndex(0);
+          setCurrentBeatIndex(0);
+          setTuningNameOverride(null);
+          setSemitones(0);
+          setIsSongSelectOpen(false);
         }}
       />
 

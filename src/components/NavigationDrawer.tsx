@@ -6,6 +6,7 @@ import {
   Gauge,
   Music,
   Grid,
+  Search,
   FastForward,
   Mic,
   TrendingUp,

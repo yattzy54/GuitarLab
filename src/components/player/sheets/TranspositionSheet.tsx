@@ -107,7 +107,7 @@ export const TranspositionSheet: React.FC<TranspositionSheetProps> = ({
                 onClick={() => {
                   // Direct transpose to key offset
                   const offset = ((idx - 0 + 12) % 12);
-                  onSemitonesChange(offset > 6 ? offset - 12 : offset);
+                  changeSemitones(offset > 6 ? offset - 12 : offset);
                 }}
                 className={`py-2 px-1 rounded-xl text-xs font-mono font-bold border transition-colors ${
                   semitones === ((idx > 6 ? idx - 12 : idx))

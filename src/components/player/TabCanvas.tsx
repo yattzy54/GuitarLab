@@ -289,14 +289,14 @@ export const TabCanvas: React.FC<TabCanvasProps> = ({
                                   isBeatActive ? 'bg-emerald-400' : 'bg-zinc-500'
                                 }`}
                               />
-                              {(beat.duration === 'eighth' || beat.duration === 'sixteenth') && (
+                              {(beat.duration === 'e' || beat.duration === 's') && (
                                 <div
                                   className={`w-2.5 h-[2px] mt-0.5 ${
                                     isBeatActive ? 'bg-emerald-400' : 'bg-zinc-400'
                                   }`}
                                 />
                               )}
-                              {beat.duration === 'sixteenth' && (
+                              {beat.duration === 's' && (
                                 <div
                                   className={`w-2.5 h-[2px] mt-0.5 ${
                                     isBeatActive ? 'bg-emerald-400' : 'bg-zinc-400'
