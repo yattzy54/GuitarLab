@@ -82,7 +82,7 @@ fun SongsterrBottomControlBar(
         contentAlignment = Alignment.Center
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterVertically,
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .shadow(elevation = 16.dp, shape = RoundedCornerShape(24.dp), spotColor = Color(0x66000000))
                 .clip(RoundedCornerShape(24.dp))
