@@ -38,6 +38,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Star
@@ -106,6 +109,7 @@ fun TunerScreen(viewModel: TunerViewModel = hiltViewModel()) {
     val targetNote by viewModel.targetNote.collectAsStateWithLifecycle()
 
     var showTuningDialog by remember { mutableStateOf(false) }
+    var calibrationDropdownExpanded by remember { mutableStateOf(false) }
     var lockedNoteIndex by remember { mutableStateOf<Int?>(null) } // null = Auto-detect mode
     var isChromaticMode by remember { mutableStateOf(false) }
 
@@ -156,7 +160,7 @@ fun TunerScreen(viewModel: TunerViewModel = hiltViewModel()) {
             .padding(horizontal = 18.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Top Bar: Preset Selector & Chromatic Toggle Button & Mic Toggle
+        // Top Bar: Preset Selector & Calibration Dropdown & Mic Toggle
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -169,32 +173,37 @@ fun TunerScreen(viewModel: TunerViewModel = hiltViewModel()) {
                     .clip(RoundedCornerShape(16.dp))
                     .background(
                         brush = Brush.verticalGradient(
-                            listOf(StudioCardElevated, StudioCardBg),
+                            if (isChromaticMode) listOf(Color(0xFF2E2413), Color(0xFF1E1609))
+                            else listOf(StudioCardElevated, StudioCardBg),
                         ),
                     )
-                    .border(1.dp, StudioCardBorder, RoundedCornerShape(16.dp))
+                    .border(
+                        1.dp,
+                        if (isChromaticMode) ElectricAmber else StudioCardBorder,
+                        RoundedCornerShape(16.dp)
+                    )
                     .clickable { showTuningDialog = true }
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Studio3DIconBadge(
-                    icon = Icons.Default.Tune,
+                    icon = if (isChromaticMode) Icons.Default.MusicNote else Icons.Default.Tune,
                     contentDescription = null,
-                    size = 30.dp,
+                    size = 32.dp,
                     accent = Studio3DAccent.AMBER,
                 )
                 Spacer(Modifier.width(8.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = selectedTuning?.name ?: "Standard E",
+                        text = if (isChromaticMode) "Хроматический тюнер" else (selectedTuning?.name ?: "Standard E"),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        color = StudioTextPrimary,
+                        color = if (isChromaticMode) ElectricAmber else StudioTextPrimary,
                         maxLines = 1,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     )
                     Text(
-                        text = selectedTuning?.notes?.joinToString(" ") { it.noteName } ?: "E A D G B E",
+                        text = if (isChromaticMode) "Определение любой ноты" else (selectedTuning?.notes?.joinToString(" ") { it.noteName } ?: "E A D G B E"),
                         style = MaterialTheme.typography.labelSmall,
                         color = StudioTextSecondary,
                         maxLines = 1,
@@ -203,39 +212,71 @@ fun TunerScreen(viewModel: TunerViewModel = hiltViewModel()) {
                 }
             }
 
-            // CHROMATIC MODE BUTTON (Отдельная кнопка рядом со строем)
-            Row(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(
-                        if (isChromaticMode) Brush.verticalGradient(listOf(Color(0xFF2E2413), Color(0xFF1E1609)))
-                        else Brush.verticalGradient(listOf(StudioCardElevated, StudioCardBg))
+            // Calibration Dropdown (Размещено рядом с выбором строя)
+            Box {
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(
+                            brush = Brush.verticalGradient(
+                                listOf(StudioCardElevated, StudioCardBg),
+                            )
+                        )
+                        .border(1.dp, StudioCardBorder, RoundedCornerShape(16.dp))
+                        .clickable { calibrationDropdownExpanded = true }
+                        .padding(horizontal = 10.dp, vertical = 11.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    Text(
+                        text = "${a4.toInt()} Hz",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = ElectricAmber,
                     )
-                    .border(
-                        1.dp,
-                        if (isChromaticMode) ElectricAmber else StudioCardBorder,
-                        RoundedCornerShape(16.dp)
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = "Calibration options",
+                        tint = StudioTextSecondary,
+                        modifier = Modifier.size(18.dp),
                     )
-                    .clickable {
-                        isChromaticMode = !isChromaticMode
-                        if (isChromaticMode) lockedNoteIndex = null
+                }
+
+                DropdownMenu(
+                    expanded = calibrationDropdownExpanded,
+                    onDismissRequest = { calibrationDropdownExpanded = false },
+                    modifier = Modifier.background(StudioCardBg),
+                ) {
+                    listOf(432f, 440f, 442f, 444f).forEach { hz ->
+                        val isCur = abs(a4 - hz) < 0.5f
+                        DropdownMenuItem(
+                            text = {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        text = "${hz.toInt()} Hz",
+                                        fontWeight = if (isCur) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (isCur) ElectricAmber else StudioTextPrimary,
+                                    )
+                                    if (hz == 440f) {
+                                        Text(
+                                            text = " (Стандарт)",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = StudioTextSecondary,
+                                        )
+                                    }
+                                }
+                            },
+                            onClick = {
+                                viewModel.setA4(hz)
+                                calibrationDropdownExpanded = false
+                            },
+                        )
                     }
-                    .padding(horizontal = 10.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.MusicNote,
-                    contentDescription = "Хроматический тюнер",
-                    tint = if (isChromaticMode) ElectricAmber else StudioTextMuted,
-                    modifier = Modifier.size(18.dp),
-                )
-                Text(
-                    text = "ХРОМ",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isChromaticMode) ElectricAmber else StudioTextSecondary,
-                )
+                }
             }
 
             // Mic On/Off 3D Badge
@@ -362,140 +403,71 @@ fun TunerScreen(viewModel: TunerViewModel = hiltViewModel()) {
 
         Spacer(Modifier.height(18.dp))
 
-        // Headstock 6-Peg Visualizer (GuitarTuna Style)
-        Text(
-            text = "GUITAR HEADSTOCK",
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            color = StudioTextMuted,
-            letterSpacing = 1.2.sp,
-            modifier = Modifier.align(Alignment.Start),
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        StudioCard(
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+        // Auto Detection Block (Скрывается при хроматическом режиме)
+        if (!isChromaticMode) {
+            Spacer(Modifier.height(18.dp))
+            StudioCard(
+                modifier = Modifier.fillMaxWidth(),
             ) {
-                // Auto / Lock mode toggle
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 14.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(
-                        text = if (lockedNoteIndex == null) "Auto Detection Active" else "Peg Lock Mode",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = ElectricTeal,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    if (lockedNoteIndex != null) {
-                        Text(
-                            text = "Switch to Auto",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = ElectricAmber,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.clickable { lockedNoteIndex = null },
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(14.dp))
-
-                // Interactive 6 Pegs (3 Left: 6E, 5A, 4D ; 3 Right: 3G, 2B, 1E)
-                val notes = selectedTuning?.notes ?: emptyList()
-                val leftNotes = notes.take(3)
-                val rightNotes = notes.drop(3).take(3)
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    // Left 3 pegs
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    // Auto / Lock mode header
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        leftNotes.forEachIndexed { index, note ->
+                        Text(
+                            text = if (lockedNoteIndex == null) "Auto Detection Active" else "Peg Lock Mode",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricTeal,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp,
+                        )
+                        if (lockedNoteIndex != null) {
+                            Text(
+                                text = "Switch to Auto",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = ElectricAmber,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.clickable { lockedNoteIndex = null },
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+
+                    // Strings in ONE single row: automatically fits without scroll
+                    val notes = selectedTuning?.notes ?: emptyList()
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        notes.forEachIndexed { index, note ->
                             val isSelected = (lockedNoteIndex == index) ||
                                 (lockedNoteIndex == null && activeTuningNote?.stringNumber == note.stringNumber)
+
                             PegItem(
                                 note = note,
                                 isSelected = isSelected,
                                 isInTune = isSelected && isInTune,
+                                modifier = Modifier.weight(1f),
                                 onClick = {
                                     lockedNoteIndex = if (lockedNoteIndex == index) null else index
                                 },
                             )
                         }
                     }
-
-                    // Headstock Graphic in the middle
-                    HeadstockCenterGraphic(
-                        modifier = Modifier
-                            .width(80.dp)
-                            .height(150.dp),
-                    )
-
-                    // Right 3 pegs
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        rightNotes.forEachIndexed { rIndex, note ->
-                            val actualIndex = rIndex + 3
-                            val isSelected = (lockedNoteIndex == actualIndex) ||
-                                (lockedNoteIndex == null && activeTuningNote?.stringNumber == note.stringNumber)
-                            PegItem(
-                                note = note,
-                                isSelected = isSelected,
-                                isInTune = isSelected && isInTune,
-                                onClick = {
-                                    lockedNoteIndex = if (lockedNoteIndex == actualIndex) null else actualIndex
-                                },
-                            )
-                        }
-                    }
                 }
             }
         }
 
-        Spacer(Modifier.height(18.dp))
-
-        // Reference Pitch (A4 Calibration) Pills
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "CALIBRATION (A4)",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                color = StudioTextMuted,
-                letterSpacing = 1.sp,
-            )
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                listOf(432f, 440f, 442f).forEach { hz ->
-                    val isCur = abs(a4 - hz) < 0.5f
-                    StudioPill(
-                        text = "${hz.toInt()} Hz",
-                        selected = isCur,
-                        onClick = { viewModel.setA4(hz) },
-                        accentColor = ElectricAmber,
-                    )
-                }
-            }
-        }
-
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(20.dp))
     }
 
     // Tuning Selection Modal
@@ -503,7 +475,14 @@ fun TunerScreen(viewModel: TunerViewModel = hiltViewModel()) {
         TuningSelectionDialog(
             tunings = tunings,
             selectedId = selectedTuning?.id ?: "",
+            isChromatic = isChromaticMode,
+            onToggleChromatic = {
+                isChromaticMode = !isChromaticMode
+                if (isChromaticMode) lockedNoteIndex = null
+                showTuningDialog = false
+            },
             onSelect = {
+                isChromaticMode = false
                 viewModel.selectTuning(it.id)
                 lockedNoteIndex = null
                 showTuningDialog = false
@@ -519,6 +498,7 @@ private fun PegItem(
     note: TuningNote,
     isSelected: Boolean,
     isInTune: Boolean,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
     val (bgColors, borderColor, textColor) = when {
@@ -539,21 +519,32 @@ private fun PegItem(
         )
     }
 
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
             .background(brush = Brush.verticalGradient(bgColors))
-            .border(1.dp, borderColor, RoundedCornerShape(12.dp))
+            .border(1.dp, borderColor, RoundedCornerShape(10.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .padding(vertical = 10.dp, horizontal = 2.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = "${note.stringNumber}: ${note.noteName}${note.octave}",
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
-            color = textColor,
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = "${note.stringNumber}",
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                color = if (isSelected) textColor.copy(alpha = 0.75f) else StudioTextMuted,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = "${note.noteName}${note.octave}",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Black,
+                color = textColor,
+                maxLines = 1,
+            )
+        }
     }
 }
 
@@ -673,6 +664,8 @@ private fun StrobeNeedleGauge(
 private fun TuningSelectionDialog(
     tunings: List<Tuning>,
     selectedId: String,
+    isChromatic: Boolean,
+    onToggleChromatic: () -> Unit,
     onSelect: (Tuning) -> Unit,
     onToggleFavorite: (String) -> Unit,
     onDismiss: () -> Unit,
@@ -701,6 +694,62 @@ private fun TuningSelectionDialog(
         },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
+                // Chromatic Mode Button inside Guitar tuning presets
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            if (isChromatic) Brush.verticalGradient(listOf(Color(0xFF382600), Color(0xFF261900)))
+                            else StudioCardElevated
+                        )
+                        .border(
+                            1.dp,
+                            if (isChromatic) ElectricAmber else StudioCardBorder,
+                            RoundedCornerShape(12.dp),
+                        )
+                        .clickable { onToggleChromatic() }
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MusicNote,
+                            contentDescription = "Chromatic Tuner",
+                            tint = if (isChromatic) ElectricAmber else StudioTextSecondary,
+                            modifier = Modifier.size(24.dp),
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "Хроматический режим",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isChromatic) ElectricAmber else StudioTextPrimary,
+                            )
+                            Text(
+                                text = "Определение любой ноты без струн",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = StudioTextSecondary,
+                            )
+                        }
+                    }
+                    if (isChromatic) {
+                        Text(
+                            text = "АКТИВЕН",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = ElectricAmber,
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(14.dp))
+
                 ScrollableTabRow(
                     selectedTabIndex = categories.indexOf(selectedCategory).coerceAtLeast(0),
                     edgePadding = 0.dp,
