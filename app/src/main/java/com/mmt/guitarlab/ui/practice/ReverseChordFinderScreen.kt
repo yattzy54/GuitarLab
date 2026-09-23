@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -23,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -31,7 +33,9 @@ import com.mmt.guitarlab.domain.model.FretboardMode
 import com.mmt.guitarlab.ui.components.Studio3DAccent
 import com.mmt.guitarlab.ui.components.Studio3DIconBadge
 import com.mmt.guitarlab.ui.components.StudioCard
+import com.mmt.guitarlab.ui.components.StudioPill
 import com.mmt.guitarlab.ui.theme.ElectricGreen
+import com.mmt.guitarlab.ui.theme.ElectricTeal
 import com.mmt.guitarlab.ui.theme.StudioDarkBg
 import com.mmt.guitarlab.ui.theme.StudioTextMuted
 import com.mmt.guitarlab.ui.theme.StudioTextPrimary
@@ -43,6 +47,7 @@ fun ReverseChordFinderScreen(viewModel: FretboardViewModel = hiltViewModel()) {
         viewModel.setMode(FretboardMode.REVERSE_LOOKUP)
     }
 
+    val availableTunings by viewModel.availableTunings.collectAsStateWithLifecycle()
     val selectedTuning by viewModel.selectedTuning.collectAsStateWithLifecycle()
     val pressedFrets by viewModel.pressedFrets.collectAsStateWithLifecycle()
     val detectedChords by viewModel.detectedChords.collectAsStateWithLifecycle()
@@ -57,21 +62,60 @@ fun ReverseChordFinderScreen(viewModel: FretboardViewModel = hiltViewModel()) {
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
-        // Reverse Chord Lookup Card
-        StudioCard(modifier = Modifier.fillMaxWidth()) {
+        // Guitar Tuning Selector
+        Text(
+            text = "СТРОЙ ГИТАРЫ",
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = StudioTextMuted,
+            letterSpacing = 1.sp,
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            availableTunings.forEach { tun ->
+                val isSelected = selectedTuning?.id == tun.id
+                StudioPill(
+                    text = tun.name,
+                    selected = isSelected,
+                    onClick = { viewModel.selectTuning(tun.id) },
+                    accentColor = ElectricTeal,
+                )
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        // Fixed-size Reverse Chord Lookup Card (fixed height prevents screen jump on fret clicks)
+        StudioCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(88.dp)
+        ) {
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(14.dp),
+                    .fillMaxSize()
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp),
+                    verticalArrangement = Arrangement.Center,
+                ) {
                     Text(
-                        text = "Нажмите на лады, чтобы распознать аккорд",
+                        text = "Определитель аккордов",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = StudioTextPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                     Spacer(Modifier.height(4.dp))
                     if (detectedChords.isNotEmpty()) {
@@ -80,24 +124,38 @@ fun ReverseChordFinderScreen(viewModel: FretboardViewModel = hiltViewModel()) {
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Black,
                             color = ElectricGreen,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     } else {
                         Text(
-                            text = "Зажмите 2+ ноты на грифе (макс. 1 нота на струну)",
+                            text = if (pressedFrets.isEmpty()) {
+                                "Зажмите 2+ ноты на грифе (макс. 1 на струну)"
+                            } else {
+                                "Выбрано нот: ${pressedFrets.size}. Ищем аккорд..."
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = StudioTextSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }
 
-                if (pressedFrets.isNotEmpty()) {
-                    Studio3DIconBadge(
-                        icon = Icons.Default.Clear,
-                        contentDescription = "Очистить",
-                        size = 36.dp,
-                        accent = Studio3DAccent.RUBY,
-                        onClick = { viewModel.clearPressedFrets() },
-                    )
+                // Fixed-width placeholder for clear button to prevent text width shifts
+                Box(
+                    modifier = Modifier.size(36.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (pressedFrets.isNotEmpty()) {
+                        Studio3DIconBadge(
+                            icon = Icons.Default.Clear,
+                            contentDescription = "Очистить",
+                            size = 36.dp,
+                            accent = Studio3DAccent.RUBY,
+                            onClick = { viewModel.clearPressedFrets() },
+                        )
+                    }
                 }
             }
         }
@@ -111,7 +169,6 @@ fun ReverseChordFinderScreen(viewModel: FretboardViewModel = hiltViewModel()) {
             color = StudioTextMuted,
             letterSpacing = 1.sp,
         )
-
         Spacer(Modifier.height(10.dp))
 
         StudioCard(

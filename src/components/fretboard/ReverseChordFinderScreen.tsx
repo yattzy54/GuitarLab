@@ -103,32 +103,31 @@ export const ReverseChordFinderScreen: React.FC<ReverseChordFinderScreenProps> =
 
       {/* Detection Results */}
       <StudioCard>
-        <div className="p-4 sm:p-5 flex items-center justify-between">
-          <div>
-            <div className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-1">
+        <div className="p-4 sm:p-5 flex items-center justify-between min-h-[84px] h-[84px]">
+          <div className="flex flex-col justify-center min-w-0 pr-4">
+            <div className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-0.5">
               Определенный аккорд
             </div>
             {detectedChords.length > 0 ? (
-              <div className="flex items-baseline space-x-2">
+              <div className="flex items-baseline space-x-2 truncate">
                 <span className="text-2xl sm:text-3xl font-black text-teal-300">
                   {detectedChords[0]}
                 </span>
                 {detectedChords.length > 1 && (
-                  <span className="text-xs text-zinc-400">
+                  <span className="text-xs text-zinc-400 truncate">
                     или {detectedChords.slice(1).join(', ')}
                   </span>
                 )}
               </div>
             ) : (
-              <div className="text-sm text-zinc-500 italic">
+              <div className="text-sm text-zinc-500 italic truncate">
                 {pressedFrets.length < 2
                   ? 'Зажмите минимум 2 ноты на грифе'
                   : 'Аккорд не найден (попробуйте изменить лады)'}
               </div>
             )}
           </div>
-
-          <div className="text-right">
+          <div className="text-right shrink-0">
             <div className="text-[11px] text-zinc-500 font-bold uppercase tracking-wider">
               Выбрано нот
             </div>
