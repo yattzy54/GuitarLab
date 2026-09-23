@@ -62,6 +62,9 @@ import com.mmt.guitarlab.ui.tab.components.sheets.ChromaticTunerBottomSheet
 import com.mmt.guitarlab.ui.tab.components.sheets.MixerBottomSheet
 import com.mmt.guitarlab.ui.tab.components.sheets.MoreOptionsBottomSheet
 import com.mmt.guitarlab.ui.tab.components.sheets.SongCatalogBottomSheet
+import androidx.compose.material.icons.filled.Menu
+import com.mmt.guitarlab.ui.tab.components.sheets.TabSourceBottomSheet
+
 import androidx.compose.material.icons.filled.LibraryMusic
 import com.mmt.guitarlab.ui.tab.components.sheets.TempoBottomSheet
 import com.mmt.guitarlab.ui.tab.components.sheets.TranspositionBottomSheet
@@ -73,6 +76,7 @@ import kotlinx.coroutines.launch
 fun SongsterrTabPlayerScreen(
     viewModel: TabViewModel,
     modifier: Modifier = Modifier,
+    onOpenDrawer: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -104,6 +108,8 @@ fun SongsterrTabPlayerScreen(
     val isSearchingOnline by viewModel.isSearchingOnline.collectAsState()
     val isLoadingOnlineSong by viewModel.isLoadingOnlineSong.collectAsState()
 
+        var isTabSourceOpen by remember { mutableStateOf(false) }
+    val tabSourceSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var isCatalogOpen by remember { mutableStateOf(false) }
     val catalogSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -208,124 +214,77 @@ fun SongsterrTabPlayerScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // 1. TOP INFORMATION HEADER WITH LOAD TAB BUTTON
-            Column(
+            // 1. INTEGRATED STUDIO TOOLBAR: Drawer Menu + Song Title & Artist + Catalog/Load Action Button
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFF12151A))
-                    .border(1.dp, Color(0xFF1F242D))
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .background(Color(0xFF101319))
+                    .border(1.dp, Color(0xFF1E2430))
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                // Menu Drawer Button
+                IconButton(
+                    onClick = onOpenDrawer,
+                    modifier = Modifier.size(38.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(Color(0x26F59E0B))
-                            .border(1.dp, Color(0x66F59E0B), RoundedCornerShape(10.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MusicNote,
-                            contentDescription = null,
-                            tint = Color(0xFFFBBF24),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "${score.title} — ${score.artist}",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Black,
-                            color = Color.White,
-                            maxLines = 1,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = "${activeTrack.name} • ${tuningOverrideName ?: activeTrack.tuningName} • ${score.tempo} BPM",
-                            fontSize = 11.sp,
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFFBBF24),
-                            maxLines = 1,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.Menu,
+                        contentDescription = "Open Studio Menu",
+                        tint = Color(0xFFF59E0B),
+                        modifier = Modifier.size(22.dp)
+                    )
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                // Song Title & Artist in Toolbar
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 4.dp)
                 ) {
-                    // BUTTON: Online Catalog
-                    Row(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(Color(0xFF222731))
-                            .border(1.dp, Color(0xFF384050), RoundedCornerShape(10.dp))
-                            .clickable { isCatalogOpen = true }
-                            .padding(horizontal = 10.dp, vertical = 7.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.LibraryMusic,
-                            contentDescription = "Каталог онлайн",
-                            tint = Color(0xFFFBBF24),
-                            modifier = Modifier.size(16.dp)
-                        )
-                        androidx.compose.foundation.layout.Spacer(Modifier.size(6.dp))
-                        Text(
-                            text = "Каталог",
-                            color = Color(0xFFF3F4F6),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    Text(
+                        text = "${score.title} — ${score.artist}",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Black,
+                        color = Color.White,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = "${activeTrack.name} • ${tuningOverrideName ?: activeTrack.tuningName} • ${score.tempo} BPM",
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFFFBBF24),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                }
 
-                    // BUTTON: Load Tablature from Device
-                    Row(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(Color(0xFF222731))
-                            .border(1.dp, Color(0xFF384050), RoundedCornerShape(10.dp))
-                            .clickable {
-                                filePickerLauncher.launch(
-                                    arrayOf(
-                                        "*/*",
-                                        "application/octet-stream",
-                                        "application/x-guitar-pro",
-                                        "text/plain"
-                                    )
-                                )
-                            }
-                            .padding(horizontal = 10.dp, vertical = 7.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.FolderOpen,
-                            contentDescription = "Загрузить с устройства",
-                            tint = Color(0xFFFBBF24),
-                            modifier = Modifier.size(16.dp)
-                        )
-                        androidx.compose.foundation.layout.Spacer(Modifier.size(6.dp))
-                        Text(
-                            text = "Загрузить",
-                            color = Color(0xFFF3F4F6),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                // Button opening TabSourceBottomSheet (Catalog & Load)
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFF1C222D))
+                        .border(1.dp, Color(0xFF2E384D), RoundedCornerShape(12.dp))
+                        .clickable { isTabSourceOpen = true }
+                        .padding(horizontal = 10.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.LibraryMusic,
+                        contentDescription = "Выбрать песню или загрузить",
+                        tint = Color(0xFFFBBF24),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = "Каталог",
+                        color = Color(0xFFF3F4F6),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
 
@@ -622,6 +581,24 @@ fun SongsterrTabPlayerScreen(
         )
     }
 
+    // 5.5 Tab Source Sheet
+    TabSourceBottomSheet(
+    isOpen = isTabSourceOpen,
+    sheetState = tabSourceSheetState,
+    onDismiss = { isTabSourceOpen = false },
+    onOpenCatalog = { isCatalogOpen = true },
+    onOpenFilePicker = {
+    filePickerLauncher.launch(
+    arrayOf(
+    "*/*",
+    "application/octet-stream",
+    "application/x-guitar-pro",
+    "text/plain"
+    )
+    )
+    }
+    )
+    
     // 6. Song Catalog Sheet
     if (isCatalogOpen) {
         SongCatalogBottomSheet(

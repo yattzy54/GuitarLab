@@ -90,32 +90,19 @@ fun SongsterrBottomControlBar(
                 .border(1.dp, Color(0xFF2C323E), RoundedCornerShape(24.dp))
                 .padding(horizontal = 12.dp, vertical = 6.dp)
         ) {
-            // Swipe Handle & Indicator Bar
-            Row(
+            // Sleek Wide Bar Handle (without "Управление" text)
+            Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
                     .clickable { isExpanded = !isExpanded }
-                    .padding(horizontal = 12.dp, vertical = 2.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    .padding(horizontal = 24.dp, vertical = 5.dp),
+                contentAlignment = Alignment.Center
             ) {
                 Box(
                     modifier = Modifier
-                        .width(32.dp)
-                        .padding(vertical = 3.dp)
+                        .width(48.dp)
+                        .height(4.dp)
                         .background(Color(0xFF4B5563), RoundedCornerShape(2.dp))
-                )
-                Icon(
-                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
-                    contentDescription = if (isExpanded) "Скрыть панель" else "Раскрыть панель",
-                    tint = Color(0xFF9CA3AF),
-                    modifier = Modifier.size(16.dp)
-                )
-                Text(
-                    text = if (isExpanded) "Скрыть" else "Управление",
-                    fontSize = 10.sp,
-                    color = Color(0xFF9CA3AF),
-                    fontWeight = FontWeight.Medium
                 )
             }
 

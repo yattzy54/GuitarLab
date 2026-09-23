@@ -7,8 +7,14 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
-fun TabViewerScreen(viewModel: TabViewModel = hiltViewModel()) {
+fun TabViewerScreen(
+    viewModel: TabViewModel = hiltViewModel(),
+    onOpenDrawer: () -> Unit = {},
+) {
     Box(modifier = Modifier.fillMaxSize()) {
-        SongsterrTabPlayerScreen(viewModel = viewModel)
+        SongsterrTabPlayerScreen(
+            viewModel = viewModel,
+            onOpenDrawer = onOpenDrawer,
+        )
     }
 }

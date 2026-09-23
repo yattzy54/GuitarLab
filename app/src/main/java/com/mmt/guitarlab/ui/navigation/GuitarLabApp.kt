@@ -226,41 +226,47 @@ fun GuitarLabApp() {
             }
         },
     ) {
+        val isTabsScreen = currentRoute == AppDest.Tabs.route
+
         Scaffold(
             topBar = {
-                CenterAlignedTopAppBar(
-                    title = {
-                        Text(
-                            text = currentDest.title,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = StudioTextPrimary,
-                        )
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(
-                                imageVector = Icons.Default.Menu,
-                                contentDescription = "Open Menu",
-                                tint = ElectricAmber,
+                if (!isTabsScreen) {
+                    CenterAlignedTopAppBar(
+                        title = {
+                            Text(
+                                text = currentDest.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = StudioTextPrimary,
                             )
-                        }
-                    },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = StudioDarkBg,
-                    ),
-                )
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                Icon(
+                                    imageVector = Icons.Default.Menu,
+                                    contentDescription = "Open Menu",
+                                    tint = ElectricAmber,
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                            containerColor = StudioDarkBg,
+                        ),
+                    )
+                }
             },
         ) { padding ->
             NavHost(
                 navController = navController,
                 startDestination = AppDest.Tabs.route,
-                modifier = Modifier.padding(padding),
+                modifier = Modifier.padding(if (isTabsScreen) androidx.compose.foundation.layout.PaddingValues(0.dp) else padding),
             ) {
                 composable(AppDest.Tuner.route) { TunerScreen() }
                 composable(AppDest.Metronome.route) { MetronomeScreen() }
                 composable(AppDest.Trainer.route) { AutoSpeedTrainerScreen() }
-                composable(AppDest.Tabs.route) { TabViewerScreen() }
+                composable(AppDest.Tabs.route) { 
+                    TabViewerScreen(onOpenDrawer = { scope.launch { drawerState.open() } })
+                }
                 composable(AppDest.TabEditor.route) { TabEditorScreen() }
                 composable(AppDest.Fretboard.route) { ChordScaleScreen() }
                 composable(AppDest.ReverseChord.route) { ReverseChordFinderScreen() }
