@@ -52,6 +52,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -144,12 +145,37 @@ fun SongsterrTabPlayerScreen(
     var isMoreOpen by remember { mutableStateOf(false) }
     val moreSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    // Smooth auto-scroll during playback
+    // High-precision viewport tracking: ensures active bar never disappears past bottom edge
+    val localDensity = LocalDensity.current
     LaunchedEffect(currentMeasureIndex, isPlaying) {
-        if (isPlaying && currentMeasureIndex > 0) {
-            val approxMeasureHeightPx = 280
-            val targetScroll = (currentMeasureIndex * approxMeasureHeightPx).coerceAtLeast(0)
-            scrollState.animateScrollTo(targetScroll)
+        if (isPlaying && activeTrack.measures.isNotEmpty()) {
+            val stringCount = if (activeTrack.instrumentType == com.mmt.guitarlab.domain.model.InstrumentType.DRUMS) 5 else activeTrack.stringCount.coerceAtLeast(4)
+            val stringSpacing = with(localDensity) { 24.dp.toPx() }
+            val topPadding = with(localDensity) { 40.dp.toPx() }
+            val stemHeight = with(localDensity) { 28.dp.toPx() }
+            val measureBottomPadding = with(localDensity) { 20.dp.toPx() }
+            val measureTotalHeightPx = topPadding + (stringCount - 1) * stringSpacing + stemHeight + measureBottomPadding
+
+            val activeBarTop = currentMeasureIndex * measureTotalHeightPx
+            val activeBarBottom = activeBarTop + measureTotalHeightPx
+
+            val viewportHeight = scrollState.viewportSize.toFloat()
+            if (viewportHeight > 0) {
+                val currentScroll = scrollState.value.toFloat()
+                // If active bar approaches or reaches the bottom of viewport (leaving safe margin above bottom bar), scroll smoothly so it remains fully visible
+                val bottomSafetyMargin = with(localDensity) { 120.dp.toPx() }
+                if (activeBarBottom > currentScroll + viewportHeight - bottomSafetyMargin) {
+                    val targetScroll = (activeBarBottom - viewportHeight + bottomSafetyMargin + with(localDensity) { 40.dp.toPx() }).toInt()
+                    scrollState.animateScrollTo(targetScroll.coerceAtLeast(0))
+                } else if (activeBarTop < currentScroll) {
+                    // Also guard against scrolling up
+                    scrollState.animateScrollTo(activeBarTop.toInt().coerceAtLeast(0))
+                }
+            } else {
+                // Fallback before first layout pass
+                val targetScroll = (currentMeasureIndex * measureTotalHeightPx - 100f).toInt().coerceAtLeast(0)
+                scrollState.animateScrollTo(targetScroll)
+            }
         }
     }
 
@@ -252,7 +278,7 @@ fun SongsterrTabPlayerScreen(
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "${activeTrack.name} • ${tuningOverrideName ?: activeTrack.tuningName} • ${score.tempo} BPM",
+                        text = "${tuningOverrideName ?: activeTrack.tuningName} • ${score.tempo} BPM",
                         fontSize = 11.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.SemiBold,
