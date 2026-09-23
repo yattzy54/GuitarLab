@@ -29,6 +29,11 @@ object MusicTheory {
         ChordFormula("sus2", listOf(0, 2, 7)),
         ChordFormula("diminished", listOf(0, 3, 6)),
         ChordFormula("augmented", listOf(0, 4, 8)),
+        ChordFormula("add9", listOf(0, 2, 4, 7)),
+        ChordFormula("m9", listOf(0, 2, 3, 7, 10)),
+        ChordFormula("9", listOf(0, 2, 4, 7, 10)),
+        ChordFormula("6", listOf(0, 4, 7, 9)),
+        ChordFormula("m6", listOf(0, 3, 7, 9)),
     )
 
     val scaleFormulas = listOf(
@@ -46,24 +51,58 @@ object MusicTheory {
         return if (index != -1) index else 0
     }
 
+    /**
+     * Accurate reverse chord detection:
+     * Prioritizes exact chord matches where all played pitch classes match the chord formula.
+     * Secondary matches include extensions or root inversions with lowest bass note notation (e.g. C/E).
+     */
     fun reverseLookupChord(selectedMidiNotes: List<Int>): List<String> {
         if (selectedMidiNotes.isEmpty()) return emptyList()
-        val pitchClasses = selectedMidiNotes.map { (it % 12 + 12) % 12 }.distinct()
+
+        // Lowest note determines the bass note
+        val lowestMidi = selectedMidiNotes.minOrNull() ?: 0
+        val bassPitch = (lowestMidi % 12 + 12) % 12
+        val bassName = noteNames[bassPitch]
+
+        val pitchClasses = selectedMidiNotes.map { (it % 12 + 12) % 12 }.distinct().toSet()
         if (pitchClasses.isEmpty()) return emptyList()
 
-        val results = mutableListOf<String>()
+        val exactMatches = mutableListOf<String>()
+        val partialMatches = mutableListOf<String>()
 
         for (rootPitch in pitchClasses) {
             val rootName = noteNames[rootPitch]
-            val intervals = pitchClasses.map { (it - rootPitch + 12) % 12 }.sorted()
+            val intervals = pitchClasses.map { (it - rootPitch + 12) % 12 }.toSet()
 
             for (formula in chordFormulas) {
-                if (formula.intervals.all { intervals.contains(it) }) {
-                    results.add("$rootName ${formula.name}")
+                val formulaSet = formula.intervals.toSet()
+
+                // Check exact match (all formula notes present, and no extraneous notes)
+                if (formulaSet == intervals) {
+                    val chordTitle = if (bassPitch != rootPitch && formula.intervals.size > 2) {
+                        "$rootName ${formula.name}/$bassName"
+                    } else {
+                        "$rootName ${formula.name}"
+                    }
+                    exactMatches.add(chordTitle)
+                } else if (formulaSet.all { intervals.contains(it) }) {
+                    // Formula notes are present, but extra notes exist (extensions or compound chords)
+                    val chordTitle = if (bassPitch != rootPitch && formula.intervals.size > 2) {
+                        "$rootName ${formula.name}/$bassName"
+                    } else {
+                        "$rootName ${formula.name}"
+                    }
+                    partialMatches.add(chordTitle)
                 }
             }
         }
 
-        return results.distinct()
+        val combined = if (exactMatches.isNotEmpty()) {
+            exactMatches
+        } else {
+            partialMatches
+        }
+
+        return combined.distinct()
     }
 }
