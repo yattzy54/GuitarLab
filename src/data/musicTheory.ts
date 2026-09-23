@@ -59,21 +59,40 @@ export function intervalName(semitones: number): string {
  */
 export function reverseLookupChord(selectedMidiNotes: number[]): string[] {
   if (selectedMidiNotes.length === 0) return [];
+
+  const lowestMidi = Math.min(...selectedMidiNotes);
+  const bassPitch = ((lowestMidi % 12) + 12) % 12;
+  const bassName = NOTE_NAMES[bassPitch];
+
   const pitchClasses = Array.from(new Set(selectedMidiNotes.map(n => ((n % 12) + 12) % 12)));
   if (pitchClasses.length === 0) return [];
 
-  const results: string[] = [];
+  const exactMatches: string[] = [];
+  const partialMatches: string[] = [];
 
   for (const rootPitch of pitchClasses) {
     const rootName = NOTE_NAMES[rootPitch];
-    const intervals = pitchClasses.map(p => (p - rootPitch + 12) % 12).sort((a, b) => a - b);
+    const intervals = pitchClasses.map(p => (p - rootPitch + 12) % 12);
+    const intervalSet = new Set(intervals);
 
     for (const formula of CHORD_FORMULAS) {
-      if (formula.intervals.every(intv => intervals.includes(intv))) {
-        results.push(`${rootName} ${formula.name}`);
+      const formulaSet = new Set(formula.intervals);
+
+      // Exact match (exact pitch classes match formula)
+      if (formula.intervals.length === pitchClasses.length && formula.intervals.every(i => intervalSet.has(i))) {
+        const chordTitle = bassPitch !== rootPitch && formula.intervals.length > 2
+          ? `${rootName} ${formula.name}/${bassName}`
+          : `${rootName} ${formula.name}`;
+        exactMatches.push(chordTitle);
+      } else if (formula.intervals.every(i => intervalSet.has(i))) {
+        const chordTitle = bassPitch !== rootPitch && formula.intervals.length > 2
+          ? `${rootName} ${formula.name}/${bassName}`
+          : `${rootName} ${formula.name}`;
+        partialMatches.push(chordTitle);
       }
     }
   }
 
+  const results = exactMatches.length > 0 ? exactMatches : partialMatches;
   return Array.from(new Set(results));
 }
