@@ -384,14 +384,24 @@ export const SongsterrPlayer: React.FC<SongsterrPlayerProps> = ({ onOpenStudioTo
         </div>
       )}
 
-      {/* 3. Main Touch Tab Canvas with Hardware-Accelerated Rendering */}
+      {/* 3. Main Touch Tab Canvas with Hardware-Accelerated Rendering powered by alphaTab */}
       <TabCanvas
         track={activeTrack}
+        song={song}
         currentMeasureIndex={currentMeasureIndex}
         currentBeatIndex={currentBeatIndex}
         isPlaying={isPlaying}
         onSelectPosition={handleSelectPosition}
         loopRange={isLoopActive ? loopRange : null}
+        speedRatio={speedRatio}
+        isLoopActive={isLoopActive}
+        countInEnabled={countInEnabled}
+        metronomeClickEnabled={metronomeClickEnabled}
+        semitones={semitones}
+        audioSource={audioSource}
+        onTogglePlay={togglePlay}
+        onPlayStateChanged={setIsPlaying}
+        onMeasureChanged={setCurrentMeasureIndex}
       />
 
       {/* 4. Ergonomic Floating Bottom Dock for One-Handed Mobile Control */}

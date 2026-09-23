@@ -1,3 +1,4 @@
+import { AlphaTabViewer } from './AlphaTabViewer';
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, FileText, Music, Copy, Check, Upload, Volume2 } from 'lucide-react';
 import { TabScore, TabMeasure, TabBeat } from '../../types';
@@ -228,81 +229,12 @@ export const TabViewerScreen: React.FC = () => {
 
         {/* Display: Interactive Tab vs Raw ASCII */}
         {!showRawAscii ? (
-          <div className="space-y-6 overflow-x-auto pb-2">
-            <div className="min-w-[640px] space-y-4">
-              {measures.map((measure, mIdx) => {
-                const isCurrentMeasure = isPlaying && currentMeasureIndex === mIdx;
-
-                return (
-                  <div
-                    key={measure.number}
-                    className={`rounded-2xl p-4 border transition-all ${
-                      isCurrentMeasure
-                        ? 'bg-zinc-800/80 border-amber-500/60 shadow-lg shadow-amber-500/5'
-                        : 'bg-zinc-950/40 border-zinc-800/80'
-                    }`}
-                  >
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-xs font-bold font-mono text-amber-400/90">
-                        Measure {measure.number}
-                      </span>
-                      {isCurrentMeasure && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 animate-pulse">
-                          PLAYING
-                        </span>
-                      )}
-                    </div>
-
-                    {/* 6 Tab Lines */}
-                    <div className="space-y-2 font-mono text-sm relative py-2">
-                      {['e', 'B', 'G', 'D', 'A', 'E'].map((stringLabel, sIdx) => (
-                        <div key={stringLabel} className="flex items-center space-x-2">
-                          <span className="w-5 text-right font-bold text-zinc-400 text-xs shrink-0">
-                            {stringLabel}|
-                          </span>
-                          <div className="flex-1 flex items-center relative h-5">
-                            {/* Horizontal string wire */}
-                            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[1px] bg-zinc-700" />
-
-                            {/* Note columns */}
-                            <div className="flex-1 flex justify-around relative z-10">
-                              {measure.beats.map((beat, bIdx) => {
-                                const note = beat.notes.find((n) => n.stringIndex === sIdx);
-                                const isCurrentNote =
-                                  isPlaying && currentMeasureIndex === mIdx && currentBeatIndex === bIdx;
-
-                                return (
-                                  <div
-                                    key={bIdx}
-                                    onClick={() => {
-                                      if (note && note.fret >= 0) {
-                                        const baseMidi = STRING_BASE_MIDI[sIdx];
-                                        playGuitarPluck(midiToHz(baseMidi + note.fret), 1.5, 0.9);
-                                      }
-                                    }}
-                                    className={`w-7 h-5 flex items-center justify-center rounded cursor-pointer transition-all ${
-                                      isCurrentNote
-                                        ? 'bg-amber-400 text-zinc-950 font-black scale-125 shadow-md shadow-amber-400/50'
-                                        : note && note.fret >= 0
-                                        ? 'bg-zinc-800 text-zinc-100 hover:bg-amber-500/20 hover:text-amber-300 font-bold'
-                                        : 'text-zinc-600'
-                                    }`}
-                                  >
-                                    {note && note.fret >= 0 ? note.fret : '-'}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                          <span className="text-zinc-600 text-xs shrink-0">|</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <AlphaTabViewer
+            score={selectedScore}
+            isPlaying={isPlaying}
+            tempo={tempo}
+            onPlayStateChanged={setIsPlaying}
+          />
         ) : (
           /* Raw ASCII Tab View */
           <div className="space-y-3">

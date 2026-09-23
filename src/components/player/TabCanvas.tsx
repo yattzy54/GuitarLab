@@ -1,360 +1,426 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { TabTrackInfo, AdvancedMeasure, AdvancedBeat, AdvancedNote } from '../../types/tabPlayer';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import * as alphaTab from '@coderline/alphatab';
+import { TabTrackInfo, SongTabScore } from '../../types/tabPlayer';
+import { convertTrackToAlphaTex } from '../../audio/alphaTexConverter';
+import { ZoomIn, ZoomOut, RotateCcw, FileText, Music, Sparkles, Volume2, CheckCircle2 } from 'lucide-react';
 
-interface TabCanvasProps {
+export interface TabCanvasProps {
   track: TabTrackInfo;
+  song?: SongTabScore;
   currentMeasureIndex: number;
   currentBeatIndex: number;
   isPlaying: boolean;
-  onSelectPosition: (measureIdx: number, beatIdx: number) => void;
+  onSelectPosition?: (measureIdx: number, beatIdx: number) => void;
   loopRange?: [number, number] | null; // [measureStart, measureEnd]
+  speedRatio?: number;
+  isLoopActive?: boolean;
+  countInEnabled?: boolean;
+  metronomeClickEnabled?: boolean;
+  semitones?: number;
+  audioSource?: 'SYNTH' | 'ORIG';
+  onTogglePlay?: () => void;
+  onPlayStateChanged?: (playing: boolean) => void;
+  onMeasureChanged?: (measureIndex: number) => void;
 }
 
 export const TabCanvas: React.FC<TabCanvasProps> = ({
   track,
+  song,
   currentMeasureIndex,
   currentBeatIndex,
   isPlaying,
   onSelectPosition,
   loopRange,
+  speedRatio = 1.0,
+  isLoopActive = false,
+  countInEnabled = false,
+  metronomeClickEnabled = false,
+  semitones = 0,
+  audioSource = 'SYNTH',
+  onTogglePlay,
+  onPlayStateChanged,
+  onMeasureChanged,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const activeMeasureRef = useRef<HTMLDivElement | null>(null);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const apiRef = useRef<alphaTab.AlphaTabApi | null>(null);
 
-  // Mobile pinch-to-zoom & double-tap zoom state
+  // Score display & layout states
   const [zoomScale, setZoomScale] = useState<number>(1.0);
-  const lastTouchDistRef = useRef<number | null>(null);
-  const lastTapTimeRef = useRef<number>(0);
+  const [staveProfile, setStaveProfile] = useState<alphaTab.StaveProfile>(alphaTab.StaveProfile.Tab);
+  const [layoutMode, setLayoutMode] = useState<alphaTab.LayoutMode>(alphaTab.LayoutMode.Page);
 
-  const isDrums = useMemo(() => {
-    return (
-      track.instrument?.toLowerCase().includes('drum') ||
-      track.name?.toLowerCase().includes('drum')
-    );
-  }, [track.instrument, track.name]);
+  // Status states
+  const [isScoreLoaded, setIsScoreLoaded] = useState(false);
+  const [isSoundFontReady, setIsSoundFontReady] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const stringLabels = useMemo(() => {
-    if (isDrums) return ['CC', 'HH', 'T1', 'SD', 'BD'];
-    return track.tuningNotes.length > 0
-      ? track.tuningNotes.map((n) => n.replace(/[0-9]/g, ''))
-      : ['e', 'B', 'G', 'D', 'A', 'E'];
-  }, [track.tuningNotes, isDrums]);
-
-  const stringCount = isDrums ? 5 : stringLabels.length || 6;
-
-  // Touch gesture handling: smooth pinch-to-zoom + double tap to reset
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 2) {
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
-      lastTouchDistRef.current = Math.hypot(dx, dy);
-    } else if (e.touches.length === 1) {
-      const now = Date.now();
-      if (now - lastTapTimeRef.current < 300) {
-        // Double tap toggles between 1.0x and 1.35x zoom
-        setZoomScale((prev) => (prev > 1.1 ? 1.0 : 1.35));
-        lastTapTimeRef.current = 0;
-      } else {
-        lastTapTimeRef.current = now;
-      }
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length === 2 && lastTouchDistRef.current !== null) {
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
-      const dist = Math.hypot(dx, dy);
-      const factor = dist / lastTouchDistRef.current;
-      setZoomScale((prev) => Math.min(1.8, Math.max(0.85, prev * (1 + (factor - 1) * 0.5))));
-      lastTouchDistRef.current = dist;
-    }
-  };
-
-  const handleTouchEnd = () => {
-    lastTouchDistRef.current = null;
-  };
-
-  // High-performance Auto-Scroll using RequestAnimationFrame & instant centering during playback
+  // Initialize alphaTab engine
   useEffect(() => {
-    if (isPlaying && activeMeasureRef.current && containerRef.current) {
-      const container = containerRef.current;
-      const activeEl = activeMeasureRef.current;
-      
-      const containerRect = container.getBoundingClientRect();
-      const activeRect = activeEl.getBoundingClientRect();
-      
-      // Calculate relative center offset
-      const targetScrollTop = container.scrollTop + (activeRect.top - containerRect.top) - (containerRect.height / 2) + (activeRect.height / 2);
-      
-      // Smooth animated scroll with requestAnimationFrame to prevent jank on mobile
-      container.scrollTo({
-        top: Math.max(0, targetScrollTop),
-        behavior: 'smooth',
+    if (!containerRef.current) return;
+
+    try {
+      const settings = new alphaTab.Settings();
+      settings.core.fontDirectory = '/font/';
+      settings.player.enablePlayer = true;
+      settings.player.soundFont = '/soundfont/sonivox.sf2';
+      settings.player.scrollElement = viewportRef.current || containerRef.current;
+      settings.player.scrollMode = alphaTab.ScrollMode.Continuous;
+      settings.display.staveProfile = staveProfile;
+      settings.display.layoutMode = layoutMode;
+      settings.display.scale = zoomScale;
+
+      // Dark Studio Palette styling
+      const Color = (settings.display.resources.staffLineColor.constructor as any);
+      settings.display.resources.staffLineColor = Color.fromJson('#3f3f46'); // zinc-700
+      settings.display.resources.barSeparatorColor = Color.fromJson('#52525b'); // zinc-600
+      settings.display.resources.barNumberColor = Color.fromJson('#f59e0b'); // amber-500
+      settings.display.resources.mainGlyphColor = Color.fromJson('#f4f4f5'); // zinc-100
+      settings.display.resources.secondaryGlyphColor = Color.fromJson('#a1a1aa'); // zinc-400
+      settings.display.resources.scoreInfoColor = Color.fromJson('#f59e0b'); // amber-500
+
+      const api = new alphaTab.AlphaTabApi(containerRef.current, settings);
+      apiRef.current = api;
+
+      // Listeners
+      api.scoreLoaded.on(() => {
+        setIsScoreLoaded(true);
+        setLoadError(null);
       });
+
+      api.soundFontLoaded.on(() => {
+        setIsSoundFontReady(true);
+      });
+
+      api.playerStateChanged.on((args) => {
+        const playing = args.state === 1; // 1 = Playing
+        if (onPlayStateChanged) {
+          onPlayStateChanged(playing);
+        }
+      });
+
+      api.playerPositionChanged.on((args) => {
+        // Find active bar and beat
+        if (api.score && args.currentTick !== undefined) {
+          const bar = api.score.masterBars.find((mb) => {
+            return args.currentTick >= mb.start && args.currentTick < (mb.start + mb.calculateDuration());
+          });
+          if (bar && onMeasureChanged) {
+            onMeasureChanged(bar.index);
+          }
+        }
+      });
+
+      api.playerFinished.on(() => {
+        if (onPlayStateChanged) {
+          onPlayStateChanged(false);
+        }
+      });
+
+      api.error.on((err) => {
+        console.warn('alphaTab error event:', err);
+      });
+
+      // Handle ResizeObserver
+      const resizeObserver = new ResizeObserver(() => {
+        if (apiRef.current) {
+          try {
+            (apiRef.current as any).resizeRender?.() ?? (apiRef.current as any).triggerResize?.();
+          } catch (_) {}
+        }
+      });
+
+      if (viewportRef.current) {
+        resizeObserver.observe(viewportRef.current);
+      }
+
+      return () => {
+        resizeObserver.disconnect();
+        api.destroy();
+        apiRef.current = null;
+      };
+    } catch (e: any) {
+      console.error('Failed to init alphaTab:', e);
+      setLoadError(e?.message || 'Failed to initialize alphaTab engine');
     }
-  }, [currentMeasureIndex, isPlaying]);
+  }, []);
+
+  // Load / update score AlphaTex whenever track or song changes
+  useEffect(() => {
+    const api = apiRef.current;
+    if (!api || !track) return;
+
+    try {
+      setIsScoreLoaded(false);
+      const songData: SongTabScore = song || {
+        id: 'current_song',
+        title: 'Guitar Tablature',
+        artist: 'GuitarLab',
+        revisionDate: '2026',
+        defaultTempo: 120,
+        tracks: [track],
+      };
+
+      const alphaTex = convertTrackToAlphaTex(songData, track);
+      api.tex(alphaTex);
+    } catch (err: any) {
+      console.error('Error generating/loading AlphaTex:', err);
+      setLoadError(err?.message || 'Failed to render tablature');
+    }
+  }, [track.id, song?.id]);
+
+  // Synchronize Playback state
+  useEffect(() => {
+    const api = apiRef.current;
+    if (!api || !isScoreLoaded) return;
+
+    try {
+      const isCurrentlyPlaying = api.playerState === 1; // 1 = Playing
+      if (isPlaying && !isCurrentlyPlaying) {
+        api.play();
+      } else if (!isPlaying && isCurrentlyPlaying) {
+        api.pause();
+      }
+    } catch (e) {
+      console.warn('alphaTab play/pause error:', e);
+    }
+  }, [isPlaying, isScoreLoaded]);
+
+  // Synchronize Playback Speed (Tempo modifier)
+  useEffect(() => {
+    const api = apiRef.current;
+    if (!api) return;
+    try {
+      api.playbackSpeed = speedRatio;
+    } catch (_) {}
+  }, [speedRatio]);
+
+  // Synchronize Looping
+  useEffect(() => {
+    const api = apiRef.current;
+    if (!api) return;
+    try {
+      api.isLooping = isLoopActive;
+    } catch (_) {}
+  }, [isLoopActive]);
+
+  // Synchronize Metronome Volume
+  useEffect(() => {
+    const api = apiRef.current;
+    if (!api) return;
+    try {
+      api.metronomeVolume = metronomeClickEnabled ? 1.0 : 0.0;
+    } catch (_) {}
+  }, [metronomeClickEnabled]);
+
+  // Synchronize Count-In Volume
+  useEffect(() => {
+    const api = apiRef.current;
+    if (!api) return;
+    try {
+      api.countInVolume = countInEnabled ? 1.0 : 0.0;
+    } catch (_) {}
+  }, [countInEnabled]);
+
+  // Synchronize Audio Source (SYNTH vs ORIG)
+  useEffect(() => {
+    const api = apiRef.current;
+    if (!api) return;
+    try {
+      // If user chose original audio, mute the internal synthesizer so they hear only the master recording
+      api.masterVolume = audioSource === 'ORIG' ? 0.0 : 1.0;
+    } catch (_) {}
+  }, [audioSource]);
+
+  // Synchronize Transposition
+  useEffect(() => {
+    const api = apiRef.current;
+    if (!api || !api.tracks || api.tracks.length === 0) return;
+    try {
+      api.changeTrackTranspositionPitch(api.tracks, semitones);
+    } catch (_) {}
+  }, [semitones]);
+
+  // Zoom handlers
+  const handleZoomIn = () => {
+    const next = Math.min(1.8, Math.round((zoomScale + 0.15) * 100) / 100);
+    setZoomScale(next);
+    if (apiRef.current) {
+      apiRef.current.settings.display.scale = next;
+      apiRef.current.updateSettings();
+      apiRef.current.render();
+    }
+  };
+
+  const handleZoomOut = () => {
+    const next = Math.max(0.65, Math.round((zoomScale - 0.15) * 100) / 100);
+    setZoomScale(next);
+    if (apiRef.current) {
+      apiRef.current.settings.display.scale = next;
+      apiRef.current.updateSettings();
+      apiRef.current.render();
+    }
+  };
+
+  const handleZoomReset = () => {
+    setZoomScale(1.0);
+    if (apiRef.current) {
+      apiRef.current.settings.display.scale = 1.0;
+      apiRef.current.updateSettings();
+      apiRef.current.render();
+    }
+  };
+
+  // Stave profile toggle (Tab only vs Score + Tab)
+  const handleToggleStaveProfile = () => {
+    const next =
+      staveProfile === alphaTab.StaveProfile.Tab
+        ? alphaTab.StaveProfile.Default
+        : alphaTab.StaveProfile.Tab;
+    setStaveProfile(next);
+    if (apiRef.current) {
+      apiRef.current.settings.display.staveProfile = next;
+      apiRef.current.updateSettings();
+      apiRef.current.render();
+    }
+  };
+
+  // Layout mode toggle (Page vs Horizontal scroll)
+  const handleToggleLayout = () => {
+    const next =
+      layoutMode === alphaTab.LayoutMode.Page
+        ? alphaTab.LayoutMode.Horizontal
+        : alphaTab.LayoutMode.Page;
+    setLayoutMode(next);
+    if (apiRef.current) {
+      apiRef.current.settings.display.layoutMode = next;
+      apiRef.current.updateSettings();
+      apiRef.current.render();
+    }
+  };
 
   return (
     <div
-      ref={containerRef}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      style={{
-        WebkitOverflowScrolling: 'touch',
-        touchAction: 'pan-x pan-y',
-        transform: 'translateZ(0)', // Force hardware acceleration in Android WebView
-      }}
-      className="flex-1 w-full overflow-y-auto overflow-x-hidden bg-[#0a0c10] text-zinc-100 select-none pb-44 pt-2 px-1.5 sm:px-4"
+      ref={viewportRef}
+      className="flex-1 w-full overflow-y-auto overflow-x-hidden bg-[#090b10] relative flex flex-col items-center select-none"
     >
-      {/* Zoom indicator & controls capsule for mobile quick view */}
-      <div className="sticky top-1 z-30 flex justify-end px-2 mb-2 pointer-events-none">
-        <div className="pointer-events-auto flex items-center space-x-1.5 bg-zinc-900/90 backdrop-blur-md border border-zinc-800/80 px-2.5 py-1 rounded-full text-[11px] font-mono shadow-lg text-zinc-400">
-          <button
-            onClick={() => setZoomScale((z) => Math.max(0.85, +(z - 0.15).toFixed(2)))}
-            className="w-5 h-5 flex items-center justify-center rounded active:bg-zinc-800 text-zinc-300 font-bold"
-          >
-            -
-          </button>
-          <span className="w-9 text-center font-semibold text-zinc-200">{Math.round(zoomScale * 100)}%</span>
-          <button
-            onClick={() => setZoomScale((z) => Math.min(1.8, +(z + 0.15).toFixed(2)))}
-            className="w-5 h-5 flex items-center justify-center rounded active:bg-zinc-800 text-zinc-300 font-bold"
-          >
-            +
-          </button>
-          {zoomScale !== 1.0 && (
-            <button
-              onClick={() => setZoomScale(1.0)}
-              className="ml-1 text-[10px] text-amber-400 font-medium active:underline"
-            >
-              Reset
-            </button>
+      {/* Top Floating Utility Bar */}
+      <div className="sticky top-2 z-30 w-full max-w-4xl px-4 flex items-center justify-between pointer-events-none mb-1">
+        {/* Left: Engine & SoundFont Badge */}
+        <div className="flex items-center space-x-2 pointer-events-auto bg-zinc-950/85 backdrop-blur-md border border-zinc-800/80 px-2.5 py-1 rounded-full shadow-lg">
+          <div className="flex items-center space-x-1.5 text-[11px] font-medium text-zinc-300">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            <span className="font-bold text-amber-400">alphaTab</span>
+            <span className="text-zinc-600">·</span>
+            <span className="text-zinc-400">{track.name}</span>
+          </div>
+          {isSoundFontReady && (
+            <div className="flex items-center space-x-1 text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded-full">
+              <CheckCircle2 className="w-3 h-3" />
+              <span>HQ Synth</span>
+            </div>
           )}
+        </div>
+
+        {/* Right: Engraving Controls (Stave mode, Horizontal/Page, Zoom) */}
+        <div className="flex items-center space-x-1.5 pointer-events-auto bg-zinc-950/85 backdrop-blur-md border border-zinc-800/80 p-1 rounded-xl shadow-lg">
+          {/* Notation / Tab Profile toggle */}
+          <button
+            onClick={handleToggleStaveProfile}
+            title={staveProfile === alphaTab.StaveProfile.Tab ? 'Switch to Score + Tab' : 'Switch to Tab only'}
+            className="px-2.5 py-1 rounded-lg text-xs font-semibold text-zinc-300 hover:text-white bg-zinc-900 hover:bg-zinc-800 transition-colors border border-zinc-800 flex items-center space-x-1"
+          >
+            {staveProfile === alphaTab.StaveProfile.Tab ? (
+              <>
+                <FileText className="w-3 h-3 text-amber-400" />
+                <span>TAB</span>
+              </>
+            ) : (
+              <>
+                <Music className="w-3 h-3 text-amber-400" />
+                <span>SCORE+TAB</span>
+              </>
+            )}
+          </button>
+
+          {/* Page vs Horizontal Layout */}
+          <button
+            onClick={handleToggleLayout}
+            title={layoutMode === alphaTab.LayoutMode.Page ? 'Continuous Horizontal Mode' : 'Standard Page Mode'}
+            className="px-2.5 py-1 rounded-lg text-xs font-semibold text-zinc-300 hover:text-white bg-zinc-900 hover:bg-zinc-800 transition-colors border border-zinc-800"
+          >
+            {layoutMode === alphaTab.LayoutMode.Page ? 'Page' : 'Flow'}
+          </button>
+
+          {/* Zoom controls */}
+          <div className="flex items-center bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+            <button
+              onClick={handleZoomOut}
+              title="Zoom Out"
+              className="p-1 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 transition-colors"
+            >
+              <ZoomOut className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={handleZoomReset}
+              title="Reset Zoom (100%)"
+              className="px-1.5 text-[10px] font-mono text-zinc-400 hover:text-amber-400 transition-colors"
+            >
+              {Math.round(zoomScale * 100)}%
+            </button>
+            <button
+              onClick={handleZoomIn}
+              title="Zoom In"
+              className="p-1 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 transition-colors"
+            >
+              <ZoomIn className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </div>
 
-      <div
-        className="max-w-4xl mx-auto space-y-4 transition-transform duration-75 origin-top"
-        style={{ transform: `scale(${zoomScale})` }}
-      >
-        {track.measures.map((measure, mIdx) => {
-          const isMeasureActive = isPlaying && currentMeasureIndex === mIdx;
-          const isInLoop =
-            loopRange && mIdx + 1 >= loopRange[0] && mIdx + 1 <= loopRange[1];
-
-          return (
-            <div
-              key={measure.number}
-              ref={isMeasureActive ? activeMeasureRef : null}
-              className={`relative rounded-2xl border transition-colors duration-150 ${
-                isMeasureActive
-                  ? 'bg-zinc-900/95 border-emerald-500 shadow-xl shadow-emerald-500/15 ring-2 ring-emerald-500/40'
-                  : isInLoop
-                  ? 'bg-zinc-950/90 border-amber-500/40'
-                  : 'bg-zinc-950/70 border-zinc-800/70 active:border-zinc-700'
-              }`}
-            >
-              {/* Measure Top Header */}
-              <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-800/60 bg-zinc-900/40 rounded-t-2xl">
-                <div className="flex items-center space-x-2.5">
-                  <div className="flex items-baseline space-x-1">
-                    <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">
-                      Bar
-                    </span>
-                    <span
-                      className={`text-sm font-mono font-extrabold ${
-                        isMeasureActive ? 'text-emerald-400' : 'text-zinc-200'
-                      }`}
-                    >
-                      {measure.number}
-                    </span>
-                  </div>
-                  <span className="text-[11px] font-mono text-zinc-400 bg-zinc-800/90 px-1.5 py-0.5 rounded">
-                    {measure.timeSignature[0]}/{measure.timeSignature[1]}
-                  </span>
-                  {measure.tempoBpm && (
-                    <span className="text-[11px] font-mono text-zinc-400">
-                      ♩={measure.tempoBpm}
-                    </span>
-                  )}
-                </div>
-
-                {/* Palm Mute label */}
-                {measure.palmMute && (
-                  <div className="px-2 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-[10px] font-mono font-bold text-amber-400 tracking-wider">
-                    {measure.palmMuteLabel || 'P.M.'}
-                  </div>
-                )}
-
-                {/* Status Pill */}
-                <div className="flex items-center space-x-1.5">
-                  {isMeasureActive && (
-                    <span className="flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 animate-pulse">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                      <span>PLAY</span>
-                    </span>
-                  )}
-                  {isInLoop && !isMeasureActive && (
-                    <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                      LOOP
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Tab Notation Touch Grid */}
+      {/* Loading Skeleton */}
+      {!isScoreLoaded && !loadError && (
+        <div className="w-full max-w-4xl px-4 py-8 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="h-6 w-48 bg-zinc-800/60 rounded-md animate-pulse" />
+            <div className="h-6 w-24 bg-zinc-800/60 rounded-md animate-pulse" />
+          </div>
+          <div className="space-y-6">
+            {[1, 2, 3].map((idx) => (
               <div
-                className="p-2 sm:p-3 overflow-x-auto scrollbar-none"
-                style={{ WebkitOverflowScrolling: 'touch' }}
+                key={idx}
+                className="h-28 w-full bg-zinc-900/60 border border-zinc-800/40 rounded-xl p-4 flex flex-col justify-between animate-pulse"
               >
-                <div className="min-w-[460px] relative">
-                  {/* Left String Tuning Labels or GP8 Percussion Clef */}
-                  <div className="absolute left-0 top-0 bottom-8 w-8 flex flex-col justify-between py-1 border-r border-zinc-800 text-[11px] font-mono font-bold text-amber-400/90 z-10 bg-[#0a0c10]/90 backdrop-blur-xs">
-                    {isDrums ? (
-                      <div className="h-full flex items-center justify-center space-x-1">
-                        <div className="w-1 h-20 bg-amber-400/90 rounded-xs" />
-                        <div className="w-1 h-20 bg-amber-400/90 rounded-xs" />
-                      </div>
-                    ) : (
-                      stringLabels.map((lbl, sIdx) => (
-                        <div
-                          key={sIdx}
-                          className="h-7 flex items-center justify-start pl-1"
-                        >
-                          {lbl}
-                        </div>
-                      ))
-                    )}
-                  </div>
-
-                  {/* Horizontal Wire Strings */}
-                  <div className="ml-9 relative">
-                    <div className="space-y-0">
-                      {Array.from({ length: stringCount }, (_, sIdx) => (
-                        <div
-                          key={sIdx}
-                          className="h-7 flex items-center relative"
-                        >
-                          <div
-                            className={`absolute inset-x-0 top-1/2 -translate-y-1/2 transition-colors ${
-                              isMeasureActive ? 'bg-zinc-500' : 'bg-zinc-700/80'
-                            }`}
-                            style={{
-                              height: `${Math.max(1, (stringCount - sIdx) * 0.4)}px`,
-                            }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Touch-Friendly Beat Columns */}
-                    <div className="absolute inset-0 flex justify-between items-stretch">
-                      {measure.beats.map((beat, bIdx) => {
-                        const isBeatActive = isMeasureActive && currentBeatIndex === bIdx;
-                        return (
-                          <div
-                            key={beat.id}
-                            onClick={() => onSelectPosition(mIdx, bIdx)}
-                            className={`flex-1 min-w-[36px] relative cursor-pointer flex flex-col justify-between py-0 rounded-lg active:scale-95 transition-transform ${
-                              isBeatActive
-                                ? 'bg-emerald-500/20 ring-2 ring-emerald-400 shadow-md shadow-emerald-500/30'
-                                : 'hover:bg-zinc-800/30 active:bg-zinc-800/50'
-                            }`}
-                          >
-                            {/* Notes on each string for this beat */}
-                            {Array.from({ length: stringCount }, (_, sIdx) => {
-                              const note = beat.notes.find((n) => n.stringIndex === sIdx);
-                              return (
-                                <div
-                                  key={sIdx}
-                                  className="h-7 flex items-center justify-center relative z-20"
-                                >
-                                  {note && (
-                                    isDrums ? (
-                                      /* CLASSIC GUITAR PRO 8 DRUM NOTATION */
-                                      sIdx <= 1 ? (
-                                        /* Cymbal / Hi-Hat Cross '×' notehead */
-                                        <div
-                                          className={`relative w-4 h-4 flex items-center justify-center transition-transform ${
-                                            isBeatActive ? 'scale-125 text-emerald-400 font-black' : 'text-zinc-100'
-                                          }`}
-                                        >
-                                          <div className="absolute w-3.5 h-0.5 bg-current rotate-45 rounded-full" />
-                                          <div className="absolute w-3.5 h-0.5 bg-current -rotate-45 rounded-full" />
-                                        </div>
-                                      ) : (
-                                        /* Snare / Tom / Kick solid oval notehead */
-                                        <div
-                                          className={`w-3.5 h-2.5 rounded-full border transition-all ${
-                                            isBeatActive
-                                              ? 'bg-emerald-400 border-emerald-300 scale-125 shadow-md shadow-emerald-400/50'
-                                              : 'bg-zinc-100 border-zinc-300 shadow-xs'
-                                          }`}
-                                        />
-                                      )
-                                    ) : (
-                                      <div
-                                        className={`px-1.5 py-0.5 rounded font-mono font-bold text-xs flex items-center justify-center transition-all ${
-                                          isBeatActive
-                                            ? 'bg-emerald-400 text-zinc-950 font-black scale-110 shadow-lg shadow-emerald-400/50'
-                                            : 'bg-zinc-900 border border-zinc-700 text-zinc-100 shadow-xs'
-                                        }`}
-                                      >
-                                        {note.deadNote ? 'X' : note.fret}
-                                        {note.slide === 'up' && (
-                                          <span className="text-[9px] text-amber-400 ml-0.5">/</span>
-                                        )}
-                                        {note.slide === 'down' && (
-                                          <span className="text-[9px] text-amber-400 ml-0.5">\</span>
-                                        )}
-                                        {note.bend && (
-                                          <span className="text-[9px] text-cyan-400 ml-0.5">b</span>
-                                        )}
-                                        {note.vibrato && (
-                                          <span className="text-[9px] text-indigo-400 ml-0.5">~</span>
-                                        )}
-                                      </div>
-                                    )
-                                  )}
-                                </div>
-                              );
-                            })}
-
-                            {/* Rhythm Stem under strings */}
-                            <div className="h-7 flex flex-col items-center justify-start pt-1 z-10">
-                              <div
-                                className={`w-[2px] h-3.5 transition-colors ${
-                                  isBeatActive ? 'bg-emerald-400' : 'bg-zinc-500'
-                                }`}
-                              />
-                              {(beat.duration === 'e' || beat.duration === 's') && (
-                                <div
-                                  className={`w-2.5 h-[2px] mt-0.5 ${
-                                    isBeatActive ? 'bg-emerald-400' : 'bg-zinc-400'
-                                  }`}
-                                />
-                              )}
-                              {beat.duration === 's' && (
-                                <div
-                                  className={`w-2.5 h-[2px] mt-0.5 ${
-                                    isBeatActive ? 'bg-emerald-400' : 'bg-zinc-400'
-                                  }`}
-                                />
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                <div className="space-y-2">
+                  <div className="h-1 w-full bg-zinc-800 rounded-full" />
+                  <div className="h-1 w-full bg-zinc-800 rounded-full" />
+                  <div className="h-1 w-full bg-zinc-800 rounded-full" />
+                  <div className="h-1 w-full bg-zinc-800 rounded-full" />
+                  <div className="h-1 w-full bg-zinc-800 rounded-full" />
+                  <div className="h-1 w-full bg-zinc-800 rounded-full" />
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Load Error Message */}
+      {loadError && (
+        <div className="w-full max-w-lg mx-auto my-12 p-6 bg-red-950/40 border border-red-800/60 rounded-2xl text-center space-y-3">
+          <p className="text-sm font-semibold text-red-300">Ошибка отрисовки табулатуры</p>
+          <p className="text-xs text-red-400/80 font-mono">{loadError}</p>
+        </div>
+      )}
+
+      {/* alphaTab Rendering Host */}
+      <div
+        ref={containerRef}
+        className={`alphatab-surface w-full max-w-4xl px-3 sm:px-6 pb-28 pt-2 transition-opacity duration-300 ${
+          isScoreLoaded ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'
+        }`}
+      />
     </div>
   );
 };
