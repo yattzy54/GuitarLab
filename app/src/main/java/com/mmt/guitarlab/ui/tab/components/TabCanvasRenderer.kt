@@ -143,15 +143,8 @@ fun TabCanvasRenderer(
                 )
 
                 drawText(
-                    textMeasurer = textMeasurer,
-                    text = barLabel,
-                    topLeft = Offset(24f, currentY + 12f),
-                    style = TextStyle(
-                        color = if (isMeasureActive) Color(0xFF34D399) else Color(0xFF9CA3AF),
-                        fontSize = 11.sp,
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Bold,
-                    )
+                    textLayoutResult = barLayout,
+                    topLeft = Offset(24f.coerceAtMost(width - barLayout.size.width - 4f).coerceAtLeast(0f), currentY + 12f),
                 )
 
                 // PALM MUTE: Clean Header Badge and Bracket (no broken layout)
@@ -171,17 +164,21 @@ fun TabCanvasRenderer(
                         cornerRadius = CornerRadius(4f, 4f),
                         style = Stroke(width = 1f),
                     )
-                    drawText(
-                        textMeasurer = textMeasurer,
-                        text = "P.M.",
-                        topLeft = Offset(pmBadgeX + 8f, pmBadgeY + 1f),
-                        style = TextStyle(
-                            color = Color(0xFFF59E0B),
-                            fontSize = 9.sp,
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Bold,
+                    if (pmBadgeX + 44f < width) {
+                        val pmLayout = textMeasurer.measure(
+                            text = "P.M.",
+                            style = TextStyle(
+                                color = Color(0xFFF59E0B),
+                                fontSize = 9.sp,
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
+                            )
                         )
-                    )
+                        drawText(
+                            textLayoutResult = pmLayout,
+                            topLeft = Offset(pmBadgeX + 8f, pmBadgeY + 1f),
+                        )
+                    }
                 }
 
                 // LOOP MARKER BADGES on Measure Top-Right
@@ -202,7 +199,7 @@ fun TabCanvasRenderer(
                     )
                     val badgeW = (loopTextLayout.size.width + 14).toFloat()
                     val badgeH = 18f
-                    val badgeX = width - rightMargin - badgeW - 8f
+                    val badgeX = (width - rightMargin - badgeW - 8f).coerceIn(leftMargin, width - badgeW)
                     val badgeY = currentY + 10f
 
                     drawRoundRect(
@@ -211,17 +208,12 @@ fun TabCanvasRenderer(
                         size = Size(badgeW, badgeH),
                         cornerRadius = CornerRadius(5f, 5f),
                     )
-                    drawText(
-                        textMeasurer = textMeasurer,
-                        text = loopBadgeText,
-                        topLeft = Offset(badgeX + 7f, badgeY + 1f),
-                        style = TextStyle(
-                            color = Color(0xFF09090B),
-                            fontSize = 9.sp,
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Black,
+                    if (badgeX >= 0f && badgeX + badgeW <= width) {
+                        drawText(
+                            textLayoutResult = loopTextLayout,
+                            topLeft = Offset(badgeX + 7f, badgeY + 1f),
                         )
-                    )
+                    }
                 }
 
                 val stringsStartY = currentY + topPadding
@@ -258,15 +250,8 @@ fun TabCanvasRenderer(
                         )
                     )
                     drawText(
-                        textMeasurer = textMeasurer,
-                        text = label,
+                        textLayoutResult = labelLayout,
                         topLeft = Offset(24f, stringY - labelLayout.size.height / 2f),
-                        style = TextStyle(
-                            color = Color(0xFFFBBF24),
-                            fontSize = 12.sp,
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Bold,
-                        )
                     )
                 }
 
@@ -365,19 +350,19 @@ fun TabCanvasRenderer(
                                 )
 
                                 // Text
-                                drawText(
-                                    textMeasurer = textMeasurer,
+                                val fretTextX = (beatCenterX - textLayout.size.width / 2f).coerceIn(0f, (width - textLayout.size.width).coerceAtLeast(0f))
+                                val fretTextLayout = textMeasurer.measure(
                                     text = fretText,
-                                    topLeft = Offset(
-                                        beatCenterX - textLayout.size.width / 2f,
-                                        noteY - textLayout.size.height / 2f
-                                    ),
                                     style = TextStyle(
                                         color = if (isBeatActive) Color(0xFF09090B) else Color(0xFFF4F4F5),
                                         fontSize = if (isBeatActive) 13.sp else 12.sp,
                                         fontFamily = FontFamily.Monospace,
                                         fontWeight = FontWeight.Black,
                                     )
+                                )
+                                drawText(
+                                    textLayoutResult = fretTextLayout,
+                                    topLeft = Offset(fretTextX, noteY - fretTextLayout.size.height / 2f)
                                 )
                             }
                         }
