@@ -39,6 +39,7 @@ import androidx.compose.material.icons.outlined.SlowMotionVideo
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.Timeline
 import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -83,6 +84,7 @@ import com.mmt.guitarlab.ui.practice.PracticeTrackerScreen
 import com.mmt.guitarlab.ui.practice.RiffRecorderScreen
 import com.mmt.guitarlab.ui.practice.SlowDownerScreen
 import com.mmt.guitarlab.ui.tab.TabViewerScreen
+import com.mmt.guitarlab.ui.tab.TabEditorScreen
 import com.mmt.guitarlab.ui.theme.ElectricAmber
 import com.mmt.guitarlab.ui.theme.ElectricTeal
 import com.mmt.guitarlab.ui.theme.StudioCardBg
@@ -102,7 +104,8 @@ enum class AppDest(
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector,
 ) {
-    Tabs("tabs", "Табы & Каталог", "Табы", Icons.Filled.LibraryMusic, Icons.Outlined.LibraryMusic),
+    Tabs("tabs", "Табы", "Табы", Icons.Filled.LibraryMusic, Icons.Outlined.LibraryMusic),
+    TabEditor("tab_editor", "Tab Editor", "Редактор", Icons.Filled.Tune, Icons.Outlined.Tune),
     Tuner("tuner", "Guitar Tuner", "Тюнер", Icons.Filled.GraphicEq, Icons.Outlined.GraphicEq),
     Metronome("metronome", "Metronome", "Метроном", Icons.Filled.Timer, Icons.Outlined.Timer),
     Fretboard("fretboard", "Гриф & Аккорды", "Гриф", Icons.Filled.GridOn, Icons.Outlined.GridOn),
@@ -254,6 +257,7 @@ fun GuitarLabApp() {
                 composable(AppDest.Metronome.route) { MetronomeScreen() }
                 composable(AppDest.Trainer.route) { AutoSpeedTrainerScreen() }
                 composable(AppDest.Tabs.route) { TabViewerScreen() }
+                composable(AppDest.TabEditor.route) { TabEditorScreen() }
                 composable(AppDest.Fretboard.route) { ChordScaleScreen() }
                 composable(AppDest.SlowDowner.route) { SlowDownerScreen() }
                 composable(AppDest.Recorder.route) { RiffRecorderScreen() }
