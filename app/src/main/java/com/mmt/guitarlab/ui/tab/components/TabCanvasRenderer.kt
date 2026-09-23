@@ -50,14 +50,14 @@ fun TabCanvasRenderer(
 
     val density = LocalDensity.current
     // Generous string spacing ensuring fret badges never collide
-    val stringSpacing = with(density) { 26.dp.toPx() }
-    val topPadding = with(density) { 44.dp.toPx() }
-    val stemHeight = with(density) { 32.dp.toPx() }
-    val measureBottomPadding = with(density) { 24.dp.toPx() }
+    val stringSpacing = with(density) { 24.dp.toPx() }
+    val topPadding = with(density) { 40.dp.toPx() }
+    val stemHeight = with(density) { 28.dp.toPx() }
+    val measureBottomPadding = with(density) { 20.dp.toPx() }
     val measureTotalHeight = topPadding + (stringCount - 1) * stringSpacing + stemHeight + measureBottomPadding
 
     val totalHeightDp = with(density) {
-        ((track.measures.size.coerceAtLeast(1) * measureTotalHeight) + 60.dp.toPx()).toDp()
+        ((track.measures.size.coerceAtLeast(1) * measureTotalHeight) + 120.dp.toPx()).toDp()
     }
 
     Box(
@@ -79,8 +79,8 @@ fun TabCanvasRenderer(
                         val measure = track.measures.getOrNull(mIdx)
                         if (measure != null && measure.beats.isNotEmpty()) {
                             val beatsCount = measure.beats.size
-                            val leftPadding = 56f
-                            val contentWidth = size.width - leftPadding - 24f
+                            val leftPadding = 42f
+                            val contentWidth = size.width - leftPadding - 12f
                             val beatWidth = contentWidth / beatsCount.coerceAtLeast(1)
                             val relativeX = offset.x - leftPadding
                             val bIdx = (relativeX / beatWidth).toInt().coerceIn(0, beatsCount - 1)
@@ -90,9 +90,9 @@ fun TabCanvasRenderer(
                 }
         ) {
             val width = size.width
-            val leftMargin = 56f
-            val rightMargin = 16f
-            val tabWidth = width - leftMargin - rightMargin
+            val leftMargin = 42f
+            val rightMargin = 12f
+            val tabWidth = (width - leftMargin - rightMargin).coerceAtLeast(10f)
 
             var currentY = 16f
 
@@ -144,12 +144,12 @@ fun TabCanvasRenderer(
 
                 drawText(
                     textLayoutResult = barLayout,
-                    topLeft = Offset(24f.coerceAtMost(width - barLayout.size.width - 4f).coerceAtLeast(0f), currentY + 12f),
+                    topLeft = Offset(14f.coerceAtMost((width - barLayout.size.width - 4f).coerceAtLeast(0f)), currentY + 12f),
                 )
 
                 // PALM MUTE: Clean Header Badge and Bracket (no broken layout)
                 if (measure.palmMute) {
-                    val pmBadgeX = 24f + barLayout.size.width + 12f
+                    val pmBadgeX = 14f + barLayout.size.width + 10f
                     val pmBadgeY = currentY + 11f
                     drawRoundRect(
                         color = Color(0x33F59E0B),
@@ -251,7 +251,7 @@ fun TabCanvasRenderer(
                     )
                     drawText(
                         textLayoutResult = labelLayout,
-                        topLeft = Offset(24f, stringY - labelLayout.size.height / 2f),
+                        topLeft = Offset(14f, stringY - labelLayout.size.height / 2f),
                     )
                 }
 

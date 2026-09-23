@@ -209,19 +209,18 @@ fun SongsterrTabPlayerScreen(
                 .padding(paddingValues)
         ) {
             // 1. TOP INFORMATION HEADER WITH LOAD TAB BUTTON
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color(0xFF12151A))
                     .border(1.dp, Color(0xFF1F242D))
                     .padding(horizontal = 14.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.weight(1f)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Box(
                         modifier = Modifier
@@ -239,38 +238,43 @@ fun SongsterrTabPlayerScreen(
                         )
                     }
 
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "${score.title} — ${score.artist}",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Black,
                             color = Color.White,
-                            maxLines = 1
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
                         Text(
                             text = "${activeTrack.name} • ${tuningOverrideName ?: activeTrack.tuningName} • ${score.tempo} BPM",
                             fontSize = 11.sp,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFFBBF24)
+                            color = Color(0xFFFBBF24),
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
                     }
                 }
 
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // BUTTON: Online Catalog
                     Row(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
+                            .weight(1f)
+                            .clip(RoundedCornerShape(10.dp))
                             .background(Color(0xFF222731))
-                            .border(1.dp, Color(0xFF384050), RoundedCornerShape(12.dp))
+                            .border(1.dp, Color(0xFF384050), RoundedCornerShape(10.dp))
                             .clickable { isCatalogOpen = true }
                             .padding(horizontal = 10.dp, vertical = 7.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.LibraryMusic,
@@ -278,6 +282,7 @@ fun SongsterrTabPlayerScreen(
                             tint = Color(0xFFFBBF24),
                             modifier = Modifier.size(16.dp)
                         )
+                        androidx.compose.foundation.layout.Spacer(Modifier.size(6.dp))
                         Text(
                             text = "Каталог",
                             color = Color(0xFFF3F4F6),
@@ -287,37 +292,40 @@ fun SongsterrTabPlayerScreen(
                     }
 
                     // BUTTON: Load Tablature from Device
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFF222731))
-                        .border(1.dp, Color(0xFF384050), RoundedCornerShape(12.dp))
-                        .clickable {
-                            filePickerLauncher.launch(
-                                arrayOf(
-                                    "*/*",
-                                    "application/octet-stream",
-                                    "application/x-guitar-pro",
-                                    "text/plain"
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color(0xFF222731))
+                            .border(1.dp, Color(0xFF384050), RoundedCornerShape(10.dp))
+                            .clickable {
+                                filePickerLauncher.launch(
+                                    arrayOf(
+                                        "*/*",
+                                        "application/octet-stream",
+                                        "application/x-guitar-pro",
+                                        "text/plain"
+                                    )
                                 )
-                            )
-                        }
-                        .padding(horizontal = 10.dp, vertical = 7.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.FolderOpen,
-                        contentDescription = "Загрузить с устройства",
-                        tint = Color(0xFFFBBF24),
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text = "Загрузить",
-                        color = Color(0xFFF3F4F6),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                            }
+                            .padding(horizontal = 10.dp, vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FolderOpen,
+                            contentDescription = "Загрузить с устройства",
+                            tint = Color(0xFFFBBF24),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        androidx.compose.foundation.layout.Spacer(Modifier.size(6.dp))
+                        Text(
+                            text = "Загрузить",
+                            color = Color(0xFFF3F4F6),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
 
