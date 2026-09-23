@@ -3,7 +3,6 @@ package com.mmt.guitarlab.ui.tab.components.sheets
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,17 +13,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.VolumeDown
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Slider
@@ -37,17 +35,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mmt.guitarlab.domain.model.TabTrack
 
 /**
- * Compact Studio Console Mixer:
- * Each channel strip is designed as a professional compact channel (width <= 100.dp),
- * featuring channel header, active tab selection badge, Mute/Solo toggles,
- * and clear percentage volume indicator.
+ * Vertical Compact Studio Mixer:
+ * Tracks are listed vertically in a clean, compact, and non-bloated list.
+ * Clicking anywhere on a track element selects it as the active tab.
+ * Includes inline Mute/Solo buttons and a compact volume slider.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,13 +70,13 @@ fun MixerBottomSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
-                .padding(bottom = 28.dp)
+                .padding(bottom = 24.dp)
         ) {
             // Header
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 14.dp),
+                    .padding(bottom = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -91,7 +88,7 @@ fun MixerBottomSheet(
                         color = Color.White
                     )
                     Text(
-                        text = "Компактная консоль громкости и каналов",
+                        text = "Нажмите на дорожку для выбора активного таба",
                         fontSize = 11.sp,
                         color = Color(0xFF94A3B8)
                     )
@@ -103,7 +100,7 @@ fun MixerBottomSheet(
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = "${tracks.size} каналов",
+                        text = "${tracks.size} дорожек",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.Monospace,
@@ -112,143 +109,154 @@ fun MixerBottomSheet(
                 }
             }
 
-            // Compact horizontal scroll channel strips (width <= 100.dp each)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            // Vertical list of compact tracks
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                tracks.forEach { track ->
+                items(tracks, key = { it.id }) { track ->
                     val isActive = track.id == activeTrackId
 
                     Column(
                         modifier = Modifier
-                            .widthIn(min = 84.dp, max = 96.dp)
+                            .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .background(if (isActive) Color(0xFF182234) else Color(0xFF141820))
+                            .background(if (isActive) Color(0xFF162338) else Color(0xFF141820))
                             .border(
                                 width = if (isActive) 1.5.dp else 1.dp,
                                 color = if (isActive) Color(0xFF38BDF8) else Color(0xFF232A36),
                                 shape = RoundedCornerShape(12.dp)
                             )
-                            .padding(horizontal = 6.dp, vertical = 8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                            .clickable { onSelectActiveTrack(track.id) }
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
                     ) {
-                        // Track Instrument / Name (Compact, 1 line with ellipsis)
-                        Text(
-                            text = track.name,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isActive) Color(0xFF38BDF8) else Color.White,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        // Short instrument badge
-                        Text(
-                            text = track.tuningName.ifEmpty { "Default" },
-                            fontSize = 9.sp,
-                            fontFamily = FontFamily.Monospace,
-                            color = Color(0xFF64748B),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        // Active Tab selector toggle button
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(if (isActive) Color(0xFF0284C7) else Color(0xFF1E2530))
-                                .clickable { onSelectActiveTrack(track.id) }
-                                .padding(vertical = 4.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = if (isActive) "ТАБ ✓" else "Таб",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Black,
-                                color = if (isActive) Color.White else Color(0xFF94A3B8)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        // Mute & Solo row
+                        // Top row: Active indicator + Track Title + Tuning + Mute/Solo
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            // Mute button
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(if (track.isMuted) Color(0xFFDC2626) else Color(0xFF1E2530))
-                                    .clickable { onToggleMute(track.id) }
-                                    .padding(vertical = 4.dp),
-                                contentAlignment = Alignment.Center
+                            // Left: Selection radio dot & Track info
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.weight(1f)
                             ) {
-                                Text(
-                                    text = "M",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Black,
-                                    fontFamily = FontFamily.Monospace,
-                                    color = if (track.isMuted) Color.White else Color(0xFF94A3B8)
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .size(16.dp)
+                                        .clip(CircleShape)
+                                        .background(if (isActive) Color(0xFF38BDF8) else Color(0xFF263040))
+                                        .border(
+                                            1.5.dp,
+                                            if (isActive) Color(0xFF7DD3FC) else Color(0xFF475569),
+                                            CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (isActive) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(6.dp)
+                                                .clip(CircleShape)
+                                                .background(Color(0xFF0F172A))
+                                        )
+                                    }
+                                }
+
+                                Column {
+                                    Text(
+                                        text = track.name,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isActive) Color(0xFF38BDF8) else Color.White,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = "${track.instrumentType.displayName} • ${track.tuningName.ifEmpty { "Стандарт" }}",
+                                        fontSize = 10.sp,
+                                        fontFamily = FontFamily.Monospace,
+                                        color = Color(0xFF64748B),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
                             }
 
-                            // Solo button
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(if (track.isSolo) Color(0xFF16A34A) else Color(0xFF1E2530))
-                                    .clickable { onToggleSolo(track.id) }
-                                    .padding(vertical = 4.dp),
-                                contentAlignment = Alignment.Center
+                            // Right: Mute & Solo compact buttons
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = "S",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Black,
-                                    fontFamily = FontFamily.Monospace,
-                                    color = if (track.isSolo) Color.White else Color(0xFF94A3B8)
-                                )
+                                // Mute button
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(if (track.isMuted) Color(0xFFDC2626) else Color(0xFF1E2530))
+                                        .clickable { onToggleMute(track.id) }
+                                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "M",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Black,
+                                        fontFamily = FontFamily.Monospace,
+                                        color = if (track.isMuted) Color.White else Color(0xFF94A3B8)
+                                    )
+                                }
+
+                                // Solo button
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(if (track.isSolo) Color(0xFF16A34A) else Color(0xFF1E2530))
+                                        .clickable { onToggleSolo(track.id) }
+                                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "S",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Black,
+                                        fontFamily = FontFamily.Monospace,
+                                        color = if (track.isSolo) Color.White else Color(0xFF94A3B8)
+                                    )
+                                }
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(2.dp))
 
-                        // Volume Level percentage
-                        Text(
-                            text = "${(track.volume * 100).toInt()}%",
-                            fontSize = 10.sp,
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFFBBF24)
-                        )
-
-                        // Compact volume slider
-                        Slider(
-                            value = track.volume,
-                            onValueChange = { onVolumeChange(track.id, it) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(28.dp),
-                            colors = SliderDefaults.colors(
-                                thumbColor = Color(0xFFF59E0B),
-                                activeTrackColor = Color(0xFFF59E0B),
-                                inactiveTrackColor = Color(0xFF334155)
+                        // Bottom row: Volume Slider + Percentage
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Slider(
+                                value = track.volume,
+                                onValueChange = { onVolumeChange(track.id, it) },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(26.dp),
+                                colors = SliderDefaults.colors(
+                                    thumbColor = Color(0xFFF59E0B),
+                                    activeTrackColor = Color(0xFFF59E0B),
+                                    inactiveTrackColor = Color(0xFF334155)
+                                )
                             )
-                        )
+
+                            Text(
+                                text = "${(track.volume * 100).toInt()}%",
+                                fontSize = 10.sp,
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFFBBF24),
+                                modifier = Modifier.width(32.dp)
+                            )
+                        }
                     }
                 }
             }
