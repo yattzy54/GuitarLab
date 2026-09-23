@@ -29,8 +29,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -79,7 +77,7 @@ fun AutoSpeedTrainerScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
         // Status & Progress Card
         StudioCard(
             modifier = Modifier.fillMaxWidth(),
-            accentBorder = if (trainer.enabled) ElectricTeal else null,
+            accentBorder = if (running) ElectricTeal else null,
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Row(
@@ -103,28 +101,52 @@ fun AutoSpeedTrainerScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
                                 color = StudioTextPrimary,
                             )
                             Text(
-                                text = if (trainer.enabled) "Active · ${config.bpm} BPM" else "Trainer Disabled",
+                                text = if (running) "Running · ${config.bpm} BPM" else "Ready · ${config.bpm} BPM",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = if (trainer.enabled) ElectricTeal else StudioTextSecondary,
+                                color = if (running) ElectricTeal else StudioTextSecondary,
                                 fontWeight = FontWeight.SemiBold,
                             )
                         }
                     }
 
-                    Switch(
-                        checked = trainer.enabled,
-                        onCheckedChange = viewModel::setTrainerEnabled,
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = ElectricTeal,
-                            uncheckedThumbColor = StudioTextSecondary,
-                            uncheckedTrackColor = Color(0xFF232A3B),
-                        ),
-                    )
+                    // Play / Pause Button in place of switch
+                    Box(
+                        modifier = Modifier
+                            .size(54.dp)
+                            .shadow(
+                                elevation = 8.dp,
+                                shape = CircleShape,
+                                ambientColor = if (running) ElectricRuby else ElectricTeal,
+                                spotColor = if (running) ElectricRuby else ElectricTeal,
+                            )
+                            .clip(CircleShape)
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    if (running) {
+                                        listOf(Color(0xFFFF5277), Color(0xFFFF2A55), Color(0xFFB80028))
+                                    } else {
+                                        listOf(Color(0xFF80F5FF), ElectricTeal, Color(0xFF008394))
+                                    },
+                                ),
+                            )
+                            .border(1.dp, Color.White.copy(alpha = 0.4f), CircleShape)
+                            .clickable {
+                                if (!trainer.enabled) viewModel.setTrainerEnabled(true)
+                                viewModel.toggle()
+                            },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = if (running) Icons.Default.Pause else Icons.Default.PlayArrow,
+                            contentDescription = if (running) "Stop" else "Start",
+                            tint = if (running) Color.White else Color(0xFF002227),
+                            modifier = Modifier.size(30.dp),
+                        )
+                    }
                 }
 
-                if (trainer.enabled) {
-                    Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(16.dp))
+                if (true) {
 
                     // Progress to Next Increment
                     LinearProgressIndicator(
@@ -155,42 +177,7 @@ fun AutoSpeedTrainerScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
             }
         }
 
-        Spacer(Modifier.height(20.dp))
 
-        // Big Play / Stop Button
-        Box(
-            modifier = Modifier
-                .size(76.dp)
-                .shadow(
-                    elevation = 12.dp,
-                    shape = CircleShape,
-                    ambientColor = if (running) ElectricRuby else ElectricTeal,
-                    spotColor = if (running) ElectricRuby else ElectricTeal,
-                )
-                .clip(CircleShape)
-                .background(
-                    brush = Brush.verticalGradient(
-                        if (running) {
-                            listOf(Color(0xFFFF5277), Color(0xFFFF2A55), Color(0xFFB80028))
-                        } else {
-                            listOf(Color(0xFF80F5FF), ElectricTeal, Color(0xFF008394))
-                        },
-                    ),
-                )
-                .border(1.5.dp, Color.White.copy(alpha = 0.4f), CircleShape)
-                .clickable {
-                    if (!trainer.enabled) viewModel.setTrainerEnabled(true)
-                    viewModel.toggle()
-                },
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = if (running) Icons.Default.Pause else Icons.Default.PlayArrow,
-                contentDescription = if (running) "Stop" else "Start",
-                tint = if (running) Color.White else Color(0xFF002227),
-                modifier = Modifier.size(38.dp),
-            )
-        }
 
         Spacer(Modifier.height(20.dp))
 
