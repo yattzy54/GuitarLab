@@ -209,19 +209,28 @@ export const SongsterrPlayer: React.FC<SongsterrPlayerProps> = ({ onOpenStudioTo
           playMetronomeClick(bIdx === 0, 0.7);
         }
 
-        // Schedule Synthesizer (Guitar physical modeling or GP8 drum sounds)
-        if (audioSource === 'SYNTH' && !activeTrack.isMuted) {
-          const isDrums = activeTrack.instrument?.toLowerCase().includes('drum') || activeTrack.name?.toLowerCase().includes('drum');
-          for (const note of beat.notes) {
-            if (isDrums) {
-              playDrumHit(note.stringIndex, activeTrack.volume);
-            } else if (note.fret >= 0 && !note.deadNote) {
-              const midi = getNoteMidi(note.stringIndex, note.fret, activeTrack.tuningNotes);
-              const freq = midiToHz(midi);
-              const duration = beat.durationValue * 1.5;
-              playGuitarPluck(freq, duration, activeTrack.volume);
+        // Schedule Synthesizer across all audible tracks (respecting Solo and Mute states)
+        if (audioSource === 'SYNTH') {
+          const soloTracks = song.tracks.filter((t) => t.isSolo);
+          const audibleTracks = soloTracks.length > 0 ? soloTracks : song.tracks.filter((t) => !t.isMuted);
+
+          audibleTracks.forEach((track) => {
+            const trackMeasure = track.measures?.[mIdx];
+            const trackBeat = trackMeasure?.beats?.[bIdx];
+            if (!trackBeat || !trackBeat.notes || trackBeat.notes.length === 0) return;
+
+            const isDrums = track.instrument?.toLowerCase().includes('drum') || track.name?.toLowerCase().includes('drum');
+            for (const note of trackBeat.notes) {
+              if (isDrums) {
+                playDrumHit(note.stringIndex, track.volume);
+              } else if (note.fret >= 0 && !note.deadNote) {
+                const midi = getNoteMidi(note.stringIndex, note.fret, track.tuningNotes || []);
+                const freq = midiToHz(midi);
+                const duration = (trackBeat.durationValue || 0.5) * 1.5;
+                playGuitarPluck(freq, duration, track.volume);
+              }
             }
-          }
+          });
         }
       }
 
