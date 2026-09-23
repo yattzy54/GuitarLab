@@ -32,7 +32,59 @@ import javax.inject.Inject
 class TabViewModel @Inject constructor(
     private val tabRepository: TabRepository,
     private val playbackEngine: TabPlaybackEngine,
+    private val songsterrApi: com.mmt.guitarlab.data.remote.SongsterrApiService,
 ) : ViewModel() {
+
+    // Online Songsterr Catalog state
+    private val _searchResults = MutableStateFlow<List<com.mmt.guitarlab.data.remote.SongsterrSearchResult>>(emptyList())
+    val searchResults: StateFlow<List<com.mmt.guitarlab.data.remote.SongsterrSearchResult>> = _searchResults.asStateFlow()
+
+    private val _isSearchingOnline = MutableStateFlow(false)
+    val isSearchingOnline: StateFlow<Boolean> = _isSearchingOnline.asStateFlow()
+
+    private val _isLoadingOnlineSong = MutableStateFlow(false)
+    val isLoadingOnlineSong: StateFlow<Boolean> = _isLoadingOnlineSong.asStateFlow()
+
+    fun searchOnlineSongs(query: String) {
+        if (query.isBlank()) {
+            _searchResults.value = emptyList()
+            return
+        }
+        viewModelScope.launch {
+            _isSearchingOnline.value = true
+            songsterrApi.searchSongs(query)
+                .onSuccess {
+                    _searchResults.value = it
+                    _isSearchingOnline.value = false
+                }
+                .onFailure {
+                    _isSearchingOnline.value = false
+                    _statusMessage.value = "Ошибка поиска: ${it.message}"
+                }
+        }
+    }
+
+    fun loadOnlineSong(songId: Int, specificTrackIdx: Int? = null, onLoaded: (() -> Unit)? = null) {
+        viewModelScope.launch {
+            _isLoadingOnlineSong.value = true
+            _statusMessage.value = "Загрузка из каталога Songsterr..."
+            playbackEngine.stop()
+            songsterrApi.fetchSongScore(songId, specificTrackIdx)
+                .onSuccess { newScore ->
+                    _score.value = newScore
+                    _selectedTrackIndex.value = 0
+                    _selectedMeasureIndex.value = 0
+                    _selectedBeatIndex.value = 0
+                    _isLoadingOnlineSong.value = false
+                    _statusMessage.value = "Загружено: ${newScore.title} — ${newScore.artist}"
+                    onLoaded?.invoke()
+                }
+                .onFailure {
+                    _isLoadingOnlineSong.value = false
+                    _statusMessage.value = "Ошибка загрузки: ${it.message}"
+                }
+        }
+    }
 
     private val _score = MutableStateFlow<TabScore?>(createSampleScore())
     val score: StateFlow<TabScore?> = _score.asStateFlow()

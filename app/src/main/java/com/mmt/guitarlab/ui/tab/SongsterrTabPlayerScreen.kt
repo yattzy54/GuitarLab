@@ -61,6 +61,8 @@ import com.mmt.guitarlab.ui.tab.components.TabCanvasRenderer
 import com.mmt.guitarlab.ui.tab.components.sheets.ChromaticTunerBottomSheet
 import com.mmt.guitarlab.ui.tab.components.sheets.MixerBottomSheet
 import com.mmt.guitarlab.ui.tab.components.sheets.MoreOptionsBottomSheet
+import com.mmt.guitarlab.ui.tab.components.sheets.SongCatalogBottomSheet
+import androidx.compose.material.icons.filled.LibraryMusic
 import com.mmt.guitarlab.ui.tab.components.sheets.TempoBottomSheet
 import com.mmt.guitarlab.ui.tab.components.sheets.TranspositionBottomSheet
 import kotlinx.coroutines.delay
@@ -97,6 +99,13 @@ fun SongsterrTabPlayerScreen(
     val currentMeasureIndex by viewModel.currentMeasureIndex.collectAsState()
     val currentBeatIndex by viewModel.currentBeatIndex.collectAsState()
     val speedMultiplier by viewModel.speedMultiplier.collectAsState()
+
+    val searchResults by viewModel.searchResults.collectAsState()
+    val isSearchingOnline by viewModel.isSearchingOnline.collectAsState()
+    val isLoadingOnlineSong by viewModel.isLoadingOnlineSong.collectAsState()
+
+    var isCatalogOpen by remember { mutableStateOf(false) }
+    val catalogSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     // Interactive Loop state
     var isLoopActive by remember { mutableStateOf(false) }
@@ -248,7 +257,36 @@ fun SongsterrTabPlayerScreen(
                     }
                 }
 
-                // BUTTON: Load Tablature from Device
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // BUTTON: Online Catalog
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFF222731))
+                            .border(1.dp, Color(0xFF384050), RoundedCornerShape(12.dp))
+                            .clickable { isCatalogOpen = true }
+                            .padding(horizontal = 10.dp, vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LibraryMusic,
+                            contentDescription = "Каталог онлайн",
+                            tint = Color(0xFFFBBF24),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = "Каталог",
+                            color = Color(0xFFF3F4F6),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    // BUTTON: Load Tablature from Device
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
@@ -553,7 +591,7 @@ fun SongsterrTabPlayerScreen(
             },
             onOpenSongCatalog = {
                 isMoreOpen = false
-                Toast.makeText(context, "Каталог песен доступен в меню", Toast.LENGTH_SHORT).show()
+                isCatalogOpen = true
             },
             countInEnabled = countInEnabled,
             onToggleCountIn = {
@@ -572,6 +610,24 @@ fun SongsterrTabPlayerScreen(
                 )
                 clipboard.setPrimaryClip(clip)
                 Toast.makeText(context, "Информация о табулатуре скопирована в буфер", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
+}    // 6. Song Catalog Sheet
+    if (isCatalogOpen) {
+        SongCatalogBottomSheet(
+            sheetState = catalogSheetState,
+            onDismissRequest = { isCatalogOpen = false },
+            searchResults = searchResults,
+            isSearching = isSearchingOnline,
+            isLoadingSong = isLoadingOnlineSong,
+            onSearch = { query ->
+                viewModel.searchOnlineSongs(query)
+            },
+            onSelectSong = { songId ->
+                viewModel.loadOnlineSong(songId) {
+                    isCatalogOpen = false
+                }
             }
         )
     }
