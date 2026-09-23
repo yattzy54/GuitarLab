@@ -113,8 +113,8 @@ class TabPlaybackEngine @Inject constructor() {
             notes.forEach { note ->
                 when (track.instrumentType) {
                     InstrumentType.DRUMS -> playDrumHit(note.stringIndex)
-                    InstrumentType.BASS -> {
-                        val base = floatArrayOf(98.00f, 73.42f, 55.00f, 41.20f)
+                    InstrumentType.BASS, InstrumentType.BASS_5 -> {
+                        val base = floatArrayOf(98.00f, 73.42f, 55.00f, 41.20f, 30.87f)
                         val freq = base.getOrElse(note.stringIndex) { 41.20f } * 2.0f.pow(note.fret / 12.0f)
                         playSynthesizedTone(freq, durationMs = 350, isBass = true)
                     }
@@ -128,7 +128,12 @@ class TabPlaybackEngine @Inject constructor() {
                         val freq = base.getOrElse(note.stringIndex) { 261.63f } * 2.0f.pow(note.fret / 12.0f)
                         playSynthesizedTone(freq, durationMs = 400, isBass = false)
                     }
-                    InstrumentType.GUITAR -> {
+                    InstrumentType.GUITAR, InstrumentType.GUITAR_7, InstrumentType.GUITAR_8 -> {
+                        val base = floatArrayOf(329.63f, 246.94f, 196.00f, 146.83f, 110.00f, 82.41f, 61.74f, 46.25f)
+                        val freq = base.getOrElse(note.stringIndex) { 110.00f } * 2.0f.pow(note.fret / 12.0f)
+                        playSynthesizedTone(freq, durationMs = 280, isBass = false)
+                    }
+                    else -> {
                         val base = floatArrayOf(329.63f, 246.94f, 196.00f, 146.83f, 110.00f, 82.41f)
                         val freq = base.getOrElse(note.stringIndex) { 110.00f } * 2.0f.pow(note.fret / 12.0f)
                         playSynthesizedTone(freq, durationMs = 280, isBass = false)
