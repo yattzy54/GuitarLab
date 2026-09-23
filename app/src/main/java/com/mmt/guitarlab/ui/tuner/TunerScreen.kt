@@ -700,8 +700,7 @@ private fun TuningSelectionDialog(
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
                         .background(
-                            if (isChromatic) Brush.verticalGradient(listOf(Color(0xFF382600), Color(0xFF261900)))
-                            else StudioCardElevated
+                            if (isChromatic) Color(0xFF382600) else StudioCardElevated
                         )
                         .border(
                             1.dp,
