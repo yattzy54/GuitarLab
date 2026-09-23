@@ -143,12 +143,27 @@ fun TunerScreen(viewModel: TunerViewModel = hiltViewModel()) {
         targetNote ?: selectedTuning?.notes?.firstOrNull()
     }
 
-    val currentCents = pitch?.cents ?: 0f
-    val isInTune = pitch != null && abs(currentCents) <= 3f && pitch!!.clarity > 0.6f
+    // Monotonic continuous cents calculation:
+    // In Chromatic mode -> deviation relative to nearest chromatic semitone (pitch.cents)
+    // In Tuning Preset mode -> continuous deviation relative to active tuning string's target frequency
+    val currentCents: Float = when {
+        pitch == null -> 0f
+        isChromaticMode || activeTuningNote == null -> pitch!!.cents
+        else -> {
+            val f = pitch!!.frequencyHz
+            val targetF = activeTuningNote.targetFrequencyHz
+            if (f > 0f && targetF > 0f) {
+                (1200.0 * (kotlin.math.ln((f / targetF).toDouble()) / kotlin.math.ln(2.0))).toFloat()
+            } else {
+                pitch!!.cents
+            }
+        }
+    }
 
+    val isInTune = pitch != null && abs(currentCents) <= 3f
     val centsAnimated by animateFloatAsState(
         targetValue = if (pitch != null) currentCents.coerceIn(-50f, 50f) else 0f,
-        animationSpec = spring(stiffness = 600f, dampingRatio = 0.85f),
+        animationSpec = spring(stiffness = 500f, dampingRatio = 0.85f),
         label = "tuner_cents",
     )
 
@@ -310,11 +325,11 @@ fun TunerScreen(viewModel: TunerViewModel = hiltViewModel()) {
             ) {
                 // Status Pill
                 val statusText = when {
-                    !running -> "Microphone Paused"
-                    pitch == null || pitch!!.clarity < 0.4f -> "Pluck a string..."
-                    isInTune -> "PERFECT IN TUNE"
-                    currentCents < -3f -> String.format(Locale.US, "%.1f cents FLAT (Tune UP ↑)", abs(currentCents))
-                    else -> String.format(Locale.US, "%.1f cents SHARP (Tune DOWN ↓)", currentCents)
+                    !running -> "Микрофон отключен"
+                    pitch == null || pitch!!.clarity < 0.4f -> "Дёрните струну..."
+                    isInTune -> "ИДЕАЛЬНО В СТРОЙ (В НОТУ)"
+                    currentCents < -3f -> String.format(Locale.US, "%.1f цент. НИЖЕ (Тяните вверх ↑)", abs(currentCents))
+                    else -> String.format(Locale.US, "%.1f цент. ВЫШЕ (Ослабьте вниз ↓)", currentCents)
                 }
 
                 val statusColor = when {
