@@ -3,10 +3,16 @@ package com.mmt.guitarlab.ui.tab
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,10 +25,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -45,7 +56,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mmt.guitarlab.ui.tab.components.AudioSourceMode
 import com.mmt.guitarlab.ui.tab.components.SongsterrBottomControlBar
 import com.mmt.guitarlab.ui.tab.components.TabCanvasRenderer
 import com.mmt.guitarlab.ui.tab.components.sheets.ChromaticTunerBottomSheet
@@ -72,17 +82,26 @@ fun SongsterrTabPlayerScreen(
     val selectedTrackIndex by viewModel.selectedTrackIndex.collectAsState()
     val activeTrack = score.tracks.getOrNull(selectedTrackIndex) ?: score.tracks.first()
 
+    // File picker to load tabs (.gp, .gp5, .gpx, .gp3, text) from device storage
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+    ) { uri: Uri? ->
+        uri?.let {
+            viewModel.loadFromFile(context, it)
+            Toast.makeText(context, "Загрузка табулатуры...", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     // Real audio playback states bound to TabPlaybackEngine
     val isPlaying by viewModel.isPlaying.collectAsState()
     val currentMeasureIndex by viewModel.currentMeasureIndex.collectAsState()
     val currentBeatIndex by viewModel.currentBeatIndex.collectAsState()
     val speedMultiplier by viewModel.speedMultiplier.collectAsState()
 
-    var audioSource by remember { mutableStateOf(AudioSourceMode.SYNTH) }
-
-    // Loop state
+    // Interactive Loop state
     var isLoopActive by remember { mutableStateOf(false) }
     var loopRange by remember { mutableStateOf<Pair<Int, Int>?>(Pair(1, 4)) }
+    var loopPickingPoint by remember { mutableStateOf<String?>("A") } // "A" then "B"
 
     // Transposition state
     var semitones by remember { mutableIntStateOf(0) }
@@ -146,16 +165,26 @@ fun SongsterrTabPlayerScreen(
                 },
                 activeTrackName = activeTrack.name,
                 speedRatio = speedMultiplier,
-                audioSource = audioSource,
-                onToggleAudioSource = { audioSource = it },
                 isLoopActive = isLoopActive,
+                loopRange = loopRange,
                 onToggleLoop = {
                     isLoopActive = !isLoopActive
                     if (isLoopActive) {
-                        val range = loopRange ?: Pair(1, 4)
+                        val currentBar = currentMeasureIndex + 1
+                        val total = activeTrack.measures.size.coerceAtLeast(1)
+                        val endBar = (currentBar + 3).coerceAtMost(total)
+                        val range = loopRange ?: Pair(currentBar, endBar)
+                        loopRange = range
                         viewModel.setLoop(range.first - 1, range.second - 1)
+                        loopPickingPoint = "A"
+                        Toast.makeText(
+                            context,
+                            "Зацикливание включено: такты ${range.first}–${range.second}. Нажмите на такт в табах чтобы выбрать отрезок.",
+                            Toast.LENGTH_LONG
+                        ).show()
                     } else {
                         viewModel.clearLoop()
+                        loopPickingPoint = null
                     }
                 },
                 onOpenMixer = { isMixerOpen = true },
@@ -170,60 +199,205 @@ fun SongsterrTabPlayerScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // 1. TOP INFORMATION HEADER (Clean, no redundant track button)
+            // 1. TOP INFORMATION HEADER WITH LOAD TAB BUTTON
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color(0xFF12151A))
                     .border(1.dp, Color(0xFF1F242D))
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.weight(1f)
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(42.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                            .size(38.dp)
+                            .clip(RoundedCornerShape(10.dp))
                             .background(Color(0x26F59E0B))
-                            .border(1.dp, Color(0x66F59E0B), RoundedCornerShape(12.dp)),
+                            .border(1.dp, Color(0x66F59E0B), RoundedCornerShape(10.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.MusicNote,
                             contentDescription = null,
                             tint = Color(0xFFFBBF24),
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     }
 
                     Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "${score.title} — ${score.artist}",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Black,
-                                color = Color.White
-                            )
-                            Icon(
-                                imageVector = Icons.Default.KeyboardArrowDown,
-                                contentDescription = null,
-                                tint = Color(0xFF9CA3AF),
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-
                         Text(
-                            text = "РЕВИЗИЯ ОТ: ${score.revisionDate} • ${activeTrack.name} (${tuningOverrideName ?: activeTrack.tuningName})",
+                            text = "${score.title} — ${score.artist}",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Black,
+                            color = Color.White,
+                            maxLines = 1
+                        )
+                        Text(
+                            text = "${activeTrack.name} • ${tuningOverrideName ?: activeTrack.tuningName} • ${score.tempo} BPM",
                             fontSize = 11.sp,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFFFBBF24)
                         )
+                    }
+                }
+
+                // BUTTON: Load Tablature from Device
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFF222731))
+                        .border(1.dp, Color(0xFF384050), RoundedCornerShape(12.dp))
+                        .clickable {
+                            filePickerLauncher.launch(
+                                arrayOf(
+                                    "*/*",
+                                    "application/octet-stream",
+                                    "application/x-guitar-pro",
+                                    "text/plain"
+                                )
+                            )
+                        }
+                        .padding(horizontal = 10.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FolderOpen,
+                        contentDescription = "Загрузить с устройства",
+                        tint = Color(0xFFFBBF24),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = "Загрузить",
+                        color = Color(0xFFF3F4F6),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            // 2. INTERACTIVE LOOP SELECTION BANNER (when loop is active)
+            AnimatedVisibility(
+                visible = isLoopActive && loopRange != null,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                val totalBars = activeTrack.measures.size.coerceAtLeast(1)
+                val curRange = loopRange ?: Pair(1, 4)
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF1E1A11))
+                        .border(1.dp, Color(0x66F59E0B))
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Repeat,
+                            contentDescription = null,
+                            tint = Color(0xFFFBBF24),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = "Цикл: Такты ${curRange.first}–${curRange.second}",
+                            color = Color(0xFFFBBF24),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    // Stepper controls for Start (A) and End (B) bars
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        // Bar A Stepper
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .background(Color(0xFF2C2518), RoundedCornerShape(8.dp))
+                                .border(1.dp, Color(0xFF4A3B22), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                        ) {
+                            Text("A:", fontSize = 10.sp, color = Color(0xFF9CA3AF), fontWeight = FontWeight.Bold)
+                            IconButton(
+                                onClick = {
+                                    val newStart = (curRange.first - 1).coerceAtLeast(1)
+                                    loopRange = Pair(newStart, curRange.second)
+                                    viewModel.setLoop(newStart - 1, curRange.second - 1)
+                                },
+                                modifier = Modifier.size(20.dp)
+                            ) {
+                                Icon(Icons.Default.Remove, contentDescription = "-1", tint = Color.White, modifier = Modifier.size(12.dp))
+                            }
+                            Text("${curRange.first}", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Black)
+                            IconButton(
+                                onClick = {
+                                    val newStart = (curRange.first + 1).coerceAtMost(curRange.second)
+                                    loopRange = Pair(newStart, curRange.second)
+                                    viewModel.setLoop(newStart - 1, curRange.second - 1)
+                                },
+                                modifier = Modifier.size(20.dp)
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = "+1", tint = Color.White, modifier = Modifier.size(12.dp))
+                            }
+                        }
+
+                        // Bar B Stepper
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .background(Color(0xFF2C2518), RoundedCornerShape(8.dp))
+                                .border(1.dp, Color(0xFF4A3B22), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                        ) {
+                            Text("B:", fontSize = 10.sp, color = Color(0xFF9CA3AF), fontWeight = FontWeight.Bold)
+                            IconButton(
+                                onClick = {
+                                    val newEnd = (curRange.second - 1).coerceAtLeast(curRange.first)
+                                    loopRange = Pair(curRange.first, newEnd)
+                                    viewModel.setLoop(curRange.first - 1, newEnd - 1)
+                                },
+                                modifier = Modifier.size(20.dp)
+                            ) {
+                                Icon(Icons.Default.Remove, contentDescription = "-1", tint = Color.White, modifier = Modifier.size(12.dp))
+                            }
+                            Text("${curRange.second}", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Black)
+                            IconButton(
+                                onClick = {
+                                    val newEnd = (curRange.second + 1).coerceAtMost(totalBars)
+                                    loopRange = Pair(curRange.first, newEnd)
+                                    viewModel.setLoop(curRange.first - 1, newEnd - 1)
+                                },
+                                modifier = Modifier.size(20.dp)
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = "+1", tint = Color.White, modifier = Modifier.size(12.dp))
+                            }
+                        }
+
+                        // Close Loop button
+                        IconButton(
+                            onClick = {
+                                isLoopActive = false
+                                viewModel.clearLoop()
+                            },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = "Выключить цикл", tint = Color(0xFF9CA3AF), modifier = Modifier.size(16.dp))
+                        }
                     }
                 }
             }
@@ -247,7 +421,7 @@ fun SongsterrTabPlayerScreen(
                 }
             }
 
-            // 2. TAB CANVAS (Maximized 60 FPS Canvas with smooth scrolling)
+            // 3. TAB CANVAS (with smooth vertical scrolling & interactive measure/loop tapping)
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -262,6 +436,34 @@ fun SongsterrTabPlayerScreen(
                     loopRange = if (isLoopActive) loopRange else null,
                     onSelectPosition = { mIdx, bIdx ->
                         viewModel.seekPlayback(mIdx, bIdx)
+                    },
+                    onMeasureTapped = { mIdx ->
+                        val barNum = mIdx + 1
+                        if (isLoopActive) {
+                            val cur = loopRange ?: Pair(1, 4)
+                            if (loopPickingPoint == "A") {
+                                val newEnd = maxOf(barNum, cur.second)
+                                loopRange = Pair(barNum, newEnd)
+                                viewModel.setLoop(barNum - 1, newEnd - 1)
+                                loopPickingPoint = "B"
+                                Toast.makeText(
+                                    context,
+                                    "Старт цикла (A) установлен на такт $barNum. Нажмите такт для конца (B).",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            } else {
+                                val s = minOf(cur.first, barNum)
+                                val e = maxOf(cur.first, barNum)
+                                loopRange = Pair(s, e)
+                                viewModel.setLoop(s - 1, e - 1)
+                                loopPickingPoint = "A"
+                                Toast.makeText(
+                                    context,
+                                    "Отрезок зациклен: такты $s–$e",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
                     }
                 )
             }

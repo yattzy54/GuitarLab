@@ -12,6 +12,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -27,9 +28,10 @@ import com.mmt.guitarlab.domain.model.NoteEffect
 import com.mmt.guitarlab.domain.model.TabTrack
 
 /**
- * High-performance 60 FPS Jetpack Compose Canvas renderer for tablature.
- * Renders strings with comfortable spacing preventing fret badge overlap,
- * measures, rhythm stems, palm-mutes and animated green playhead frame.
+ * High-performance Jetpack Compose Canvas renderer for tablatures.
+ * Renders strings with 26.dp spacing to prevent fret badge overlap,
+ * measure headers, fixed palm-mute brackets, interactive loop badges,
+ * rhythm stems, and green animated playhead.
  */
 @Composable
 fun TabCanvasRenderer(
@@ -39,6 +41,7 @@ fun TabCanvasRenderer(
     isPlaying: Boolean,
     loopRange: Pair<Int, Int>?,
     onSelectPosition: (measureIdx: Int, beatIdx: Int) -> Unit,
+    onMeasureTapped: ((measureIndex: Int) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val textMeasurer = rememberTextMeasurer()
@@ -46,9 +49,9 @@ fun TabCanvasRenderer(
     val stringLabels = track.stringLabels.ifEmpty { listOf("e", "B", "G", "D", "A", "E") }
 
     val density = LocalDensity.current
-    // Comfortable string spacing (26 dp) ensures fret badges on adjacent strings never overlap
+    // Generous string spacing ensuring fret badges never collide
     val stringSpacing = with(density) { 26.dp.toPx() }
-    val topPadding = with(density) { 42.dp.toPx() }
+    val topPadding = with(density) { 44.dp.toPx() }
     val stemHeight = with(density) { 32.dp.toPx() }
     val measureBottomPadding = with(density) { 24.dp.toPx() }
     val measureTotalHeight = topPadding + (stringCount - 1) * stringSpacing + stemHeight + measureBottomPadding
@@ -70,6 +73,9 @@ fun TabCanvasRenderer(
                     detectTapGestures { offset ->
                         val mIdx = (offset.y / measureTotalHeight).toInt()
                             .coerceIn(0, track.measures.lastIndex.coerceAtLeast(0))
+                        
+                        onMeasureTapped?.invoke(mIdx)
+
                         val measure = track.measures.getOrNull(mIdx)
                         if (measure != null && measure.beats.isNotEmpty()) {
                             val beatsCount = measure.beats.size
@@ -92,7 +98,10 @@ fun TabCanvasRenderer(
 
             track.measures.forEachIndexed { mIdx, measure ->
                 val isMeasureActive = isPlaying && currentMeasureIndex == mIdx
-                val isInLoop = loopRange != null && (mIdx + 1) >= loopRange.first && (mIdx + 1) <= loopRange.second
+                val barNumber = mIdx + 1
+                val isLoopStart = loopRange != null && barNumber == loopRange.first
+                val isLoopEnd = loopRange != null && barNumber == loopRange.second
+                val isInLoop = loopRange != null && barNumber >= loopRange.first && barNumber <= loopRange.second
 
                 // Measure card background
                 val cardRect = Size(width - 24f, measureTotalHeight - 12f)
@@ -118,11 +127,21 @@ fun TabCanvasRenderer(
                     topLeft = Offset(12f, currentY),
                     size = cardRect,
                     cornerRadius = CornerRadius(16f, 16f),
-                    style = Stroke(width = if (isMeasureActive) 2.5f else 1f),
+                    style = Stroke(width = if (isMeasureActive) 2.5f else if (isInLoop) 2.0f else 1f),
                 )
 
                 // Measure Header (Bar number & Time signature)
                 val barLabel = "BAR ${measure.number} [${measure.timeSignatureNumerator}/${measure.timeSignatureDenominator}]"
+                val barLayout = textMeasurer.measure(
+                    text = barLabel,
+                    style = TextStyle(
+                        color = if (isMeasureActive) Color(0xFF34D399) else Color(0xFF9CA3AF),
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                    )
+                )
+
                 drawText(
                     textMeasurer = textMeasurer,
                     text = barLabel,
@@ -135,22 +154,95 @@ fun TabCanvasRenderer(
                     )
                 )
 
+                // PALM MUTE: Clean Header Badge and Bracket (no broken layout)
                 if (measure.palmMute) {
-                    val pmText = measure.palmMuteLabel ?: "P.M. ---|"
+                    val pmBadgeX = 24f + barLayout.size.width + 12f
+                    val pmBadgeY = currentY + 11f
+                    drawRoundRect(
+                        color = Color(0x33F59E0B),
+                        topLeft = Offset(pmBadgeX, pmBadgeY),
+                        size = Size(44f, 16f),
+                        cornerRadius = CornerRadius(4f, 4f),
+                    )
+                    drawRoundRect(
+                        color = Color(0xFFF59E0B),
+                        topLeft = Offset(pmBadgeX, pmBadgeY),
+                        size = Size(44f, 16f),
+                        cornerRadius = CornerRadius(4f, 4f),
+                        style = Stroke(width = 1f),
+                    )
                     drawText(
                         textMeasurer = textMeasurer,
-                        text = pmText,
-                        topLeft = Offset(width - 140f, currentY + 12f),
+                        text = "P.M.",
+                        topLeft = Offset(pmBadgeX + 8f, pmBadgeY + 1f),
                         style = TextStyle(
                             color = Color(0xFFF59E0B),
-                            fontSize = 10.sp,
+                            fontSize = 9.sp,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold,
                         )
                     )
                 }
 
+                // LOOP MARKER BADGES on Measure Top-Right
+                val loopBadgeText = when {
+                    isLoopStart && isLoopEnd -> "🔁 ЦИКЛ (A=B: Такт $barNumber)"
+                    isLoopStart -> "🔁 СТАРТ ЦИКЛА (A: Такт $barNumber)"
+                    isLoopEnd -> "🔁 КОНЕЦ ЦИКЛА (B: Такт $barNumber)"
+                    else -> null
+                }
+                if (loopBadgeText != null) {
+                    val loopTextLayout = textMeasurer.measure(
+                        text = loopBadgeText,
+                        style = TextStyle(
+                            fontSize = 9.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    )
+                    val badgeW = (loopTextLayout.size.width + 14).toFloat()
+                    val badgeH = 18f
+                    val badgeX = width - rightMargin - badgeW - 8f
+                    val badgeY = currentY + 10f
+
+                    drawRoundRect(
+                        color = Color(0xFFF59E0B),
+                        topLeft = Offset(badgeX, badgeY),
+                        size = Size(badgeW, badgeH),
+                        cornerRadius = CornerRadius(5f, 5f),
+                    )
+                    drawText(
+                        textMeasurer = textMeasurer,
+                        text = loopBadgeText,
+                        topLeft = Offset(badgeX + 7f, badgeY + 1f),
+                        style = TextStyle(
+                            color = Color(0xFF09090B),
+                            fontSize = 9.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Black,
+                        )
+                    )
+                }
+
                 val stringsStartY = currentY + topPadding
+
+                // PALM MUTE BRACKET above strings (dashed line across muted measure)
+                if (measure.palmMute) {
+                    val pmLineY = stringsStartY - 10f
+                    drawLine(
+                        color = Color(0xFFF59E0B),
+                        start = Offset(leftMargin, pmLineY),
+                        end = Offset(width - rightMargin - 4f, pmLineY),
+                        strokeWidth = 1.5f,
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 6f), 0f),
+                    )
+                    drawLine(
+                        color = Color(0xFFF59E0B),
+                        start = Offset(width - rightMargin - 4f, pmLineY),
+                        end = Offset(width - rightMargin - 4f, pmLineY + 6f),
+                        strokeWidth = 1.5f,
+                    )
+                }
 
                 // Draw string names (e, B, G, D, A, E) on the left margin, aligned with string lines
                 for (sIdx in 0 until stringCount) {
