@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">GuitarLab</string>
+    <string name="tab_tabs">Tabs</string>
+    <string name="tab_tuner">Stemapparaat</string>
+    <string name="tab_metronome">Metronoom</string>
+    <string name="tab_drums">Drums</string>
+    <string name="tab_fretboard">Toets &amp; Akkoorden</string>
+    <string name="tab_chords">Akkoordenzoeker</string>
+    <string name="tab_trainer">Snelheidstrainer</string>
+    <string name="tab_slowdowner">Vertrager</string>
+    <string name="tab_recorder">Riff-recorder</string>
+    <string name="tab_tracker">Oefenlog</string>
+    <string name="tab_language">Taal</string>
+</resources>

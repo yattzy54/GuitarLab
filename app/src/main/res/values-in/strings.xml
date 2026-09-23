@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">GuitarLab</string>
+    <string name="tab_tabs">Tab</string>
+    <string name="tab_tuner">Tuner</string>
+    <string name="tab_metronome">Metronom</string>
+    <string name="tab_drums">Drum</string>
+    <string name="tab_fretboard">Fretboard &amp; Akor</string>
+    <string name="tab_chords">Pencari Akor</string>
+    <string name="tab_trainer">Pelatih Kecepatan</string>
+    <string name="tab_slowdowner">Peredam Kecepatan</string>
+    <string name="tab_recorder">Perekam Riff</string>
+    <string name="tab_tracker">Pelacak Latihan</string>
+    <string name="tab_language">Bahasa</string>
+</resources>

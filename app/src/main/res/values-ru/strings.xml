@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">GuitarLab</string>
+    <string name="tab_tabs">Табы</string>
+    <string name="tab_tuner">Тюнер</string>
+    <string name="tab_metronome">Метроном</string>
+    <string name="tab_drums">Драм-машина</string>
+    <string name="tab_fretboard">Гриф &amp; Аккорды</string>
+    <string name="tab_chords">Поиск аккордов</string>
+    <string name="tab_trainer">Тренер скорости</string>
+    <string name="tab_slowdowner">Замедлитель</string>
+    <string name="tab_recorder">Диктофон риффов</string>
+    <string name="tab_tracker">Трекер практики</string>
+    <string name="tab_language">Язык</string>
+    <string name="tuning_standard">Стандартный E</string>
+    <string name="tuning_drop_d">Дроп D</string>
+    <string name="tuning_half_step">На полтона ниже</string>
+    <string name="play">Играть</string>
+    <string name="pause">Пауза</string>
+    <string name="stop">Стоп</string>
+</resources>

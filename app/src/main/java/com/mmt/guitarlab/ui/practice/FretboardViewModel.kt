@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class FretPosition(val stringIndex: Int, val fret: Int, val midiNote: Int)
@@ -23,6 +24,9 @@ data class FretPosition(val stringIndex: Int, val fret: Int, val midiNote: Int)
 class FretboardViewModel @Inject constructor(
     private val tuningRepository: TuningRepository,
 ) : ViewModel() {
+
+    val availableTunings: StateFlow<List<Tuning>> = tuningRepository.getTunings()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val selectedTuning: StateFlow<Tuning?> = combine(
         tuningRepository.getTunings(),
@@ -54,6 +58,12 @@ class FretboardViewModel @Inject constructor(
             emptyList()
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun selectTuning(id: String) {
+        viewModelScope.launch {
+            tuningRepository.setSelectedTuningId(id)
+        }
+    }
 
     fun setMode(newMode: FretboardMode) {
         _mode.value = newMode

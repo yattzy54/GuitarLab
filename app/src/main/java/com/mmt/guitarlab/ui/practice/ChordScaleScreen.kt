@@ -82,6 +82,7 @@ fun ChordScaleScreen(viewModel: FretboardViewModel = hiltViewModel()) {
     val pressedFrets by viewModel.pressedFrets.collectAsStateWithLifecycle()
     val detectedChords by viewModel.detectedChords.collectAsStateWithLifecycle()
 
+    val availableTunings by viewModel.availableTunings.collectAsStateWithLifecycle()
     val stringCount = selectedTuning?.stringCount ?: 6
     val tuningNotes = selectedTuning?.notes ?: emptyList()
 
@@ -92,9 +93,34 @@ fun ChordScaleScreen(viewModel: FretboardViewModel = hiltViewModel()) {
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
-
-
         if (mode == FretboardMode.CHORD_SCALE_FINDER) {
+            // Tuning Selector
+            Text(
+                text = "GUITAR TUNING",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = StudioTextMuted,
+                letterSpacing = 1.sp,
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                availableTunings.forEach { tun ->
+                    val isSelected = selectedTuning?.id == tun.id
+                    StudioPill(
+                        text = tun.name,
+                        selected = isSelected,
+                        onClick = { viewModel.selectTuning(tun.id) },
+                        accentColor = ElectricTeal,
+                    )
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+
             // Root Note Picker (Chromatic 12 notes)
             Text(
                 text = "ROOT NOTE",

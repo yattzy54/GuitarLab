@@ -1,3 +1,20 @@
 <resources>
     <string name="app_name">GuitarLab</string>
+    <string name="tab_tabs">Tabs</string>
+    <string name="tab_tuner">Tuner</string>
+    <string name="tab_metronome">Metronome</string>
+    <string name="tab_drums">Drums</string>
+    <string name="tab_fretboard">Fretboard</string>
+    <string name="tab_chords">Chords</string>
+    <string name="tab_trainer">Trainer</string>
+    <string name="tab_slowdowner">Slow-Downer</string>
+    <string name="tab_recorder">Recorder</string>
+    <string name="tab_tracker">Tracker</string>
+    <string name="tab_language">Language</string>
+    <string name="tuning_standard">Standard E</string>
+    <string name="tuning_drop_d">Drop D</string>
+    <string name="tuning_half_step">Half-Step Down</string>
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
+    <string name="stop">Stop</string>
 </resources>

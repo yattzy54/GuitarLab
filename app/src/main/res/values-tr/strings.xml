@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">GuitarLab</string>
+    <string name="tab_tabs">Tablar</string>
+    <string name="tab_tuner">Akort Cihazı</string>
+    <string name="tab_metronome">Metronom</string>
+    <string name="tab_drums">Bateri</string>
+    <string name="tab_fretboard">Klavye &amp; Akorlar</string>
+    <string name="tab_chords">Akor Bulucu</string>
+    <string name="tab_trainer">Hız Eğitmeni</string>
+    <string name="tab_slowdowner">Yavaşlatıcı</string>
+    <string name="tab_recorder">Kayıt Cihazı</string>
+    <string name="tab_tracker">Çalışma Takibi</string>
+    <string name="tab_language">Dil</string>
+</resources>

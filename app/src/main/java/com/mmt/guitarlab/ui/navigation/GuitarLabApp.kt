@@ -19,24 +19,28 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.GridOn
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SlowMotionVideo
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.outlined.Album
 import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.GridOn
-import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.LibraryMusic
 import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SlowMotionVideo
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.Timeline
@@ -51,9 +55,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
@@ -66,7 +67,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -79,20 +79,20 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.mmt.guitarlab.ui.components.Studio3DAccent
 import com.mmt.guitarlab.ui.components.Studio3DIconBadge
+import com.mmt.guitarlab.ui.drums.DrumsScreen
 import com.mmt.guitarlab.ui.metronome.AutoSpeedTrainerScreen
 import com.mmt.guitarlab.ui.metronome.MetronomeScreen
 import com.mmt.guitarlab.ui.practice.ChordScaleScreen
-import com.mmt.guitarlab.ui.practice.ReverseChordFinderScreen
 import com.mmt.guitarlab.ui.practice.PracticeTrackerScreen
+import com.mmt.guitarlab.ui.practice.ReverseChordFinderScreen
 import com.mmt.guitarlab.ui.practice.RiffRecorderScreen
 import com.mmt.guitarlab.ui.practice.SlowDownerScreen
-import com.mmt.guitarlab.ui.tab.TabViewerScreen
+import com.mmt.guitarlab.ui.settings.LanguageScreen
 import com.mmt.guitarlab.ui.tab.TabEditorScreen
+import com.mmt.guitarlab.ui.tab.TabViewerScreen
 import com.mmt.guitarlab.ui.theme.ElectricAmber
 import com.mmt.guitarlab.ui.theme.ElectricTeal
-import com.mmt.guitarlab.ui.theme.StudioCardBg
 import com.mmt.guitarlab.ui.theme.StudioCardBorder
-import com.mmt.guitarlab.ui.theme.StudioCardElevated
 import com.mmt.guitarlab.ui.theme.StudioDarkBg
 import com.mmt.guitarlab.ui.theme.StudioTextMuted
 import com.mmt.guitarlab.ui.theme.StudioTextPrimary
@@ -107,7 +107,8 @@ enum class AppDest(
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector,
 ) {
-    Tabs("tabs", "Табы", "Табы", Icons.Filled.LibraryMusic, Icons.Outlined.LibraryMusic),
+    Tabs("tabs", "Табы (Tabs)", "Табы", Icons.Filled.LibraryMusic, Icons.Outlined.LibraryMusic),
+    Drums("drums", "Драм-машина (Drums)", "Ударные", Icons.Filled.Album, Icons.Outlined.Album),
     TabEditor("tab_editor", "Tab Editor", "Редактор", Icons.Filled.Tune, Icons.Outlined.Tune),
     Tuner("tuner", "Guitar Tuner", "Тюнер", Icons.Filled.GraphicEq, Icons.Outlined.GraphicEq),
     Metronome("metronome", "Metronome", "Метроном", Icons.Filled.Timer, Icons.Outlined.Timer),
@@ -117,6 +118,7 @@ enum class AppDest(
     SlowDowner("slowdowner", "Audio Slow-Downer", "Плеер", Icons.Filled.SlowMotionVideo, Icons.Outlined.SlowMotionVideo),
     Recorder("recorder", "Riff Quick Recorder", "Диктофон", Icons.Filled.Mic, Icons.Outlined.Mic),
     Tracker("tracker", "Practice Tracker", "Трекер", Icons.Filled.Timeline, Icons.Outlined.Timeline),
+    Language("language", "Язык (Language)", "Язык", Icons.Filled.Language, Icons.Outlined.Language),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -227,7 +229,6 @@ fun GuitarLabApp() {
         },
     ) {
         val isTabsScreen = currentRoute == AppDest.Tabs.route
-
         Scaffold(
             topBar = {
                 if (!isTabsScreen) {
@@ -261,18 +262,20 @@ fun GuitarLabApp() {
                 startDestination = AppDest.Tabs.route,
                 modifier = Modifier.padding(if (isTabsScreen) androidx.compose.foundation.layout.PaddingValues(0.dp) else padding),
             ) {
-                composable(AppDest.Tuner.route) { TunerScreen() }
-                composable(AppDest.Metronome.route) { MetronomeScreen() }
-                composable(AppDest.Trainer.route) { AutoSpeedTrainerScreen() }
                 composable(AppDest.Tabs.route) { 
                     TabViewerScreen(onOpenDrawer = { scope.launch { drawerState.open() } })
                 }
+                composable(AppDest.Drums.route) { DrumsScreen() }
+                composable(AppDest.Tuner.route) { TunerScreen() }
+                composable(AppDest.Metronome.route) { MetronomeScreen() }
+                composable(AppDest.Trainer.route) { AutoSpeedTrainerScreen() }
                 composable(AppDest.TabEditor.route) { TabEditorScreen() }
                 composable(AppDest.Fretboard.route) { ChordScaleScreen() }
                 composable(AppDest.ReverseChord.route) { ReverseChordFinderScreen() }
                 composable(AppDest.SlowDowner.route) { SlowDownerScreen() }
                 composable(AppDest.Recorder.route) { RiffRecorderScreen() }
                 composable(AppDest.Tracker.route) { PracticeTrackerScreen() }
+                composable(AppDest.Language.route) { LanguageScreen() }
             }
         }
     }

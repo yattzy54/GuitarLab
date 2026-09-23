@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">GuitarLab</string>
+    <string name="tab_tabs">タブ譜</string>
+    <string name="tab_tuner">チューナー</string>
+    <string name="tab_metronome">メトロノーム</string>
+    <string name="tab_drums">ドラムマシン</string>
+    <string name="tab_fretboard">フレットボード</string>
+    <string name="tab_chords">コード検索</string>
+    <string name="tab_trainer">スピードトレーナー</string>
+    <string name="tab_slowdowner">スローダウン</string>
+    <string name="tab_recorder">リフレコーダー</string>
+    <string name="tab_tracker">練習記録</string>
+    <string name="tab_language">言語</string>
+</resources>

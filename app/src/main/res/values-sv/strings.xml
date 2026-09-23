@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">GuitarLab</string>
+    <string name="tab_tabs">Tabbar</string>
+    <string name="tab_tuner">Stämapparat</string>
+    <string name="tab_metronome">Metronom</string>
+    <string name="tab_drums">Trummor</string>
+    <string name="tab_fretboard">Greppbräda &amp; Ackord</string>
+    <string name="tab_chords">Ackordsökare</string>
+    <string name="tab_trainer">Hastighetstränare</string>
+    <string name="tab_slowdowner">Saktare</string>
+    <string name="tab_recorder">Riff-inspelare</string>
+    <string name="tab_tracker">Övningsspårare</string>
+    <string name="tab_language">Språk</string>
+</resources>

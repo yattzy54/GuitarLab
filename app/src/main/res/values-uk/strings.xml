@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">GuitarLab</string>
+    <string name="tab_tabs">Таби</string>
+    <string name="tab_tuner">Тюнер</string>
+    <string name="tab_metronome">Метроном</string>
+    <string name="tab_drums">Драм-машина</string>
+    <string name="tab_fretboard">Гриф &amp; Акорди</string>
+    <string name="tab_chords">Пошук акордів</string>
+    <string name="tab_trainer">Тренер швидкості</string>
+    <string name="tab_slowdowner">Сповільнювач</string>
+    <string name="tab_recorder">Диктофон рифів</string>
+    <string name="tab_tracker">Трекер занять</string>
+    <string name="tab_language">Мова</string>
+</resources>

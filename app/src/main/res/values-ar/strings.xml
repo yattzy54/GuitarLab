@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">GuitarLab</string>
+    <string name="tab_tabs">علامات التبويب</string>
+    <string name="tab_tuner">الموالف</string>
+    <string name="tab_metronome">المسرع</string>
+    <string name="tab_drums">الطبول</string>
+    <string name="tab_fretboard">لوحة الأصابع</string>
+    <string name="tab_chords">مكتشف الأوتار</string>
+    <string name="tab_trainer">مدرب السرعة</string>
+    <string name="tab_slowdowner">مبطئ الصوت</string>
+    <string name="tab_recorder">مسجل</string>
+    <string name="tab_tracker">متتبع التدريب</string>
+    <string name="tab_language">اللغة</string>
+</resources>
