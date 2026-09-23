@@ -60,33 +60,60 @@ export const TunerScreen: React.FC<TunerScreenProps> = ({
 
       const source = audioCtx.createMediaStreamSource(stream);
       const analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 2048;
+      analyser.fftSize = 4096;
       source.connect(analyser);
       analyserRef.current = analyser;
 
-      detectorRef.current = new YinPitchDetector(audioCtx.sampleRate, analyser.fftSize, 0.12);
+      detectorRef.current = new YinPitchDetector(audioCtx.sampleRate, analyser.fftSize, 0.18);
+
       const buffer = new Float32Array(analyser.fftSize);
+      const normBuffer = new Float32Array(analyser.fftSize);
+      let lastPitch: DetectedPitch | null = null;
+      let lastDetectTime = 0;
 
       const processAudio = () => {
         if (!analyserRef.current || !detectorRef.current) return;
+
         analyserRef.current.getFloatTimeDomainData(buffer);
 
         let sumSquares = 0;
+        let maxAbs = 0;
         for (let i = 0; i < buffer.length; i++) {
-          sumSquares += buffer[i] * buffer[i];
+          const s = buffer[i];
+          sumSquares += s * s;
+          const a = Math.abs(s);
+          if (a > maxAbs) maxAbs = a;
         }
         const rms = Math.sqrt(sumSquares / buffer.length);
+        const now = performance.now();
 
-        if (rms > 0.015) {
-          const [frequencyHz, clarity] = detectorRef.current.detect(buffer);
-          if (frequencyHz > 40 && frequencyHz < 1200 && clarity > 0.6) {
+        // High-sensitivity gate for quiet electric guitars
+        if (rms >= 0.0004 && maxAbs >= 0.0003) {
+          // Adaptive gain boost up to 80x
+          const gain = Math.min(80, Math.max(1, 0.75 / maxAbs));
+          for (let i = 0; i < buffer.length; i++) {
+            normBuffer[i] = Math.max(-1, Math.min(1, buffer[i] * gain));
+          }
+
+          const [frequencyHz, clarity] = detectorRef.current.detect(normBuffer);
+          if (frequencyHz >= 30 && frequencyHz <= 1500 && clarity >= 0.42) {
             const pitch = pitchFromFrequency(frequencyHz, a4Pitch, clarity);
             if (pitch) {
-              smoothedCentsRef.current = smoothedCentsRef.current * 0.7 + pitch.cents * 0.3;
+              if (lastPitch && lastPitch.midiNote === pitch.midiNote) {
+                smoothedCentsRef.current = smoothedCentsRef.current * 0.7 + pitch.cents * 0.3;
+              } else {
+                smoothedCentsRef.current = pitch.cents;
+              }
               pitch.cents = smoothedCentsRef.current;
+              lastPitch = pitch;
+              lastDetectTime = now;
               setDetectedPitch(pitch);
             }
+          } else if (now - lastDetectTime > 320) {
+            setDetectedPitch(null);
           }
+        } else if (now - lastDetectTime > 320) {
+          setDetectedPitch(null);
         }
 
         animationFrameRef.current = requestAnimationFrame(processAudio);

@@ -52,30 +52,52 @@ export const ChromaticTunerSheet: React.FC<ChromaticTunerSheetProps> = ({
 
       const source = audioCtx.createMediaStreamSource(stream);
       const analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 2048;
+      analyser.fftSize = 4096;
       source.connect(analyser);
       analyserRef.current = analyser;
 
-      detectorRef.current = new YinPitchDetector(audioCtx.sampleRate, analyser.fftSize, 0.12);
+      detectorRef.current = new YinPitchDetector(audioCtx.sampleRate, analyser.fftSize, 0.18);
+
       const buffer = new Float32Array(analyser.fftSize);
+      const normBuffer = new Float32Array(analyser.fftSize);
+      let lastValidTime = 0;
 
       const loop = () => {
         if (!analyserRef.current || !detectorRef.current) return;
+
         analyserRef.current.getFloatTimeDomainData(buffer);
 
-        let sum = 0;
-        for (let i = 0; i < buffer.length; i++) sum += buffer[i] * buffer[i];
-        const rms = Math.sqrt(sum / buffer.length);
+        let sumSquares = 0;
+        let maxAbs = 0;
+        for (let i = 0; i < buffer.length; i++) {
+          const s = buffer[i];
+          sumSquares += s * s;
+          const a = Math.abs(s);
+          if (a > maxAbs) maxAbs = a;
+        }
+        const rms = Math.sqrt(sumSquares / buffer.length);
+        const now = performance.now();
 
-        if (rms > 0.015) {
-          const [freq, clarity] = detectorRef.current.detect(buffer);
-          if (freq > 40 && freq < 1200 && clarity > 0.6) {
+        if (rms >= 0.0004 && maxAbs >= 0.0003) {
+          const gain = Math.min(80, Math.max(1, 0.75 / maxAbs));
+          for (let i = 0; i < buffer.length; i++) {
+            normBuffer[i] = Math.max(-1, Math.min(1, buffer[i] * gain));
+          }
+
+          const [freq, clarity] = detectorRef.current.detect(normBuffer);
+          if (freq >= 30 && freq <= 1500 && clarity >= 0.42) {
             const pitch = pitchFromFrequency(freq, 440, clarity);
             if (pitch) {
+              lastValidTime = now;
               setDetectedPitch(pitch);
             }
+          } else if (now - lastValidTime > 320) {
+            setDetectedPitch(null);
           }
+        } else if (now - lastValidTime > 320) {
+          setDetectedPitch(null);
         }
+
         animFrameRef.current = requestAnimationFrame(loop);
       };
 

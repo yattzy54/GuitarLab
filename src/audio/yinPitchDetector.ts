@@ -2,9 +2,8 @@ import { DetectedPitch } from '../types';
 import { NOTE_NAMES } from '../data/musicTheory';
 
 /**
- * YIN pitch detector (de Cheveigné & Kawahara).
- * Ported directly from YinPitchDetector.kt
- * Operates on a Float32Array in [-1, 1] and returns frequency in Hz, and clarity.
+ * Enhanced YIN pitch detector (de Cheveigné & Kawahara) optimized for
+ * electric, acoustic, and bass guitars with rich harmonic overtones and low-signal sustain.
  */
 export class YinPitchDetector {
   private sampleRate: number;
@@ -13,7 +12,7 @@ export class YinPitchDetector {
   private half: number;
   private yin: Float32Array;
 
-  constructor(sampleRate: number, bufferSize = 2048, threshold = 0.12) {
+  constructor(sampleRate: number, bufferSize = 4096, threshold = 0.18) {
     this.sampleRate = sampleRate;
     this.bufferSize = bufferSize;
     this.threshold = threshold;
@@ -26,7 +25,7 @@ export class YinPitchDetector {
     this.difference(samples, tauMax);
     this.cumulativeMeanNormalizedDifference(tauMax);
     const tau = this.absoluteThreshold(tauMax);
-    if (tau < 0) return [0, 0];
+    if (tau < 2) return [0, 0];
 
     const betterTau = this.parabolicInterpolation(tau);
     if (betterTau <= 0) return [0, 0];
@@ -39,11 +38,11 @@ export class YinPitchDetector {
   private difference(samples: Float32Array, tauMax: number) {
     this.yin[0] = 1.0;
     const len = samples.length;
+    const windowSize = len - tauMax;
     for (let tau = 1; tau < tauMax; tau++) {
       let sum = 0;
       let i = 0;
-      const limit = len - tau;
-      while (i < limit) {
+      while (i < windowSize) {
         const delta = samples[i] - samples[i + tau];
         sum += delta * delta;
         i++;
@@ -81,7 +80,7 @@ export class YinPitchDetector {
         minTau = t;
       }
     }
-    return minVal < 0.35 ? minTau : -1;
+    return minVal < 0.55 ? minTau : -1;
   }
 
   private parabolicInterpolation(tau: number): number {
@@ -97,17 +96,14 @@ export class YinPitchDetector {
 
 /**
  * Calculates note details, cents deviation, and in-tune status from frequency
- * Ported from PitchMath.kt
  */
 export function pitchFromFrequency(frequencyHz: number, a4Hz = 440, clarity = 1): DetectedPitch | null {
-  if (frequencyHz <= 20 || !Number.isFinite(frequencyHz) || frequencyHz > 5000) return null;
-
+  if (frequencyHz < 30 || !Number.isFinite(frequencyHz) || frequencyHz > 1600) return null;
   const midi = 69.0 + 12.0 * (Math.log(frequencyHz / a4Hz) / Math.LN2);
   const nearest = Math.max(0, Math.min(127, Math.round(midi)));
   const cents = (midi - nearest) * 100.0;
   const noteIndex = ((nearest % 12) + 12) % 12;
   const octave = Math.floor(nearest / 12) - 1;
-
   return {
     frequencyHz,
     midiNote: nearest,
