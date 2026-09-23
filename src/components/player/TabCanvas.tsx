@@ -26,12 +26,21 @@ export const TabCanvas: React.FC<TabCanvasProps> = ({
   const lastTouchDistRef = useRef<number | null>(null);
   const lastTapTimeRef = useRef<number>(0);
 
-  const stringCount = track.tuningNotes.length || 6;
+  const isDrums = useMemo(() => {
+    return (
+      track.instrument?.toLowerCase().includes('drum') ||
+      track.name?.toLowerCase().includes('drum')
+    );
+  }, [track.instrument, track.name]);
+
   const stringLabels = useMemo(() => {
+    if (isDrums) return ['CC', 'HH', 'T1', 'SD', 'BD'];
     return track.tuningNotes.length > 0
       ? track.tuningNotes.map((n) => n.replace(/[0-9]/g, ''))
       : ['e', 'B', 'G', 'D', 'A', 'E'];
-  }, [track.tuningNotes]);
+  }, [track.tuningNotes, isDrums]);
+
+  const stringCount = isDrums ? 5 : stringLabels.length || 6;
 
   // Touch gesture handling: smooth pinch-to-zoom + double tap to reset
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -201,16 +210,23 @@ export const TabCanvas: React.FC<TabCanvasProps> = ({
                 style={{ WebkitOverflowScrolling: 'touch' }}
               >
                 <div className="min-w-[460px] relative">
-                  {/* Left String Tuning Labels */}
+                  {/* Left String Tuning Labels or GP8 Percussion Clef */}
                   <div className="absolute left-0 top-0 bottom-8 w-8 flex flex-col justify-between py-1 border-r border-zinc-800 text-[11px] font-mono font-bold text-amber-400/90 z-10 bg-[#0a0c10]/90 backdrop-blur-xs">
-                    {stringLabels.map((lbl, sIdx) => (
-                      <div
-                        key={sIdx}
-                        className="h-7 flex items-center justify-start pl-1"
-                      >
-                        {lbl}
+                    {isDrums ? (
+                      <div className="h-full flex items-center justify-center space-x-1">
+                        <div className="w-1 h-20 bg-amber-400/90 rounded-xs" />
+                        <div className="w-1 h-20 bg-amber-400/90 rounded-xs" />
                       </div>
-                    ))}
+                    ) : (
+                      stringLabels.map((lbl, sIdx) => (
+                        <div
+                          key={sIdx}
+                          className="h-7 flex items-center justify-start pl-1"
+                        >
+                          {lbl}
+                        </div>
+                      ))
+                    )}
                   </div>
 
                   {/* Horizontal Wire Strings */}
@@ -256,27 +272,51 @@ export const TabCanvas: React.FC<TabCanvasProps> = ({
                                   className="h-7 flex items-center justify-center relative z-20"
                                 >
                                   {note && (
-                                    <div
-                                      className={`px-1.5 py-0.5 rounded font-mono font-bold text-xs flex items-center justify-center transition-all ${
-                                        isBeatActive
-                                          ? 'bg-emerald-400 text-zinc-950 font-black scale-110 shadow-lg shadow-emerald-400/50'
-                                          : 'bg-zinc-900 border border-zinc-700 text-zinc-100 shadow-xs'
-                                      }`}
-                                    >
-                                      {note.deadNote ? 'X' : note.fret}
-                                      {note.slide === 'up' && (
-                                        <span className="text-[9px] text-amber-400 ml-0.5">/</span>
-                                      )}
-                                      {note.slide === 'down' && (
-                                        <span className="text-[9px] text-amber-400 ml-0.5">\</span>
-                                      )}
-                                      {note.bend && (
-                                        <span className="text-[9px] text-cyan-400 ml-0.5">b</span>
-                                      )}
-                                      {note.vibrato && (
-                                        <span className="text-[9px] text-indigo-400 ml-0.5">~</span>
-                                      )}
-                                    </div>
+                                    isDrums ? (
+                                      /* CLASSIC GUITAR PRO 8 DRUM NOTATION */
+                                      sIdx <= 1 ? (
+                                        /* Cymbal / Hi-Hat Cross '×' notehead */
+                                        <div
+                                          className={`relative w-4 h-4 flex items-center justify-center transition-transform ${
+                                            isBeatActive ? 'scale-125 text-emerald-400 font-black' : 'text-zinc-100'
+                                          }`}
+                                        >
+                                          <div className="absolute w-3.5 h-0.5 bg-current rotate-45 rounded-full" />
+                                          <div className="absolute w-3.5 h-0.5 bg-current -rotate-45 rounded-full" />
+                                        </div>
+                                      ) : (
+                                        /* Snare / Tom / Kick solid oval notehead */
+                                        <div
+                                          className={`w-3.5 h-2.5 rounded-full border transition-all ${
+                                            isBeatActive
+                                              ? 'bg-emerald-400 border-emerald-300 scale-125 shadow-md shadow-emerald-400/50'
+                                              : 'bg-zinc-100 border-zinc-300 shadow-xs'
+                                          }`}
+                                        />
+                                      )
+                                    ) : (
+                                      <div
+                                        className={`px-1.5 py-0.5 rounded font-mono font-bold text-xs flex items-center justify-center transition-all ${
+                                          isBeatActive
+                                            ? 'bg-emerald-400 text-zinc-950 font-black scale-110 shadow-lg shadow-emerald-400/50'
+                                            : 'bg-zinc-900 border border-zinc-700 text-zinc-100 shadow-xs'
+                                        }`}
+                                      >
+                                        {note.deadNote ? 'X' : note.fret}
+                                        {note.slide === 'up' && (
+                                          <span className="text-[9px] text-amber-400 ml-0.5">/</span>
+                                        )}
+                                        {note.slide === 'down' && (
+                                          <span className="text-[9px] text-amber-400 ml-0.5">\</span>
+                                        )}
+                                        {note.bend && (
+                                          <span className="text-[9px] text-cyan-400 ml-0.5">b</span>
+                                        )}
+                                        {note.vibrato && (
+                                          <span className="text-[9px] text-indigo-400 ml-0.5">~</span>
+                                        )}
+                                      </div>
+                                    )
                                   )}
                                 </div>
                               );

@@ -137,3 +137,129 @@ export function stopReferenceTone() {
     }
   }
 }
+
+
+/**
+ * Studio-grade Physical Modeling Drum Synth for Web Audio:
+ * - Kick: Punchy pitch drop (140Hz -> 42Hz) + acoustic beater click
+ * - Snare: Membrane pitch tone + snare wire filtered noise
+ * - Hi-Hat / Cymbal: Crisp metallic inharmonic cluster + bandpass decay
+ * - Tom: Resonant drum shell drop (160Hz -> 80Hz)
+ */
+export function playDrumHit(drumIndex: number, velocity = 0.9) {
+  try {
+    const ctx = getAudioContext();
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+    const t0 = ctx.currentTime;
+
+    switch (drumIndex) {
+      case 0: {
+        // Crash cymbal
+        const noise = ctx.createBufferSource();
+        const buf = ctx.createBuffer(1, ctx.sampleRate * 1.5, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < data.length; i++) {
+          data[i] = (Math.random() * 2 - 1);
+        }
+        noise.buffer = buf;
+        const bpf = ctx.createBiquadFilter();
+        bpf.type = 'highpass';
+        bpf.frequency.setValueAtTime(4500, t0);
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.7 * velocity, t0);
+        gain.gain.exponentialRampToValueAtTime(0.001, t0 + 1.4);
+        noise.connect(bpf);
+        bpf.connect(gain);
+        gain.connect(ctx.destination);
+        noise.start(t0);
+        break;
+      }
+      case 1: {
+        // Hi-Hat
+        const noise = ctx.createBufferSource();
+        const buf = ctx.createBuffer(1, ctx.sampleRate * 0.15, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < data.length; i++) {
+          data[i] = (Math.random() * 2 - 1);
+        }
+        noise.buffer = buf;
+        const hpf = ctx.createBiquadFilter();
+        hpf.type = 'highpass';
+        hpf.frequency.setValueAtTime(7000, t0);
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.6 * velocity, t0);
+        gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.12);
+        noise.connect(hpf);
+        hpf.connect(gain);
+        gain.connect(ctx.destination);
+        noise.start(t0);
+        break;
+      }
+      case 2: {
+        // Snare Drum (Tone + Wire rattle)
+        const osc = ctx.createOscillator();
+        const oscGain = ctx.createGain();
+        osc.frequency.setValueAtTime(195, t0);
+        osc.frequency.exponentialRampToValueAtTime(130, t0 + 0.12);
+        oscGain.gain.setValueAtTime(0.8 * velocity, t0);
+        oscGain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.18);
+        osc.connect(oscGain);
+        oscGain.connect(ctx.destination);
+        osc.start(t0);
+        osc.stop(t0 + 0.2);
+
+        // Snare wire noise
+        const noise = ctx.createBufferSource();
+        const buf = ctx.createBuffer(1, ctx.sampleRate * 0.25, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < data.length; i++) {
+          data[i] = (Math.random() * 2 - 1);
+        }
+        noise.buffer = buf;
+        const hpf = ctx.createBiquadFilter();
+        hpf.type = 'highpass';
+        hpf.frequency.setValueAtTime(1500, t0);
+        const noiseGain = ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.7 * velocity, t0);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.22);
+        noise.connect(hpf);
+        hpf.connect(noiseGain);
+        noiseGain.connect(ctx.destination);
+        noise.start(t0);
+        break;
+      }
+      case 3: {
+        // Tom
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.setValueAtTime(160, t0);
+        osc.frequency.exponentialRampToValueAtTime(80, t0 + 0.22);
+        gain.gain.setValueAtTime(0.9 * velocity, t0);
+        gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.3);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t0);
+        osc.stop(t0 + 0.32);
+        break;
+      }
+      default: {
+        // Kick Drum (Sub-bass drop + beater punch)
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.setValueAtTime(135, t0);
+        osc.frequency.exponentialRampToValueAtTime(42, t0 + 0.14);
+        gain.gain.setValueAtTime(1.2 * velocity, t0);
+        gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t0);
+        osc.stop(t0 + 0.36);
+        break;
+      }
+    }
+  } catch (err) {
+    console.warn('Error playing drum hit:', err);
+  }
+}

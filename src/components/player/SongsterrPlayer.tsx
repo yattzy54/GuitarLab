@@ -10,7 +10,7 @@ import { TempoSheet } from './sheets/TempoSheet';
 import { MoreOptionsSheet } from './sheets/MoreOptionsSheet';
 import { SongSelectSheet } from './sheets/SongSelectSheet';
 import { ensureAudioContextStarted, getAudioContext } from '../../audio/audioContext';
-import { playGuitarPluck, playMetronomeClick } from '../../audio/guitarSynth';
+import { playGuitarPluck, playMetronomeClick, playDrumHit } from '../../audio/guitarSynth';
 import { midiToHz } from '../../data/defaultTunings';
 import { ChevronDown, SlidersHorizontal, Sparkles, Music2, Share2, Volume2 } from 'lucide-react';
 
@@ -209,10 +209,13 @@ export const SongsterrPlayer: React.FC<SongsterrPlayerProps> = ({ onOpenStudioTo
           playMetronomeClick(bIdx === 0, 0.7);
         }
 
-        // Schedule Guitar Synth strings
+        // Schedule Synthesizer (Guitar physical modeling or GP8 drum sounds)
         if (audioSource === 'SYNTH' && !activeTrack.isMuted) {
+          const isDrums = activeTrack.instrument?.toLowerCase().includes('drum') || activeTrack.name?.toLowerCase().includes('drum');
           for (const note of beat.notes) {
-            if (note.fret >= 0 && !note.deadNote) {
+            if (isDrums) {
+              playDrumHit(note.stringIndex, activeTrack.volume);
+            } else if (note.fret >= 0 && !note.deadNote) {
               const midi = getNoteMidi(note.stringIndex, note.fret, activeTrack.tuningNotes);
               const freq = midiToHz(midi);
               const duration = beat.durationValue * 1.5;
