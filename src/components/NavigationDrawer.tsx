@@ -36,8 +36,8 @@ interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   {
     id: 'player',
-    title: 'Плеер табулатур (Songsterr)',
-    subtitle: 'Профессиональный плеер табов',
+    title: 'Табы',
+    subtitle: 'Профессиональный плеер табов (Songsterr)',
     icon: PlayCircle,
     accent: 'green',
   },
@@ -64,8 +64,8 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     id: 'tabs',
-    title: 'ASCII Tab Studio',
-    subtitle: 'Interactive Player & ASCII Parser',
+    title: 'Tab Editor & Studio',
+    subtitle: 'Редактор табов и парсер ASCII',
     icon: Music,
     accent: 'amber',
   },
