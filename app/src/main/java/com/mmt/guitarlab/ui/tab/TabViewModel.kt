@@ -169,6 +169,25 @@ class TabViewModel @Inject constructor(
         playbackEngine.setSpeed(speed)
     }
 
+    fun seekPlayback(measureIdx: Int, beatIdx: Int = 0) {
+        val currentScore = _score.value ?: return
+        _selectedMeasureIndex.value = measureIdx
+        _selectedBeatIndex.value = beatIdx
+        if (isPlaying.value) {
+            playbackEngine.play(currentScore, _selectedTrackIndex.value, measureIdx, beatIdx)
+        } else {
+            playbackEngine.seekTo(measureIdx, beatIdx)
+        }
+    }
+
+    fun setLoop(startMeasure: Int, endMeasure: Int) {
+        playbackEngine.setLoop(startMeasure, endMeasure)
+    }
+
+    fun clearLoop() {
+        playbackEngine.clearLoop()
+    }
+
     fun setActiveEffect(effect: NoteEffect) {
         _activeEffect.value = effect
     }

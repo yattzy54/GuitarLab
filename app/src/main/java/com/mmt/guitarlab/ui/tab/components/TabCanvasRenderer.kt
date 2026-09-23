@@ -12,11 +12,9 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontFamily
@@ -26,12 +24,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mmt.guitarlab.domain.model.NoteDuration
 import com.mmt.guitarlab.domain.model.NoteEffect
-import com.mmt.guitarlab.domain.model.TabMeasure
 import com.mmt.guitarlab.domain.model.TabTrack
 
 /**
  * High-performance 60 FPS Jetpack Compose Canvas renderer for tablature.
- * Renders strings, measures, fret digits, stems, palm-mutes and animated green playhead frame.
+ * Renders strings with comfortable spacing preventing fret badge overlap,
+ * measures, rhythm stems, palm-mutes and animated green playhead frame.
  */
 @Composable
 fun TabCanvasRenderer(
@@ -47,13 +45,17 @@ fun TabCanvasRenderer(
     val stringCount = track.stringCount.coerceAtLeast(4)
     val stringLabels = track.stringLabels.ifEmpty { listOf("e", "B", "G", "D", "A", "E") }
 
-    val stringSpacing = 28f
-    val topPadding = 48f
-    val stemHeight = 36f
-    val measureHeaderHeight = 32f
-    val measureTotalHeight = topPadding + (stringCount - 1) * stringSpacing + stemHeight + 24f
+    val density = LocalDensity.current
+    // Comfortable string spacing (26 dp) ensures fret badges on adjacent strings never overlap
+    val stringSpacing = with(density) { 26.dp.toPx() }
+    val topPadding = with(density) { 42.dp.toPx() }
+    val stemHeight = with(density) { 32.dp.toPx() }
+    val measureBottomPadding = with(density) { 24.dp.toPx() }
+    val measureTotalHeight = topPadding + (stringCount - 1) * stringSpacing + stemHeight + measureBottomPadding
 
-    val totalHeightDp = (track.measures.size * measureTotalHeight / 2.7f).coerceAtLeast(300f).dp
+    val totalHeightDp = with(density) {
+        ((track.measures.size.coerceAtLeast(1) * measureTotalHeight) + 60.dp.toPx()).toDp()
+    }
 
     Box(
         modifier = modifier
@@ -66,7 +68,8 @@ fun TabCanvasRenderer(
                 .height(totalHeightDp)
                 .pointerInput(track.measures) {
                     detectTapGestures { offset ->
-                        val mIdx = (offset.y / measureTotalHeight).toInt().coerceIn(0, track.measures.lastIndex.coerceAtLeast(0))
+                        val mIdx = (offset.y / measureTotalHeight).toInt()
+                            .coerceIn(0, track.measures.lastIndex.coerceAtLeast(0))
                         val measure = track.measures.getOrNull(mIdx)
                         if (measure != null && measure.beats.isNotEmpty()) {
                             val beatsCount = measure.beats.size
@@ -94,7 +97,7 @@ fun TabCanvasRenderer(
                 // Measure card background
                 val cardRect = Size(width - 24f, measureTotalHeight - 12f)
                 val cardColor = when {
-                    isMeasureActive -> Color(0xFF1E2620)
+                    isMeasureActive -> Color(0xFF1B241D)
                     isInLoop -> Color(0xFF262116)
                     else -> Color(0xFF13161C)
                 }
@@ -123,7 +126,7 @@ fun TabCanvasRenderer(
                 drawText(
                     textMeasurer = textMeasurer,
                     text = barLabel,
-                    topLeft = Offset(24f, currentY + 10f),
+                    topLeft = Offset(24f, currentY + 12f),
                     style = TextStyle(
                         color = if (isMeasureActive) Color(0xFF34D399) else Color(0xFF9CA3AF),
                         fontSize = 11.sp,
@@ -132,13 +135,12 @@ fun TabCanvasRenderer(
                     )
                 )
 
-                // Palm Mute annotation line: P.M. ----------------|
                 if (measure.palmMute) {
-                    val pmLabel = measure.palmMuteLabel ?: "P.M. ----------------------------|"
+                    val pmText = measure.palmMuteLabel ?: "P.M. ---|"
                     drawText(
                         textMeasurer = textMeasurer,
-                        text = pmLabel,
-                        topLeft = Offset(160f, currentY + 10f),
+                        text = pmText,
+                        topLeft = Offset(width - 140f, currentY + 12f),
                         style = TextStyle(
                             color = Color(0xFFF59E0B),
                             fontSize = 10.sp,
@@ -150,14 +152,23 @@ fun TabCanvasRenderer(
 
                 val stringsStartY = currentY + topPadding
 
-                // String labels on the left (e.g. D, A, F, C, G, C)
+                // Draw string names (e, B, G, D, A, E) on the left margin, aligned with string lines
                 for (sIdx in 0 until stringCount) {
-                    val label = stringLabels.getOrNull(sIdx) ?: " "
+                    val label = stringLabels.getOrElse(sIdx) { "" }
                     val stringY = stringsStartY + sIdx * stringSpacing
+                    val labelLayout = textMeasurer.measure(
+                        text = label,
+                        style = TextStyle(
+                            color = Color(0xFFFBBF24),
+                            fontSize = 12.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    )
                     drawText(
                         textMeasurer = textMeasurer,
                         text = label,
-                        topLeft = Offset(24f, stringY - 10f),
+                        topLeft = Offset(24f, stringY - labelLayout.size.height / 2f),
                         style = TextStyle(
                             color = Color(0xFFFBBF24),
                             fontSize = 12.sp,
@@ -206,7 +217,7 @@ fun TabCanvasRenderer(
 
                         // Playhead green rounded frame around active beat
                         if (isBeatActive) {
-                            val activeHeight = (stringCount - 1) * stringSpacing + stemHeight + 20f
+                            val activeHeight = (stringCount - 1) * stringSpacing + stemHeight + 16f
                             drawRoundRect(
                                 color = Color(0x3310B981),
                                 topLeft = Offset(beatBoxLeft, stringsStartY - 10f),
@@ -237,16 +248,16 @@ fun TabCanvasRenderer(
                                 val textLayout = textMeasurer.measure(
                                     text = fretText,
                                     style = TextStyle(
-                                        fontSize = if (isBeatActive) 14.sp else 12.sp,
+                                        fontSize = if (isBeatActive) 13.sp else 12.sp,
                                         fontFamily = FontFamily.Monospace,
                                         fontWeight = FontWeight.Black,
                                     )
                                 )
 
                                 val fretBoxWidth = (textLayout.size.width + 12).toFloat()
-                                val fretBoxHeight = (textLayout.size.height + 4).toFloat()
+                                val fretBoxHeight = (textLayout.size.height + 4).toFloat().coerceAtMost(stringSpacing - 4f)
 
-                                // Fret background badge
+                                // Fret background badge: masks horizontal string line cleanly behind fret digit
                                 drawRoundRect(
                                     color = if (isBeatActive) Color(0xFF10B981) else Color(0xFF18181B),
                                     topLeft = Offset(beatCenterX - fretBoxWidth / 2f, noteY - fretBoxHeight / 2f),
@@ -258,7 +269,7 @@ fun TabCanvasRenderer(
                                     topLeft = Offset(beatCenterX - fretBoxWidth / 2f, noteY - fretBoxHeight / 2f),
                                     size = Size(fretBoxWidth, fretBoxHeight),
                                     cornerRadius = CornerRadius(6f, 6f),
-                                    style = Stroke(width = 1f),
+                                    style = Stroke(width = 1.2f),
                                 )
 
                                 // Text
@@ -271,7 +282,7 @@ fun TabCanvasRenderer(
                                     ),
                                     style = TextStyle(
                                         color = if (isBeatActive) Color(0xFF09090B) else Color(0xFFF4F4F5),
-                                        fontSize = if (isBeatActive) 14.sp else 12.sp,
+                                        fontSize = if (isBeatActive) 13.sp else 12.sp,
                                         fontFamily = FontFamily.Monospace,
                                         fontWeight = FontWeight.Black,
                                     )

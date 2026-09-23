@@ -3,18 +3,16 @@ package com.mmt.guitarlab.ui.tab
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -23,7 +21,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -48,8 +45,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mmt.guitarlab.domain.model.TabScore
-import com.mmt.guitarlab.domain.model.TabTrack
 import com.mmt.guitarlab.ui.tab.components.AudioSourceMode
 import com.mmt.guitarlab.ui.tab.components.SongsterrBottomControlBar
 import com.mmt.guitarlab.ui.tab.components.TabCanvasRenderer
@@ -59,7 +54,6 @@ import com.mmt.guitarlab.ui.tab.components.sheets.MoreOptionsBottomSheet
 import com.mmt.guitarlab.ui.tab.components.sheets.TempoBottomSheet
 import com.mmt.guitarlab.ui.tab.components.sheets.TranspositionBottomSheet
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,15 +69,16 @@ fun SongsterrTabPlayerScreen(
     val scoreState by viewModel.score.collectAsState()
     val score = scoreState ?: return
 
-    var activeTrackId by remember { mutableStateOf(score.tracks.firstOrNull()?.id ?: "") }
-    val activeTrack = score.tracks.find { it.id == activeTrackId } ?: score.tracks.first()
+    val selectedTrackIndex by viewModel.selectedTrackIndex.collectAsState()
+    val activeTrack = score.tracks.getOrNull(selectedTrackIndex) ?: score.tracks.first()
 
-    // Playback state
-    var isPlaying by remember { mutableStateOf(false) }
-    var speedRatio by remember { mutableFloatStateOf(1.0f) }
+    // Real audio playback states bound to TabPlaybackEngine
+    val isPlaying by viewModel.isPlaying.collectAsState()
+    val currentMeasureIndex by viewModel.currentMeasureIndex.collectAsState()
+    val currentBeatIndex by viewModel.currentBeatIndex.collectAsState()
+    val speedMultiplier by viewModel.speedMultiplier.collectAsState()
+
     var audioSource by remember { mutableStateOf(AudioSourceMode.SYNTH) }
-    var currentMeasureIndex by remember { mutableIntStateOf(0) }
-    var currentBeatIndex by remember { mutableIntStateOf(0) }
 
     // Loop state
     var isLoopActive by remember { mutableStateOf(false) }
@@ -93,8 +88,8 @@ fun SongsterrTabPlayerScreen(
     var semitones by remember { mutableIntStateOf(0) }
     var tuningOverrideName by remember { mutableStateOf<String?>(null) }
 
-    // Count in & metronome
-    var countInEnabled by remember { mutableStateOf(true) }
+    // Count-in & metronome
+    var countInEnabled by remember { mutableStateOf(false) }
     var metronomeClickEnabled by remember { mutableStateOf(false) }
     var isCountingIn by remember { mutableStateOf(false) }
     var countInBeat by remember { mutableIntStateOf(1) }
@@ -115,40 +110,12 @@ fun SongsterrTabPlayerScreen(
     var isMoreOpen by remember { mutableStateOf(false) }
     val moreSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    // Playback Coroutine
-    LaunchedEffect(isPlaying, isCountingIn, speedRatio, isLoopActive, loopRange) {
-        if (isPlaying && !isCountingIn) {
-            val stepDelayMs = ((60000 / (score.tempo * speedRatio)) * 0.5f).toLong().coerceAtLeast(60L)
-            while (isActive && isPlaying) {
-                delay(stepDelayMs)
-
-                var mIdx = currentMeasureIndex
-                var bIdx = currentBeatIndex
-
-                val measure = activeTrack.measures.getOrNull(mIdx)
-                if (measure != null && measure.beats.isNotEmpty()) {
-                    bIdx++
-                    if (bIdx >= measure.beats.size) {
-                        bIdx = 0
-                        mIdx++
-                        if (isLoopActive && loopRange != null) {
-                            val loopStart = loopRange!!.first - 1
-                            val loopEnd = loopRange!!.second - 1
-                            if (mIdx > loopEnd || mIdx < loopStart) {
-                                mIdx = loopStart
-                            }
-                        } else if (mIdx >= activeTrack.measures.size) {
-                            mIdx = 0
-                        }
-                    }
-                } else {
-                    mIdx = (mIdx + 1) % activeTrack.measures.size.coerceAtLeast(1)
-                    bIdx = 0
-                }
-
-                currentMeasureIndex = mIdx
-                currentBeatIndex = bIdx
-            }
+    // Smooth auto-scroll during playback
+    LaunchedEffect(currentMeasureIndex, isPlaying) {
+        if (isPlaying && currentMeasureIndex > 0) {
+            val approxMeasureHeightPx = 280
+            val targetScroll = (currentMeasureIndex * approxMeasureHeightPx).coerceAtLeast(0)
+            scrollState.animateScrollTo(targetScroll)
         }
     }
 
@@ -158,33 +125,37 @@ fun SongsterrTabPlayerScreen(
             SongsterrBottomControlBar(
                 isPlaying = isPlaying,
                 onTogglePlay = {
-                    if (isPlaying || isCountingIn) {
-                        isPlaying = false
-                        isCountingIn = false
+                    if (isPlaying) {
+                        viewModel.togglePlay()
                     } else {
                         if (countInEnabled && currentMeasureIndex == 0 && currentBeatIndex == 0) {
                             scope.launch {
                                 isCountingIn = true
                                 for (beat in 1..4) {
                                     countInBeat = beat
-                                    delay((60000 / (score.tempo * speedRatio)).toLong())
+                                    val beatDelay = (60000 / (score.tempo * speedMultiplier)).toLong()
+                                    delay(beatDelay.coerceIn(150, 1000))
                                 }
                                 isCountingIn = false
-                                isPlaying = true
+                                viewModel.togglePlay()
                             }
                         } else {
-                            isPlaying = true
+                            viewModel.togglePlay()
                         }
                     }
                 },
-                speedRatio = speedRatio,
+                activeTrackName = activeTrack.name,
+                speedRatio = speedMultiplier,
                 audioSource = audioSource,
                 onToggleAudioSource = { audioSource = it },
                 isLoopActive = isLoopActive,
                 onToggleLoop = {
                     isLoopActive = !isLoopActive
-                    if (isLoopActive && loopRange == null) {
-                        loopRange = Pair(1, 4)
+                    if (isLoopActive) {
+                        val range = loopRange ?: Pair(1, 4)
+                        viewModel.setLoop(range.first - 1, range.second - 1)
+                    } else {
+                        viewModel.clearLoop()
                     }
                 },
                 onOpenMixer = { isMixerOpen = true },
@@ -199,7 +170,7 @@ fun SongsterrTabPlayerScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // 1. TOP INFORMATION HEADER
+            // 1. TOP INFORMATION HEADER (Clean, no redundant track button)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -255,34 +226,6 @@ fun SongsterrTabPlayerScreen(
                         )
                     }
                 }
-
-                // Quick Tracks Button
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFF1E222A))
-                        .border(1.dp, Color(0xFF2E333D), RoundedCornerShape(12.dp))
-                        .clickable { isMixerOpen = true }
-                        .padding(horizontal = 10.dp, vertical = 6.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Tune,
-                            contentDescription = null,
-                            tint = Color(0xFFFBBF24),
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Text(
-                            text = "Партии (${score.tracks.size})",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFE5E7EB)
-                        )
-                    }
-                }
             }
 
             // Count-in Banner
@@ -304,7 +247,7 @@ fun SongsterrTabPlayerScreen(
                 }
             }
 
-            // 2. TAB CANVAS (Maximized Canvas with scroll)
+            // 2. TAB CANVAS (Maximized 60 FPS Canvas with smooth scrolling)
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -318,8 +261,7 @@ fun SongsterrTabPlayerScreen(
                     isPlaying = isPlaying,
                     loopRange = if (isLoopActive) loopRange else null,
                     onSelectPosition = { mIdx, bIdx ->
-                        currentMeasureIndex = mIdx
-                        currentBeatIndex = bIdx
+                        viewModel.seekPlayback(mIdx, bIdx)
                     }
                 )
             }
@@ -358,14 +300,26 @@ fun SongsterrTabPlayerScreen(
             sheetState = mixerSheetState,
             onDismissRequest = { isMixerOpen = false },
             tracks = score.tracks,
-            activeTrackId = activeTrackId,
-            onSelectActiveTrack = {
-                activeTrackId = it
+            activeTrackId = activeTrack.id,
+            onSelectActiveTrack = { trackId ->
+                val idx = score.tracks.indexOfFirst { it.id == trackId }
+                if (idx >= 0) {
+                    viewModel.selectTrack(idx)
+                }
                 isMixerOpen = false
             },
-            onVolumeChange = { _, _ -> },
-            onToggleMute = { _ -> },
-            onToggleSolo = { _ -> }
+            onVolumeChange = { trackId, vol ->
+                val idx = score.tracks.indexOfFirst { it.id == trackId }
+                if (idx >= 0) viewModel.setTrackVolume(idx, vol)
+            },
+            onToggleMute = { trackId ->
+                val idx = score.tracks.indexOfFirst { it.id == trackId }
+                if (idx >= 0) viewModel.toggleMuteTrack(idx)
+            },
+            onToggleSolo = { trackId ->
+                val idx = score.tracks.indexOfFirst { it.id == trackId }
+                if (idx >= 0) viewModel.toggleSoloTrack(idx)
+            }
         )
     }
 
@@ -374,8 +328,10 @@ fun SongsterrTabPlayerScreen(
         TempoBottomSheet(
             sheetState = tempoSheetState,
             onDismissRequest = { isTempoOpen = false },
-            speedRatio = speedRatio,
-            onSpeedRatioChange = { speedRatio = it },
+            speedRatio = speedMultiplier,
+            onSpeedRatioChange = { newRatio ->
+                viewModel.setSpeedMultiplier(newRatio)
+            },
             baseTempoBpm = score.tempo
         )
     }
@@ -385,28 +341,47 @@ fun SongsterrTabPlayerScreen(
         MoreOptionsBottomSheet(
             sheetState = moreSheetState,
             onDismissRequest = { isMoreOpen = false },
-            onOpenTuner = {
-                isMoreOpen = false
-                isTunerOpen = true
+            isMutedTrack = activeTrack.isMuted,
+            onToggleMuteTrack = {
+                val idx = score.tracks.indexOfFirst { it.id == activeTrack.id }
+                if (idx >= 0) viewModel.toggleMuteTrack(idx)
+            },
+            isSoloTrack = activeTrack.isSolo,
+            onToggleSoloTrack = {
+                val idx = score.tracks.indexOfFirst { it.id == activeTrack.id }
+                if (idx >= 0) viewModel.toggleSoloTrack(idx)
             },
             onOpenTransposition = {
                 isMoreOpen = false
                 isTranspositionOpen = true
             },
-            onOpenSongCatalog = {
+            onOpenTuner = {
                 isMoreOpen = false
-                Toast.makeText(context, "Каталог песен доступен в меню", Toast.LENGTH_SHORT).show()
+                isTunerOpen = true
             },
             countInEnabled = countInEnabled,
-            onToggleCountIn = { countInEnabled = !countInEnabled },
+            onToggleCountIn = { countInEnabled = it },
             metronomeClickEnabled = metronomeClickEnabled,
-            onToggleMetronomeClick = { metronomeClickEnabled = !metronomeClickEnabled },
-            onCopyTab = {
+            onToggleMetronomeClick = { metronomeClickEnabled = it },
+            onExportAudio = {
+                isMoreOpen = false
+                Toast.makeText(context, "Экспорт аудио дорожки в разработке", Toast.LENGTH_SHORT).show()
+            },
+            onShareTab = {
+                isMoreOpen = false
+                val sendIntent = Intent().apply {
+                    action = Intent.ACTION_SEND
+                    putExtra(Intent.EXTRA_TEXT, "Смотри разбор песни ${score.title} — ${score.artist} в GuitarLab!")
+                    type = "text/plain"
+                }
+                context.startActivity(Intent.createChooser(sendIntent, "Поделиться табулатурой"))
+            },
+            onCopyLink = {
+                isMoreOpen = false
                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 val clip = ClipData.newPlainText("GuitarLab Tab", "${score.title} - ${score.artist}\nTrack: ${activeTrack.name} (${activeTrack.tuningName})")
                 clipboard.setPrimaryClip(clip)
-                Toast.makeText(context, "Табулатура скопирована в буфер обмена!", Toast.LENGTH_SHORT).show()
-                isMoreOpen = false
+                Toast.makeText(context, "Информация о табулатуре скопирована", Toast.LENGTH_SHORT).show()
             }
         )
     }
