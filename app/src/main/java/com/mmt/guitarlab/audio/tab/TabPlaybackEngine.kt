@@ -67,7 +67,8 @@ class TabPlaybackEngine @Inject constructor() {
             }
 
             val primaryTrack = score.tracks.getOrNull(activeTrackIndex) ?: playableTracks.first()
-            val totalMeasures = primaryTrack.measures.size
+            val maxMeasuresInTracks = score.tracks.maxOfOrNull { it.measures.size } ?: 0
+            val totalMeasures = if (primaryTrack.measures.isNotEmpty()) primaryTrack.measures.size else maxMeasuresInTracks
             if (totalMeasures == 0) {
                 _isPlaying.value = false
                 return@launch

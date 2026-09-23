@@ -132,6 +132,11 @@ class TabViewModel @Inject constructor(
 
     fun selectTrack(index: Int) {
         _selectedTrackIndex.value = index
+        val currentScore = _score.value ?: return
+        if (isPlaying.value) {
+            // Re-sync playback engine with the new active track without stopping audio
+            playbackEngine.play(currentScore, index, _selectedMeasureIndex.value, _selectedBeatIndex.value)
+        }
     }
 
     fun toggleMuteTrack(index: Int) {
