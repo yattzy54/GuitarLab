@@ -194,7 +194,7 @@ fun GuitarLabApp() {
             NavHost(
                 navController = navController,
                 startDestination = AppDest.Player.route,
-                modifier = Modifier.padding(if (currentRoute == AppDest.Player.route) Modifier.padding(0.dp) else Modifier.padding(padding)),
+                modifier = if (currentRoute == AppDest.Player.route) Modifier else Modifier.padding(padding),
             ) {
                 composable(AppDest.Player.route) {
                     val tabViewModel: TabViewModel = hiltViewModel()
