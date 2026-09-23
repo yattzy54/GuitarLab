@@ -1,0 +1,2 @@
+-keep class com.mmt.guitarlab.** { *; }
+-dontwarn dagger.**
