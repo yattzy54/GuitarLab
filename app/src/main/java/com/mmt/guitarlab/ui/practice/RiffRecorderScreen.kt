@@ -4,6 +4,15 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,23 +22,25 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FiberManualRecord
+import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,12 +49,33 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.mmt.guitarlab.ui.components.Studio3DAccent
+import com.mmt.guitarlab.ui.components.Studio3DIconBadge
+import com.mmt.guitarlab.ui.components.StudioCard
+import com.mmt.guitarlab.ui.components.StudioPill
+import com.mmt.guitarlab.ui.theme.ElectricAmber
+import com.mmt.guitarlab.ui.theme.ElectricGreen
+import com.mmt.guitarlab.ui.theme.ElectricRuby
+import com.mmt.guitarlab.ui.theme.ElectricTeal
+import com.mmt.guitarlab.ui.theme.StudioCardBg
+import com.mmt.guitarlab.ui.theme.StudioCardBorder
+import com.mmt.guitarlab.ui.theme.StudioCardElevated
+import com.mmt.guitarlab.ui.theme.StudioDarkBg
+import com.mmt.guitarlab.ui.theme.StudioTextMuted
+import com.mmt.guitarlab.ui.theme.StudioTextPrimary
+import com.mmt.guitarlab.ui.theme.StudioTextSecondary
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -73,83 +105,165 @@ fun RiffRecorderScreen(viewModel: RiffRecorderViewModel = hiltViewModel()) {
         hasPermission = granted
     }
 
+    val pulseTransition = rememberInfiniteTransition(label = "recordingPulse")
+    val pulseScale by pulseTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.15f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "pulseScale",
+    )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .background(StudioDarkBg)
+            .padding(horizontal = 18.dp, vertical = 12.dp),
     ) {
-        Text("Riff Quick Recorder", style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(12.dp))
-
-        // Recording Card Controls
-        Card(
+        // Recording Studio Deck Card
+        StudioCard(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+            accentBorder = if (isRecording) ElectricRuby else null,
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                // Inputs: Title & BPM
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     OutlinedTextField(
                         value = title,
                         onValueChange = { title = it },
                         label = { Text("Riff Title") },
-                        modifier = Modifier.weight(1f).padding(end = 8.dp),
+                        placeholder = { Text("e.g. Heavy Blues Riff") },
+                        modifier = Modifier.weight(1f),
                         singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = ElectricTeal,
+                            unfocusedBorderColor = StudioCardBorder,
+                            focusedTextColor = StudioTextPrimary,
+                            unfocusedTextColor = StudioTextPrimary,
+                        ),
                     )
                     OutlinedTextField(
                         value = bpmText,
                         onValueChange = { bpmText = it },
                         label = { Text("BPM") },
-                        modifier = Modifier.width(90.dp),
+                        modifier = Modifier.width(96.dp),
                         singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = ElectricAmber,
+                            unfocusedBorderColor = StudioCardBorder,
+                            focusedTextColor = StudioTextPrimary,
+                            unfocusedTextColor = StudioTextPrimary,
+                        ),
                     )
                 }
 
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = "Tuning: $activeTuningName",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(10.dp))
 
-                if (isRecording) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Text(
-                        text = formatDuration(recordingDurationMs),
-                        style = MaterialTheme.typography.headlineLarge,
-                        color = MaterialTheme.colorScheme.error,
-                        fontWeight = FontWeight.Bold,
+                        text = "Tuning: $activeTuningName",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = StudioTextSecondary,
                     )
-                    Spacer(Modifier.height(12.dp))
-                    Button(
-                        onClick = {
-                            val bpm = bpmText.toIntOrNull() ?: 120
-                            viewModel.stopRecording(title, bpm)
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    Text(
+                        text = if (isRecording) "RECORDING IN PROGRESS" else "STANDBY",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isRecording) ElectricRuby else ElectricTeal,
+                        letterSpacing = 1.sp,
+                    )
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // Big Timer Display
+                Text(
+                    text = formatDuration(recordingDurationMs),
+                    style = MaterialTheme.typography.displayMedium.copy(
+                        fontSize = 48.sp,
+                        fontWeight = FontWeight.Black,
+                    ),
+                    color = if (isRecording) ElectricRuby else StudioTextPrimary,
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                // Record / Stop Hero Button
+                if (isRecording) {
+                    Box(
+                        modifier = Modifier
+                            .size(76.dp)
+                            .scale(pulseScale)
+                            .shadow(
+                                elevation = 16.dp,
+                                shape = CircleShape,
+                                ambientColor = ElectricRuby,
+                                spotColor = ElectricRuby,
+                            )
+                            .clip(CircleShape)
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    listOf(Color(0xFFFF5277), Color(0xFFFF2A55), Color(0xFFB80028)),
+                                ),
+                            )
+                            .border(2.dp, Color.White.copy(alpha = 0.5f), CircleShape)
+                            .clickable {
+                                val bpm = bpmText.toIntOrNull() ?: 120
+                                viewModel.stopRecording(title, bpm)
+                            },
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Icon(Icons.Default.Stop, contentDescription = "Stop")
-                        Spacer(Modifier.width(6.dp))
-                        Text("Stop Recording")
+                        Icon(
+                            imageVector = Icons.Default.Stop,
+                            contentDescription = "Stop",
+                            tint = Color.White,
+                            modifier = Modifier.size(36.dp),
+                        )
                     }
                 } else {
-                    Button(
-                        onClick = {
-                            if (hasPermission) {
-                                viewModel.startRecording(context, title)
-                            } else {
-                                permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                            }
-                        },
+                    Box(
+                        modifier = Modifier
+                            .size(76.dp)
+                            .shadow(
+                                elevation = 12.dp,
+                                shape = CircleShape,
+                                ambientColor = ElectricRuby,
+                                spotColor = ElectricRuby,
+                            )
+                            .clip(CircleShape)
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    listOf(Color(0xFFFF6B8B), Color(0xFFFF3366), Color(0xFFAD0030)),
+                                ),
+                            )
+                            .border(1.5.dp, Color.White.copy(alpha = 0.4f), CircleShape)
+                            .clickable {
+                                if (hasPermission) {
+                                    viewModel.startRecording(context, title)
+                                } else {
+                                    permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                }
+                            },
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Icon(Icons.Default.FiberManualRecord, contentDescription = "Record", tint = MaterialTheme.colorScheme.error)
-                        Spacer(Modifier.width(6.dp))
-                        Text("Record Audio Memo")
+                        Icon(
+                            imageVector = Icons.Default.FiberManualRecord,
+                            contentDescription = "Record",
+                            tint = Color.White,
+                            modifier = Modifier.size(36.dp),
+                        )
                     }
                 }
             }
@@ -157,69 +271,88 @@ fun RiffRecorderScreen(viewModel: RiffRecorderViewModel = hiltViewModel()) {
 
         Spacer(Modifier.height(20.dp))
 
-        Text("Saved Riff Memos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(8.dp))
+        // Saved Memos Header
+        Text(
+            text = "SAVED RIFF MEMOS (${riffList.size})",
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = StudioTextMuted,
+            letterSpacing = 1.sp,
+        )
+
+        Spacer(Modifier.height(10.dp))
 
         if (riffList.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(32.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("No riff recordings yet. Record a quick guitar memo above!")
+            StudioCard(modifier = Modifier.fillMaxWidth()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        "No guitar riff recordings yet.\nTap the record button above to capture ideas!",
+                        color = StudioTextSecondary,
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    )
+                }
             }
         } else {
-            LazyColumn(modifier = Modifier.weight(1f)) {
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 items(riffList) { riff ->
                     val isPlayingThis = playingRiffId == riff.id
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isPlayingThis) {
-                                MaterialTheme.colorScheme.primaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.surfaceVariant
-                            },
-                        ),
+                    StudioCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        accentBorder = if (isPlayingThis) ElectricAmber else null,
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
-                            IconButton(onClick = { viewModel.playRiff(riff) }) {
-                                Icon(
-                                    imageVector = if (isPlayingThis) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                    contentDescription = "Play/Pause",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                )
-                            }
+                            // Play/Pause 3D button
+                            Studio3DIconBadge(
+                                icon = if (isPlayingThis) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                contentDescription = "Play/Pause",
+                                size = 42.dp,
+                                accent = if (isPlayingThis) Studio3DAccent.AMBER else Studio3DAccent.SLATE,
+                                onClick = { viewModel.playRiff(riff) },
+                            )
 
-                            Column(modifier = Modifier.weight(1f).padding(horizontal = 8.dp)) {
+                            Spacer(Modifier.width(12.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = riff.title,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold,
+                                    text = riff.title.ifBlank { "Untitled Riff" },
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = StudioTextPrimary,
                                 )
                                 Text(
                                     text = "${riff.tuningName}  ·  ${riff.bpm} BPM  ·  ${formatDuration(riff.durationMs)}",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = ElectricTeal,
+                                    fontWeight = FontWeight.SemiBold,
                                 )
                                 Text(
                                     text = formatDate(riff.timestamp),
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                    color = StudioTextMuted,
                                 )
                             }
 
                             IconButton(onClick = { viewModel.deleteRiff(riff) }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Delete")
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Delete",
+                                    tint = StudioTextMuted,
+                                    modifier = Modifier.size(20.dp),
+                                )
                             }
                         }
                     }
@@ -233,10 +366,10 @@ private fun formatDuration(ms: Long): String {
     val totalSeconds = ms / 1000
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
-    return "%02d:%02d".format(minutes, seconds)
+    return String.format("%02d:%02d", minutes, seconds)
 }
 
 private fun formatDate(timestamp: Long): String {
-    val sdf = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
+    val sdf = SimpleDateFormat("MMM dd, yyyy · HH:mm", Locale.getDefault())
     return sdf.format(Date(timestamp))
 }

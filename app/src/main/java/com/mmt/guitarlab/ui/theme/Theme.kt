@@ -1,81 +1,75 @@
 package com.mmt.guitarlab.ui.theme
 
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 
-// Premium Studio Dark Palette
-private val ElectricAmber = Color(0xFFFFB703)
-private val ElectricAmberContainer = Color(0xFF382600)
-private val ElectricTeal = Color(0xFF00E5FF)
-private val ElectricTealContainer = Color(0xFF00363D)
-private val DarkStudioBackground = Color(0xFF101216)
-private val DarkStudioSurface = Color(0xFF171A21)
-private val DarkStudioSurfaceVariant = Color(0xFF222631)
-private val DarkStudioSurfaceContainerHigh = Color(0xFF2A2F3D)
+// Premium Studio Dark Palette - Consistent across all screens
+val StudioDarkBg = Color(0xFF0C0F15)
+val StudioCardBg = Color(0xFF141822)
+val StudioCardElevated = Color(0xFF1B212F)
+val StudioCardBorder = Color(0xFF252D3E)
+val StudioCardBorderLight = Color(0xFF333E56)
+
+val ElectricAmber = Color(0xFFFFB703)
+val ElectricAmberGlow = Color(0xFFFFCA3A)
+val ElectricTeal = Color(0xFF00E5FF)
+val ElectricGreen = Color(0xFF00E676)
+val ElectricRuby = Color(0xFFFF3366)
+val StudioTextPrimary = Color(0xFFF1F3F9)
+val StudioTextSecondary = Color(0xFF94A0B8)
+val StudioTextMuted = Color(0xFF64748B)
+
+// 3D Gradients
+val Amber3DGradient = Brush.verticalGradient(
+    colors = listOf(Color(0xFFFFD166), Color(0xFFFFB703), Color(0xFFD48B00))
+)
+val Teal3DGradient = Brush.verticalGradient(
+    colors = listOf(Color(0xFF80F5FF), Color(0xFF00E5FF), Color(0xFF009BB0))
+)
+val Green3DGradient = Brush.verticalGradient(
+    colors = listOf(Color(0xFF69F0AE), Color(0xFF00E676), Color(0xFF00A850))
+)
+val Ruby3DGradient = Brush.verticalGradient(
+    colors = listOf(Color(0xFFFF6B8B), Color(0xFFFF3366), Color(0xFFB80036))
+)
+val Card3DGradient = Brush.verticalGradient(
+    colors = listOf(Color(0xFF22293A), Color(0xFF151A24))
+)
 
 private val DarkColors = darkColorScheme(
     primary = ElectricAmber,
-    onPrimary = Color(0xFF261800),
-    primaryContainer = ElectricAmberContainer,
+    onPrimary = Color(0xFF120E00),
+    primaryContainer = Color(0xFF382600),
     onPrimaryContainer = Color(0xFFFFE082),
     secondary = ElectricTeal,
-    onSecondary = Color(0xFF00363D),
-    secondaryContainer = ElectricTealContainer,
+    onSecondary = Color(0xFF003138),
+    secondaryContainer = Color(0xFF004D58),
     onSecondaryContainer = Color(0xFFB2F5FF),
-    background = DarkStudioBackground,
-    onBackground = Color(0xFFE6E8EE),
-    surface = DarkStudioSurface,
-    onSurface = Color(0xFFE6E8EE),
-    surfaceVariant = DarkStudioSurfaceVariant,
-    onSurfaceVariant = Color(0xFFC0C5D4),
-    surfaceContainerHigh = DarkStudioSurfaceContainerHigh,
-    outline = Color(0xFF5A6072),
-    error = Color(0xFFFF5252),
-)
-
-private val LightColors = lightColorScheme(
-    primary = Color(0xFF7C5300),
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFFFFDF9E),
-    onPrimaryContainer = Color(0xFF261800),
-    secondary = Color(0xFF006874),
-    onSecondary = Color.White,
-    secondaryContainer = Color(0xFF97F0FF),
-    onSecondaryContainer = Color(0xFF001F24),
-    background = Color(0xFFF7F9FC),
-    onBackground = Color(0xFF1A1C22),
-    surface = Color(0xFFFFFFFF),
-    onSurface = Color(0xFF1A1C22),
-    surfaceVariant = Color(0xFFE1E4ED),
-    onSurfaceVariant = Color(0xFF444752),
-    outline = Color(0xFF757783),
+    tertiary = ElectricGreen,
+    onTertiary = Color(0xFF003817),
+    background = StudioDarkBg,
+    onBackground = StudioTextPrimary,
+    surface = StudioCardBg,
+    onSurface = StudioTextPrimary,
+    surfaceVariant = StudioCardElevated,
+    onSurfaceVariant = StudioTextSecondary,
+    surfaceContainerHigh = StudioCardElevated,
+    outline = StudioCardBorder,
+    error = ElectricRuby,
 )
 
 @Composable
 fun GuitarLabTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    darkTheme: Boolean = true, // Force premium dark studio theme for guitar app
+    dynamicColor: Boolean = false, // Keep consistent branding colors
     content: @Composable () -> Unit,
 ) {
-    val context = LocalContext.current
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> DarkColors
-        else -> LightColors
-    }
-
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = DarkColors,
         content = content,
     )
 }
