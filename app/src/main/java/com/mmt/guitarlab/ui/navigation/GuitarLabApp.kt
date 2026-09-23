@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.GridOn
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Mic
@@ -33,6 +34,7 @@ import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.GridOn
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.LibraryMusic
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.SlowMotionVideo
@@ -80,6 +82,7 @@ import com.mmt.guitarlab.ui.components.Studio3DIconBadge
 import com.mmt.guitarlab.ui.metronome.AutoSpeedTrainerScreen
 import com.mmt.guitarlab.ui.metronome.MetronomeScreen
 import com.mmt.guitarlab.ui.practice.ChordScaleScreen
+import com.mmt.guitarlab.ui.practice.ReverseChordFinderScreen
 import com.mmt.guitarlab.ui.practice.PracticeTrackerScreen
 import com.mmt.guitarlab.ui.practice.RiffRecorderScreen
 import com.mmt.guitarlab.ui.practice.SlowDownerScreen
@@ -109,6 +112,7 @@ enum class AppDest(
     Tuner("tuner", "Guitar Tuner", "Тюнер", Icons.Filled.GraphicEq, Icons.Outlined.GraphicEq),
     Metronome("metronome", "Metronome", "Метроном", Icons.Filled.Timer, Icons.Outlined.Timer),
     Fretboard("fretboard", "Гриф & Аккорды", "Гриф", Icons.Filled.GridOn, Icons.Outlined.GridOn),
+    ReverseChord("reverse_chord", "Reverse Chord Finder", "Аккорды", Icons.Filled.Search, Icons.Outlined.Search),
     Trainer("trainer", "Auto-Speed Trainer", "Тренер", Icons.Filled.Speed, Icons.Outlined.Speed),
     SlowDowner("slowdowner", "Audio Slow-Downer", "Плеер", Icons.Filled.SlowMotionVideo, Icons.Outlined.SlowMotionVideo),
     Recorder("recorder", "Riff Quick Recorder", "Диктофон", Icons.Filled.Mic, Icons.Outlined.Mic),
@@ -259,6 +263,7 @@ fun GuitarLabApp() {
                 composable(AppDest.Tabs.route) { TabViewerScreen() }
                 composable(AppDest.TabEditor.route) { TabEditorScreen() }
                 composable(AppDest.Fretboard.route) { ChordScaleScreen() }
+                composable(AppDest.ReverseChord.route) { ReverseChordFinderScreen() }
                 composable(AppDest.SlowDowner.route) { SlowDownerScreen() }
                 composable(AppDest.Recorder.route) { RiffRecorderScreen() }
                 composable(AppDest.Tracker.route) { PracticeTrackerScreen() }

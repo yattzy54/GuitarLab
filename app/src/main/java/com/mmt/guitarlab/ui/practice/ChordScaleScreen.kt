@@ -71,6 +71,9 @@ import com.mmt.guitarlab.ui.theme.StudioTextSecondary
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ChordScaleScreen(viewModel: FretboardViewModel = hiltViewModel()) {
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        viewModel.setMode(FretboardMode.CHORD_SCALE_FINDER)
+    }
     val selectedTuning by viewModel.selectedTuning.collectAsStateWithLifecycle()
     val mode by viewModel.mode.collectAsStateWithLifecycle()
     val rootNote by viewModel.rootNote.collectAsStateWithLifecycle()
@@ -89,30 +92,7 @@ fun ChordScaleScreen(viewModel: FretboardViewModel = hiltViewModel()) {
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
-        // Mode Selector: Explorer vs Reverse Chord Lookup
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            StudioPill(
-                text = "Chord & Scale Explorer",
-                selected = mode == FretboardMode.CHORD_SCALE_FINDER,
-                onClick = { viewModel.setMode(FretboardMode.CHORD_SCALE_FINDER) },
-                leadingIcon = Icons.Default.GridOn,
-                accentColor = ElectricAmber,
-                modifier = Modifier.weight(1f),
-            )
-            StudioPill(
-                text = "Reverse Chord Finder",
-                selected = mode == FretboardMode.REVERSE_LOOKUP,
-                onClick = { viewModel.setMode(FretboardMode.REVERSE_LOOKUP) },
-                leadingIcon = Icons.Default.Search,
-                accentColor = ElectricTeal,
-                modifier = Modifier.weight(1f),
-            )
-        }
 
-        Spacer(Modifier.height(16.dp))
 
         if (mode == FretboardMode.CHORD_SCALE_FINDER) {
             // Root Note Picker (Chromatic 12 notes)
@@ -288,7 +268,8 @@ fun ChordScaleScreen(viewModel: FretboardViewModel = hiltViewModel()) {
 }
 
 @Composable
-private fun RealisticFretboardCanvas(
+@Composable
+fun RealisticFretboardCanvas(
     stringCount: Int,
     tuningNotes: List<com.mmt.guitarlab.domain.model.TuningNote>,
     mode: FretboardMode,
