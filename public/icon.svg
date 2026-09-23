@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18181b"/>
+      <stop offset="100%" stop-color="#09090b"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#bg)" stroke="#27272a" stroke-width="16"/>
+  <!-- Guitar Pick Body -->
+  <path d="M 256 90 C 370 90 410 140 400 240 C 390 350 290 430 256 450 C 222 430 122 350 112 240 C 102 140 142 90 256 90 Z" fill="url(#accent)"/>
+  <!-- Strings & Play Accent -->
+  <path d="M 200 170 L 312 170 M 180 230 L 332 230 M 200 290 L 312 290" stroke="#09090b" stroke-width="12" stroke-linecap="round"/>
+  <polygon points="236,200 236,320 316,260" fill="#09090b"/>
+</svg>

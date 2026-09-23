@@ -1,0 +1,6 @@
+{
+  "name": "GuitarLab",
+  "description": "Guitar learning, chord lab, tabs, tuner, and interactive fretboard application.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

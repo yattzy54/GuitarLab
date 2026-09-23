@@ -1,0 +1,17 @@
+{
+  "short_name": "GuitarLab",
+  "name": "GuitarLab - Tab Player & Tuner",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0d0f12",
+  "theme_color": "#12151a",
+  "display": "standalone",
+  "orientation": "portrait"
+}
