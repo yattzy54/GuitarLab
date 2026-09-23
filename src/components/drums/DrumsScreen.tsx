@@ -21,7 +21,7 @@ import {
   DRUM_GENRES,
   DrumPattern,
 } from '../../data/drumPatterns';
-import { drumEngine, DrumInstrument } from '../../audio/drumAudioEngine';
+import { drumEngine, DrumInstrument, DrumKitType } from '../../audio/drumAudioEngine';
 import { Studio3DBadge, StudioCard, StudioPill } from '../common/Studio3DComponents';
 
 const FAVORITES_KEY = 'guitarlab_favorite_drum_patterns';
@@ -30,6 +30,7 @@ export const DrumsScreen: React.FC = () => {
   // State
   const [selectedPattern, setSelectedPattern] = useState<DrumPattern>(() => DRUM_PATTERNS[0]);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentKit, setCurrentKit] = useState<DrumKitType>('rock');
   const [bpm, setBpm] = useState<number>(() => DRUM_PATTERNS[0].bpm);
   const [currentStep, setCurrentStep] = useState<number>(-1);
   const [selectedGenre, setSelectedGenre] = useState<string>('All');
@@ -294,6 +295,49 @@ export const DrumsScreen: React.FC = () => {
             >
               <RotateCcw className="w-5 h-5" />
             </button>
+          </div>
+        </div>
+      </StudioCard>
+
+      {/* Drum Kits Selector Bar */}
+      <StudioCard>
+        <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div className="text-xs font-black text-amber-400 tracking-wider uppercase">
+              DRUM KIT
+            </div>
+            <div className="text-xs text-zinc-400 mt-0.5">
+              {currentKit === 'rock' && 'Rock Kit — акустический панчевый бас и кленовый малый барабан'}
+              {currentKit === 'metal' && 'Metal Kit — кликающий скоростной триггер и острый стальной малый'}
+              {currentKit === 'pop' && 'Pop Studio — современный плотный округлый панч и мягкий клэп'}
+              {currentKit === 'electronic' && 'Electronic — глубокий 808 саб-бас и аналоговые 909 звуки'}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {[
+              { id: 'rock', label: 'Rock' },
+              { id: 'metal', label: 'Metal' },
+              { id: 'pop', label: 'Pop' },
+              { id: 'electronic', label: 'Electronic' },
+            ].map((kit) => {
+              const isSelected = currentKit === kit.id;
+              return (
+                <button
+                  key={kit.id}
+                  onClick={() => {
+                    setCurrentKit(kit.id as DrumKitType);
+                    drumEngine.setDrumKit(kit.id as DrumKitType);
+                  }}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer border ${
+                    isSelected
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/60 shadow-[0_0_12px_rgba(245,158,11,0.25)]'
+                      : 'bg-[#151C2A] text-zinc-400 border-[#27344D] hover:text-white hover:border-zinc-600'
+                  }`}
+                >
+                  {kit.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </StudioCard>

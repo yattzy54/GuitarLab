@@ -76,6 +76,7 @@ fun DrumsScreen(
     val volume by viewModel.volume.collectAsStateWithLifecycle()
     val swing by viewModel.swing.collectAsStateWithLifecycle()
     val pattern by viewModel.pattern.collectAsStateWithLifecycle()
+    val currentKit by viewModel.drumKit.collectAsStateWithLifecycle()
     val patterns = viewModel.availablePatterns
 
     Column(
@@ -114,7 +115,75 @@ fun DrumsScreen(
             }
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(14.dp))
+
+        // DRUM KIT SELECTOR (Rock, Metal, Pop, Electronic)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(StudioCardBg)
+                .border(1.dp, StudioCardBorder, RoundedCornerShape(16.dp))
+                .padding(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "DRUM KIT",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = ElectricAmber,
+                    letterSpacing = 1.sp,
+                )
+                Text(
+                    text = currentKit.description,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = StudioTextMuted,
+                    fontSize = 10.5.sp,
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                com.mmt.guitarlab.domain.model.DrumKit.entries.forEach { kit ->
+                    val isKitSelected = kit == currentKit
+                    val kitColor = when (kit) {
+                        com.mmt.guitarlab.domain.model.DrumKit.ROCK -> ElectricAmber
+                        com.mmt.guitarlab.domain.model.DrumKit.METAL -> Color(0xFFEF4444)
+                        com.mmt.guitarlab.domain.model.DrumKit.POP -> ElectricTeal
+                        com.mmt.guitarlab.domain.model.DrumKit.ELECTRONIC -> Color(0xFFA855F7)
+                    }
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (isKitSelected) kitColor.copy(alpha = 0.22f) else StudioCardElevated)
+                            .border(
+                                width = if (isKitSelected) 1.5.dp else 1.dp,
+                                color = if (isKitSelected) kitColor else StudioCardBorder,
+                                shape = RoundedCornerShape(10.dp)
+                            )
+                            .clickable { viewModel.setDrumKit(kit) }
+                            .padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = kit.displayName,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = if (isKitSelected) FontWeight.Black else FontWeight.Medium,
+                            color = if (isKitSelected) kitColor else StudioTextSecondary,
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
 
         // Preset style chips
         Row(

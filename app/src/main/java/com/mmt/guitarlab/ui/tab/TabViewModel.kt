@@ -158,11 +158,17 @@ class TabViewModel @Inject constructor(
 
         // Switch playback engine to the new active track and immediately start/continue playback
         val activeScore = _score.value ?: currentScore
+        val activeTrk = activeScore.tracks.getOrNull(clampedIdx)
+        val validM = curM.coerceIn(0, (activeTrk?.measures?.lastIndex ?: 0).coerceAtLeast(0))
+        val measureBeats = activeTrk?.measures?.getOrNull(validM)?.beats?.size ?: 1
+        val validB = curB.coerceIn(0, (measureBeats - 1).coerceAtLeast(0))
+
+        playbackEngine.seekTo(validM, validB)
         playbackEngine.play(
             score = activeScore,
             activeTrackIndex = clampedIdx,
-            startMeasureIndex = curM,
-            startBeatIndex = curB,
+            startMeasureIndex = validM,
+            startBeatIndex = validB,
         )
     }
 

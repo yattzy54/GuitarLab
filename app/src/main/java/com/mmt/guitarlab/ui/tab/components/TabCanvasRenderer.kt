@@ -103,7 +103,7 @@ fun TabCanvasRenderer(
             var currentY = 16f
 
             track.measures.forEachIndexed { mIdx, measure ->
-                val isMeasureActive = isPlaying && currentMeasureIndex == mIdx
+                val isMeasureActive = currentMeasureIndex == mIdx
                 val barNumber = mIdx + 1
                 val isLoopStart = loopRange != null && barNumber == loopRange.first
                 val isLoopEnd = loopRange != null && barNumber == loopRange.second
@@ -112,12 +112,14 @@ fun TabCanvasRenderer(
                 // Measure card background
                 val cardRect = Size(width - 24f, measureTotalHeight - 12f)
                 val cardColor = when {
-                    isMeasureActive -> Color(0xFF1B241D)
+                    isMeasureActive && isPlaying -> Color(0xFF1B241D)
+                    isMeasureActive -> Color(0xFF142028)
                     isInLoop -> Color(0xFF262116)
                     else -> Color(0xFF13161C)
                 }
                 val borderColor = when {
-                    isMeasureActive -> Color(0xFF10B981)
+                    isMeasureActive && isPlaying -> Color(0xFF10B981)
+                    isMeasureActive -> Color(0xFF0EA5E9)
                     isInLoop -> Color(0xFFF59E0B)
                     else -> Color(0xFF272A30)
                 }
@@ -141,7 +143,7 @@ fun TabCanvasRenderer(
                 val barLayout = textMeasurer.measure(
                     text = barLabel,
                     style = TextStyle(
-                        color = if (isMeasureActive) Color(0xFF34D399) else Color(0xFF9CA3AF),
+                        color = if (isMeasureActive && isPlaying) Color(0xFF34D399) else if (isMeasureActive) Color(0xFF38BDF8) else Color(0xFF9CA3AF),
                         fontSize = 11.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold,
@@ -314,28 +316,37 @@ fun TabCanvasRenderer(
                 val beats = measure.beats
                 if (beats.isNotEmpty()) {
                     val beatWidth = tabWidth / beats.size.coerceAtLeast(1)
+                    val clampedBeatIdx = currentBeatIndex.coerceIn(0, beats.lastIndex)
 
                     beats.forEachIndexed { bIdx, beat ->
-                        val isBeatActive = isMeasureActive && currentBeatIndex == bIdx
+                        val isBeatActive = isMeasureActive && clampedBeatIdx == bIdx
                         val beatCenterX = leftMargin + bIdx * beatWidth + beatWidth / 2f
                         val beatBoxLeft = leftMargin + bIdx * beatWidth + 2f
                         val beatBoxWidth = beatWidth - 4f
 
-                        // Playhead green rounded frame around active beat
+                        // Playhead cursor frame and needle around active beat
                         if (isBeatActive) {
                             val activeHeight = (stringCount - 1) * stringSpacing + stemHeight + 16f
+                            val playheadColor = if (isPlaying) Color(0xFF10B981) else Color(0xFF38BDF8)
                             drawRoundRect(
-                                color = Color(0x3310B981),
+                                color = playheadColor.copy(alpha = if (isPlaying) 0.28f else 0.18f),
                                 topLeft = Offset(beatBoxLeft, stringsStartY - 10f),
                                 size = Size(beatBoxWidth, activeHeight),
-                                cornerRadius = CornerRadius(10f, 10f),
+                                cornerRadius = CornerRadius(8f, 8f),
                             )
                             drawRoundRect(
-                                color = Color(0xFF10B981),
+                                color = playheadColor,
                                 topLeft = Offset(beatBoxLeft, stringsStartY - 10f),
                                 size = Size(beatBoxWidth, activeHeight),
-                                cornerRadius = CornerRadius(10f, 10f),
-                                style = Stroke(width = 2.5f),
+                                cornerRadius = CornerRadius(8f, 8f),
+                                style = Stroke(width = if (isPlaying) 2.5f else 2.0f),
+                            )
+                            // Clean playhead vertical tracking needle
+                            drawLine(
+                                color = playheadColor,
+                                start = Offset(beatCenterX, stringsStartY - 12f),
+                                end = Offset(beatCenterX, stringsStartY + activeHeight - 6f),
+                                strokeWidth = 2.5f,
                             )
                         }
 

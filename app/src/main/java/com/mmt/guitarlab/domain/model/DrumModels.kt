@@ -1,5 +1,12 @@
 package com.mmt.guitarlab.domain.model
 
+enum class DrumKit(val id: String, val displayName: String, val description: String) {
+    ROCK("rock", "Rock", "Acoustic punchy kick & crisp maple snare"),
+    METAL("metal", "Metal", "Clicky trigger kick & aggressive heavy crack"),
+    POP("pop", "Pop", "Modern radio punch & layered clap-snare"),
+    ELECTRONIC("electronic", "Electronic", "Deep sub 808 boom & analog 909 percussion"),
+}
+
 enum class DrumSound(val displayName: String, val shortName: String) {
     KICK("Bass Drum", "KICK"),
     SNARE("Snare Drum", "SNARE"),

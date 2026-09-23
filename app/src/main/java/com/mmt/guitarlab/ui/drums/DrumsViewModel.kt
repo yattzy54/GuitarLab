@@ -34,6 +34,9 @@ class DrumsViewModel @Inject constructor(
     val pattern: StateFlow<DrumPattern> = engine.pattern
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DrumPattern.DEFAULT_PATTERNS.first())
 
+    val drumKit: StateFlow<com.mmt.guitarlab.domain.model.DrumKit> = engine.drumKit
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.mmt.guitarlab.domain.model.DrumKit.ROCK)
+
     val availablePatterns: List<DrumPattern> = DrumPattern.DEFAULT_PATTERNS
 
     private val tapTimestamps = mutableListOf<Long>()
@@ -64,6 +67,10 @@ class DrumsViewModel @Inject constructor(
 
     fun selectPattern(pattern: DrumPattern) {
         engine.setPattern(pattern)
+    }
+
+    fun setDrumKit(kit: com.mmt.guitarlab.domain.model.DrumKit) {
+        engine.setDrumKit(kit)
     }
 
     fun toggleStep(sound: DrumSound, step: Int) {
