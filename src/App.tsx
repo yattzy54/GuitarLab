@@ -8,9 +8,12 @@ import { AutoSpeedTrainerScreen } from './components/metronome/AutoSpeedTrainerS
 import { TabViewerScreen } from './components/tab/TabViewerScreen';
 import { ChordScaleScreen } from './components/fretboard/ChordScaleScreen';
 import { ReverseChordFinderScreen } from './components/fretboard/ReverseChordFinderScreen';
+import { DrumsScreen } from './components/drums/DrumsScreen';
 import { SlowDownerScreen } from './components/practice/SlowDownerScreen';
 import { RiffRecorderScreen } from './components/practice/RiffRecorderScreen';
 import { PracticeTrackerScreen } from './components/practice/PracticeTrackerScreen';
+import { LanguageScreen } from './components/settings/LanguageScreen';
+import { LanguageProvider, useLanguage } from './i18n/LanguageContext';
 import { Tuning } from './types';
 import { getAllTunings } from './data/defaultTunings';
 import {
@@ -25,11 +28,11 @@ import {
   Timer,
   Grid,
   Menu,
-  TrendingUp,
 } from 'lucide-react';
 import { Studio3DBadge } from './components/common/Studio3DComponents';
 
-export default function App() {
+function AppContent() {
+  const { t } = useLanguage();
   const [currentRoute, setCurrentRoute] = useState<AppDestination>('player');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [a4Pitch, setA4Pitch] = useState(440);
@@ -63,8 +66,8 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0D14] text-zinc-100 flex flex-col selection:bg-amber-500 selection:text-zinc-950 font-sans">
-      {/* Navigation Drawer */}
+    <div className="min-h-screen bg-[#0A0D14] text-zinc-100 flex flex-col font-sans selection:bg-amber-400 selection:text-zinc-950">
+      {/* Side Navigation Drawer */}
       <NavigationDrawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
@@ -78,6 +81,10 @@ export default function App() {
           currentRoute={currentRoute}
           onOpenDrawer={() => setIsDrawerOpen(true)}
           activeTuningName={activeTuning.name}
+          activeTuning={activeTuning}
+          onTuningChange={handleTuningChange}
+          a4Pitch={a4Pitch}
+          onNavigate={(route) => setCurrentRoute(route)}
         />
       )}
 
@@ -89,7 +96,7 @@ export default function App() {
             <button
               onClick={() => setIsDrawerOpen(true)}
               className="fixed top-3 right-3 z-40 p-2.5 rounded-2xl bg-[#141A26]/85 hover:bg-[#1D2536] text-zinc-300 hover:text-white border border-[#27344D] backdrop-blur-md shadow-xl transition-all cursor-pointer"
-              title="Открыть меню студии"
+              title={t('all_tools')}
               aria-label="Open Studio Menu"
             >
               <Menu className="w-5 h-5 text-amber-400" />
@@ -115,6 +122,12 @@ export default function App() {
           </div>
         )}
 
+        {currentRoute === 'drums' && (
+          <div className="pb-24 sm:pb-10">
+            <DrumsScreen />
+          </div>
+        )}
+
         {currentRoute === 'trainer' && (
           <div className="pb-24 sm:pb-10">
             <AutoSpeedTrainerScreen />
@@ -129,12 +142,18 @@ export default function App() {
 
         {currentRoute === 'fretboard' && (
           <div className="pb-24 sm:pb-10">
-            <ChordScaleScreen activeTuning={activeTuning} />
+            <ChordScaleScreen
+              activeTuning={activeTuning}
+              onTuningChange={handleTuningChange}
+            />
           </div>
         )}
         {currentRoute === 'reverse_chord' && (
           <div className="pb-24 sm:pb-10">
-            <ReverseChordFinderScreen activeTuning={activeTuning} />
+            <ReverseChordFinderScreen
+              activeTuning={activeTuning}
+              onTuningChange={handleTuningChange}
+            />
           </div>
         )}
 
@@ -155,6 +174,12 @@ export default function App() {
             <PracticeTrackerScreen />
           </div>
         )}
+
+        {currentRoute === 'language' && (
+          <div className="pb-24 sm:pb-10">
+            <LanguageScreen />
+          </div>
+        )}
       </main>
 
       {/* Floating Bottom Navigation Bar for Standalone Studio Screens */}
@@ -165,7 +190,9 @@ export default function App() {
             className="flex flex-col items-center py-1 px-2 rounded-xl text-emerald-400 font-bold transition-all cursor-pointer"
           >
             <Studio3DBadge icon={PlayCircle} accent="green" size="sm" />
-            <span className="text-[10px] font-bold mt-1 text-zinc-300">Player</span>
+            <span className="text-[10px] font-bold mt-1 text-zinc-300">
+              {t('nav_player')}
+            </span>
           </button>
 
           <button
@@ -182,7 +209,7 @@ export default function App() {
                 currentRoute === 'tuner' ? 'text-amber-400' : 'text-zinc-400'
               }`}
             >
-              Tuner
+              {t('nav_tuner')}
             </span>
           </button>
 
@@ -200,7 +227,7 @@ export default function App() {
                 currentRoute === 'metronome' ? 'text-teal-400' : 'text-zinc-400'
               }`}
             >
-              Tempo
+              {t('tempo')}
             </span>
           </button>
 
@@ -218,7 +245,7 @@ export default function App() {
                 currentRoute === 'fretboard' ? 'text-amber-400' : 'text-zinc-400'
               }`}
             >
-              Fretboard
+              {t('nav_fretboard')}
             </span>
           </button>
 
@@ -227,10 +254,20 @@ export default function App() {
             className="flex flex-col items-center py-1 px-2 rounded-xl text-zinc-400 hover:text-white transition-all cursor-pointer"
           >
             <Studio3DBadge icon={Menu} accent="slate" size="sm" />
-            <span className="text-[10px] font-bold mt-1 text-zinc-400">All Tools</span>
+            <span className="text-[10px] font-bold mt-1 text-zinc-400">
+              {t('all_tools')}
+            </span>
           </button>
         </div>
       )}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
   );
 }

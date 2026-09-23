@@ -13,12 +13,17 @@ import { playGuitarPluck } from '../../audio/guitarSynth';
 import { midiToHz } from '../../data/defaultTunings';
 import { ensureAudioContextStarted } from '../../audio/audioContext';
 import { Studio3DBadge, StudioCard, StudioPill } from '../common/Studio3DComponents';
+import { TuningSelectorDropdown } from '../common/TuningSelectorDropdown';
 
 interface ChordScaleScreenProps {
   activeTuning: Tuning;
+  onTuningChange?: (tuning: Tuning) => void;
 }
 
-export const ChordScaleScreen: React.FC<ChordScaleScreenProps> = ({ activeTuning }) => {
+export const ChordScaleScreen: React.FC<ChordScaleScreenProps> = ({
+  activeTuning,
+  onTuningChange,
+}) => {
   const [mode, setMode] = useState<FretboardMode>('CHORD_SCALE_FINDER');
   const [explorerType, setExplorerType] = useState<'CHORD' | 'SCALE'>('CHORD');
   const [rootNote, setRootNote] = useState('E');
@@ -109,8 +114,16 @@ export const ChordScaleScreen: React.FC<ChordScaleScreenProps> = ({ activeTuning
             </div>
           </div>
 
-          {/* Mode Switcher */}
-
+          {/* Tuning Selector in Screen Toolbar */}
+          {onTuningChange && (
+            <div className="flex items-center space-x-2">
+              <TuningSelectorDropdown
+                activeTuning={activeTuning}
+                onTuningChange={onTuningChange}
+                variant="pill"
+              />
+            </div>
+          )}
         </div>
       </StudioCard>
 

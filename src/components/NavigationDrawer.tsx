@@ -12,99 +12,119 @@ import {
   TrendingUp,
   X,
   Volume2,
+  Drum,
+  Globe,
 } from 'lucide-react';
 import { Studio3DBadge, StudioAccent } from './common/Studio3DComponents';
+import { useLanguage } from '../i18n/LanguageContext';
+import { TranslationKey } from '../i18n/types';
 
 export type AppDestination =
   | 'player'
   | 'tuner'
   | 'metronome'
+  | 'drums'
   | 'trainer'
   | 'tabs'
   | 'fretboard'
   | 'reverse_chord'
   | 'slowdowner'
   | 'recorder'
-  | 'tracker';
+  | 'tracker'
+  | 'language';
 
-interface NavItem {
+interface NavItemConfig {
   id: AppDestination;
-  title: string;
-  subtitle: string;
+  titleKey: TranslationKey;
+  subtitleKey: TranslationKey;
   icon: any;
   accent: StudioAccent;
 }
 
-export const NAV_ITEMS: NavItem[] = [
+export const NAV_ITEM_CONFIGS: NavItemConfig[] = [
   {
     id: 'player',
-    title: 'Табы',
-    subtitle: 'Профессиональный плеер табов (Songsterr)',
+    titleKey: 'nav_player',
+    subtitleKey: 'nav_player_sub',
     icon: PlayCircle,
     accent: 'green',
   },
   {
     id: 'tuner',
-    title: 'Guitar Tuner',
-    subtitle: 'Chromatic YIN Pitch Tracker',
+    titleKey: 'nav_tuner',
+    subtitleKey: 'nav_tuner_sub',
     icon: Activity,
     accent: 'amber',
   },
   {
     id: 'metronome',
-    title: 'Metronome',
-    subtitle: 'Precision Click & Time Signatures',
+    titleKey: 'nav_metronome',
+    subtitleKey: 'nav_metronome_sub',
     icon: Timer,
     accent: 'teal',
   },
   {
+    id: 'drums',
+    titleKey: 'nav_drums',
+    subtitleKey: 'nav_drums_sub',
+    icon: Drum,
+    accent: 'ruby',
+  },
+  {
     id: 'trainer',
-    title: 'Auto-Speed Trainer',
-    subtitle: 'Progressive Tempo Builder',
+    titleKey: 'nav_trainer',
+    subtitleKey: 'nav_trainer_sub',
     icon: Gauge,
     accent: 'teal',
   },
   {
     id: 'tabs',
-    title: 'Tab Editor & Studio',
-    subtitle: 'Редактор табов и парсер ASCII',
+    titleKey: 'nav_tabs',
+    subtitleKey: 'nav_tabs_sub',
     icon: Music,
     accent: 'amber',
   },
   {
     id: 'fretboard',
-    title: 'Гриф & Гаммы',
-    subtitle: 'Исследователь гамм и аккордов на грифе',
+    titleKey: 'nav_fretboard',
+    subtitleKey: 'nav_fretboard_sub',
     icon: Grid,
     accent: 'amber',
   },
   {
     id: 'reverse_chord',
-    title: 'Reverse Chord Finder',
-    subtitle: 'Распознавание аккорда по зажатым ладам',
+    titleKey: 'nav_reverse_chord',
+    subtitleKey: 'nav_reverse_chord_sub',
     icon: Search,
     accent: 'teal',
   },
   {
     id: 'slowdowner',
-    title: 'Audio Slow-Downer',
-    subtitle: 'Pitch-Preserved A-B Looper',
+    titleKey: 'nav_slowdowner',
+    subtitleKey: 'nav_slowdowner_sub',
     icon: FastForward,
     accent: 'teal',
   },
   {
     id: 'recorder',
-    title: 'Riff Quick Recorder',
-    subtitle: 'Mic Memos & Idea Capturer',
+    titleKey: 'nav_recorder',
+    subtitleKey: 'nav_recorder_sub',
     icon: Mic,
     accent: 'ruby',
   },
   {
     id: 'tracker',
-    title: 'Session Tracker',
-    subtitle: 'Daily Streaks & Practice Log',
+    titleKey: 'nav_tracker',
+    subtitleKey: 'nav_tracker_sub',
     icon: TrendingUp,
     accent: 'green',
+  },
+  {
+    id: 'language',
+    titleKey: 'nav_language',
+    subtitleKey: 'nav_language_sub',
+    icon: Globe,
+    accent: 'teal',
   },
 ];
 
@@ -121,6 +141,8 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   currentRoute,
   onNavigate,
 }) => {
+  const { t, languageInfo } = useLanguage();
+
   return (
     <>
       {/* Backdrop */}
@@ -160,12 +182,15 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
         {/* Navigation Items List */}
         <nav className="flex-1 overflow-y-auto p-3 space-y-1.5">
           <div className="px-3 py-1.5 text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
-            Studio Instruments & Practice
+            {t('all_tools')}
           </div>
 
-          {NAV_ITEMS.map((item) => {
+          {NAV_ITEM_CONFIGS.map((item) => {
             const Icon = item.icon;
             const isActive = currentRoute === item.id;
+            const title = t(item.titleKey);
+            const subtitle = item.id === 'language' ? `${languageInfo.flag} ${languageInfo.nativeName}` : t(item.subtitleKey);
+
             return (
               <button
                 key={item.id}
@@ -185,17 +210,39 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
                   size="sm"
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-bold leading-tight">{item.title}</div>
-                  <div className="text-[11px] text-zinc-400 truncate mt-0.5">{item.subtitle}</div>
+                  <div className="text-sm font-bold leading-tight flex items-center justify-between">
+                    <span>{title}</span>
+                    {item.id === 'language' && (
+                      <span className="text-sm">{languageInfo.flag}</span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-zinc-400 truncate mt-0.5">{subtitle}</div>
                 </div>
               </button>
             );
           })}
         </nav>
 
-        {/* Footer info */}
-        <div className="p-4 border-t border-[#222B3D] bg-[#0A0D14]">
-          <div className="flex items-center justify-between text-xs text-zinc-400">
+        {/* Footer info & Quick Language Switcher Button */}
+        <div className="p-4 border-t border-[#222B3D] bg-[#0A0D14] space-y-2">
+          <button
+            onClick={() => {
+              onNavigate('language');
+              onClose();
+            }}
+            className="w-full py-2 px-3 rounded-xl bg-[#141B28] hover:bg-[#1C2538] border border-[#232F42] text-xs font-bold text-zinc-300 flex items-center justify-between transition-colors cursor-pointer"
+          >
+            <div className="flex items-center space-x-2">
+              <Globe className="w-3.5 h-3.5 text-teal-400" />
+              <span>{t('language_title')}</span>
+            </div>
+            <div className="flex items-center space-x-1.5 font-semibold text-white">
+              <span>{languageInfo.flag}</span>
+              <span>{languageInfo.nativeName}</span>
+            </div>
+          </button>
+
+          <div className="flex items-center justify-between text-xs text-zinc-500 pt-1">
             <span>GuitarLab Studio</span>
             <span className="px-2.5 py-0.5 rounded-full bg-[#161D2B] border border-[#27344D] text-amber-400 font-mono text-[10px] font-bold">
               v2.5 PRO

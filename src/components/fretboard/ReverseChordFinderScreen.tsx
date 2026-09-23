@@ -8,12 +8,17 @@ import { playGuitarPluck } from '../../audio/guitarSynth';
 import { midiToHz } from '../../data/defaultTunings';
 import { ensureAudioContextStarted } from '../../audio/audioContext';
 import { Studio3DBadge, StudioCard } from '../common/Studio3DComponents';
+import { TuningSelectorDropdown } from '../common/TuningSelectorDropdown';
 
 interface ReverseChordFinderScreenProps {
   activeTuning: Tuning;
+  onTuningChange?: (tuning: Tuning) => void;
 }
 
-export const ReverseChordFinderScreen: React.FC<ReverseChordFinderScreenProps> = ({ activeTuning }) => {
+export const ReverseChordFinderScreen: React.FC<ReverseChordFinderScreenProps> = ({
+  activeTuning,
+  onTuningChange,
+}) => {
   const [pressedFrets, setPressedFrets] = useState<FretPosition[]>([]);
   const totalFrets = 15;
   const stringCount = activeTuning.stringCount;
@@ -67,7 +72,14 @@ export const ReverseChordFinderScreen: React.FC<ReverseChordFinderScreenProps> =
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {onTuningChange && (
+              <TuningSelectorDropdown
+                activeTuning={activeTuning}
+                onTuningChange={onTuningChange}
+                variant="pill"
+              />
+            )}
             <button
               onClick={handleStrum}
               disabled={pressedFrets.length === 0}
