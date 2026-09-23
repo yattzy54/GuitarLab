@@ -118,9 +118,9 @@ fun MetronomeScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
             ) {
                 // Beat Dots (1, 2, 3, 4...)
                 BeatDots(
-                    beats = config.timeSignature.beats,
-                    accents = config.timeSignature.accents,
-                    current = beat?.beatNumber,
+                    beats = config.timeSignature.beatsPerBar,
+                    accents = config.timeSignature.accentBeats,
+                    current = beat?.beatInBar,
                     pulse = pulse,
                 )
 

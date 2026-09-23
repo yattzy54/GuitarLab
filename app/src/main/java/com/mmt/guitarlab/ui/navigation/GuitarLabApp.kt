@@ -266,6 +266,7 @@ fun GuitarLabApp() {
                         brush = Brush.verticalGradient(
                             listOf(StudioCardBorder, Color.Transparent),
                         ),
+                        shape = androidx.compose.ui.graphics.RectangleShape,
                     ),
                 ) {
                     val bottomTabs = AppDest.entries.filter { it.isPrimaryBottomTab }

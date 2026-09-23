@@ -158,7 +158,7 @@ fun ChordScaleScreen(viewModel: FretboardViewModel = hiltViewModel()) {
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 MusicTheory.chordFormulas.forEach { chord ->
-                    val isSelected = selectedChord?.id == chord.id
+                    val isSelected = selectedChord?.name == chord.name
                     StudioPill(
                         text = chord.name,
                         selected = isSelected,
@@ -185,7 +185,7 @@ fun ChordScaleScreen(viewModel: FretboardViewModel = hiltViewModel()) {
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 MusicTheory.scaleFormulas.forEach { scale ->
-                    val isSelected = selectedScale?.id == scale.id
+                    val isSelected = selectedScale?.name == scale.name
                     StudioPill(
                         text = scale.name,
                         selected = isSelected,
@@ -271,7 +271,7 @@ fun ChordScaleScreen(viewModel: FretboardViewModel = hiltViewModel()) {
                     stringCount = stringCount,
                     tuningNotes = tuningNotes,
                     mode = mode,
-                    rootPitchIndex = MusicTheory.pitchClassOf(rootNote),
+                    rootPitchIndex = MusicTheory.getMidiNoteIndex(rootNote),
                     targetIntervals = selectedChord?.intervals ?: selectedScale?.intervals ?: emptyList(),
                     pressedFrets = pressedFrets,
                     onFretTapped = { strIdx, fret, midi ->

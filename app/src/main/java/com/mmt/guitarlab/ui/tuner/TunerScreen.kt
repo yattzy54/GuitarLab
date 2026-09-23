@@ -381,7 +381,7 @@ fun TunerScreen(viewModel: TunerViewModel = hiltViewModel()) {
                     ) {
                         leftNotes.forEachIndexed { index, note ->
                             val isSelected = (lockedNoteIndex == index) ||
-                                (lockedNoteIndex == null && activeTuningNote?.stringIndex == note.stringIndex)
+                                (lockedNoteIndex == null && activeTuningNote?.stringNumber == note.stringNumber)
                             PegItem(
                                 note = note,
                                 isSelected = isSelected,
@@ -407,7 +407,7 @@ fun TunerScreen(viewModel: TunerViewModel = hiltViewModel()) {
                         rightNotes.forEachIndexed { rIndex, note ->
                             val actualIndex = rIndex + 3
                             val isSelected = (lockedNoteIndex == actualIndex) ||
-                                (lockedNoteIndex == null && activeTuningNote?.stringIndex == note.stringIndex)
+                                (lockedNoteIndex == null && activeTuningNote?.stringNumber == note.stringNumber)
                             PegItem(
                                 note = note,
                                 isSelected = isSelected,
@@ -506,7 +506,7 @@ private fun PegItem(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = "${note.stringIndex}: ${note.noteName}${note.octave}",
+            text = "${note.stringNumber}: ${note.noteName}${note.octave}",
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
             color = textColor,
