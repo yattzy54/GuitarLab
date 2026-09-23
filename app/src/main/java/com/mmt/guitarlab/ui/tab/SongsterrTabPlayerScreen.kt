@@ -341,47 +341,35 @@ fun SongsterrTabPlayerScreen(
         MoreOptionsBottomSheet(
             sheetState = moreSheetState,
             onDismissRequest = { isMoreOpen = false },
-            isMutedTrack = activeTrack.isMuted,
-            onToggleMuteTrack = {
-                val idx = score.tracks.indexOfFirst { it.id == activeTrack.id }
-                if (idx >= 0) viewModel.toggleMuteTrack(idx)
-            },
-            isSoloTrack = activeTrack.isSolo,
-            onToggleSoloTrack = {
-                val idx = score.tracks.indexOfFirst { it.id == activeTrack.id }
-                if (idx >= 0) viewModel.toggleSoloTrack(idx)
+            onOpenTuner = {
+                isMoreOpen = false
+                isTunerOpen = true
             },
             onOpenTransposition = {
                 isMoreOpen = false
                 isTranspositionOpen = true
             },
-            onOpenTuner = {
+            onOpenSongCatalog = {
                 isMoreOpen = false
-                isTunerOpen = true
+                Toast.makeText(context, "Каталог песен доступен в меню", Toast.LENGTH_SHORT).show()
             },
             countInEnabled = countInEnabled,
-            onToggleCountIn = { countInEnabled = it },
+            onToggleCountIn = {
+                countInEnabled = !countInEnabled
+            },
             metronomeClickEnabled = metronomeClickEnabled,
-            onToggleMetronomeClick = { metronomeClickEnabled = it },
-            onExportAudio = {
-                isMoreOpen = false
-                Toast.makeText(context, "Экспорт аудио дорожки в разработке", Toast.LENGTH_SHORT).show()
+            onToggleMetronomeClick = {
+                metronomeClickEnabled = !metronomeClickEnabled
             },
-            onShareTab = {
-                isMoreOpen = false
-                val sendIntent = Intent().apply {
-                    action = Intent.ACTION_SEND
-                    putExtra(Intent.EXTRA_TEXT, "Смотри разбор песни ${score.title} — ${score.artist} в GuitarLab!")
-                    type = "text/plain"
-                }
-                context.startActivity(Intent.createChooser(sendIntent, "Поделиться табулатурой"))
-            },
-            onCopyLink = {
+            onCopyTab = {
                 isMoreOpen = false
                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                val clip = ClipData.newPlainText("GuitarLab Tab", "${score.title} - ${score.artist}\nTrack: ${activeTrack.name} (${activeTrack.tuningName})")
+                val clip = ClipData.newPlainText(
+                    "GuitarLab Tab",
+                    "${score.title} - ${score.artist}\nTrack: ${activeTrack.name} (${activeTrack.tuningName})"
+                )
                 clipboard.setPrimaryClip(clip)
-                Toast.makeText(context, "Информация о табулатуре скопирована", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Информация о табулатуре скопирована в буфер", Toast.LENGTH_SHORT).show()
             }
         )
     }
