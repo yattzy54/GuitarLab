@@ -101,16 +101,15 @@ enum class AppDest(
     val shortLabel: String,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector,
-    val isPrimaryBottomTab: Boolean = true,
 ) {
-    Tabs("tabs", "Табы & Каталог", "Табы", Icons.Filled.LibraryMusic, Icons.Outlined.LibraryMusic, true),
-    Tuner("tuner", "Guitar Tuner", "Тюнер", Icons.Filled.GraphicEq, Icons.Outlined.GraphicEq, true),
-    Metronome("metronome", "Metronome", "Метроном", Icons.Filled.Timer, Icons.Outlined.Timer, true),
-    Fretboard("fretboard", "Гриф & Аккорды", "Гриф", Icons.Filled.GridOn, Icons.Outlined.GridOn, true),
-    Trainer("trainer", "Auto-Speed Trainer", "Тренер", Icons.Filled.Speed, Icons.Outlined.Speed, false),
-    SlowDowner("slowdowner", "Audio Slow-Downer", "Плеер", Icons.Filled.SlowMotionVideo, Icons.Outlined.SlowMotionVideo, false),
-    Recorder("recorder", "Riff Quick Recorder", "Диктофон", Icons.Filled.Mic, Icons.Outlined.Mic, false),
-    Tracker("tracker", "Practice Tracker", "Трекер", Icons.Filled.Timeline, Icons.Outlined.Timeline, false),
+    Tabs("tabs", "Табы & Каталог", "Табы", Icons.Filled.LibraryMusic, Icons.Outlined.LibraryMusic),
+    Tuner("tuner", "Guitar Tuner", "Тюнер", Icons.Filled.GraphicEq, Icons.Outlined.GraphicEq),
+    Metronome("metronome", "Metronome", "Метроном", Icons.Filled.Timer, Icons.Outlined.Timer),
+    Fretboard("fretboard", "Гриф & Аккорды", "Гриф", Icons.Filled.GridOn, Icons.Outlined.GridOn),
+    Trainer("trainer", "Auto-Speed Trainer", "Тренер", Icons.Filled.Speed, Icons.Outlined.Speed),
+    SlowDowner("slowdowner", "Audio Slow-Downer", "Плеер", Icons.Filled.SlowMotionVideo, Icons.Outlined.SlowMotionVideo),
+    Recorder("recorder", "Riff Quick Recorder", "Диктофон", Icons.Filled.Mic, Icons.Outlined.Mic),
+    Tracker("tracker", "Practice Tracker", "Трекер", Icons.Filled.Timeline, Icons.Outlined.Timeline),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -240,141 +239,10 @@ fun GuitarLabApp() {
                             )
                         }
                     },
-                    actions = {
-                        // Quick Studio Tools Menu
-                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Studio3DIconBadge(
-                                icon = Icons.Default.Build,
-                                contentDescription = "Studio Hub",
-                                size = 32.dp,
-                                accent = Studio3DAccent.TEAL,
-                            )
-                        }
-                    },
                     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                         containerColor = StudioDarkBg,
                     ),
                 )
-            },
-            bottomBar = {
-                // Sleek Studio Bottom Navigation Bar
-                NavigationBar(
-                    containerColor = StudioCardBg,
-                    tonalElevation = 8.dp,
-                    modifier = Modifier.border(
-                        width = 1.dp,
-                        brush = Brush.verticalGradient(
-                            listOf(StudioCardBorder, Color.Transparent),
-                        ),
-                        shape = androidx.compose.ui.graphics.RectangleShape,
-                    ),
-                ) {
-                    val bottomTabs = AppDest.entries.filter { it.isPrimaryBottomTab }
-                    bottomTabs.forEach { dest ->
-                        val selected = currentRoute == dest.route
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = {
-                                if (!selected) {
-                                    navController.navigate(dest.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
-                                }
-                            },
-                            icon = {
-                                if (selected) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(36.dp)
-                                            .clip(RoundedCornerShape(10.dp))
-                                            .background(
-                                                brush = Brush.verticalGradient(
-                                                    listOf(ElectricAmber, Color(0xFFC47D00)),
-                                                ),
-                                            ),
-                                        contentAlignment = Alignment.Center,
-                                    ) {
-                                        Icon(
-                                            imageVector = dest.selectedIcon,
-                                            contentDescription = dest.shortLabel,
-                                            tint = Color(0xFF140D00),
-                                            modifier = Modifier.size(20.dp),
-                                        )
-                                    }
-                                } else {
-                                    Icon(
-                                        imageVector = dest.unselectedIcon,
-                                        contentDescription = dest.shortLabel,
-                                        tint = StudioTextSecondary,
-                                        modifier = Modifier.size(22.dp),
-                                    )
-                                }
-                            },
-                            label = {
-                                Text(
-                                    text = dest.shortLabel,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (selected) ElectricAmber else StudioTextSecondary,
-                                )
-                            },
-                            colors = NavigationBarItemDefaults.colors(
-                                indicatorColor = Color.Transparent,
-                            ),
-                        )
-                    }
-
-                    // 5th item: Studio Tools button to open drawer for trainer, slow-downer, recorder, tracker
-                    val isStudioToolActive = !currentDest.isPrimaryBottomTab
-                    NavigationBarItem(
-                        selected = isStudioToolActive,
-                        onClick = { scope.launch { drawerState.open() } },
-                        icon = {
-                            if (isStudioToolActive) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(
-                                            brush = Brush.verticalGradient(
-                                                listOf(ElectricTeal, Color(0xFF008394)),
-                                            ),
-                                        ),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Icon(
-                                        imageVector = currentDest.selectedIcon,
-                                        contentDescription = "Инструменты",
-                                        tint = Color(0xFF002227),
-                                        modifier = Modifier.size(20.dp),
-                                    )
-                                }
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Default.Build,
-                                    contentDescription = "Инструменты",
-                                    tint = StudioTextSecondary,
-                                    modifier = Modifier.size(22.dp),
-                                )
-                            }
-                        },
-                        label = {
-                            Text(
-                                text = if (isStudioToolActive) currentDest.shortLabel else "Студия",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = if (isStudioToolActive) FontWeight.Bold else FontWeight.Normal,
-                                color = if (isStudioToolActive) ElectricTeal else StudioTextSecondary,
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            indicatorColor = Color.Transparent,
-                        ),
-                    )
-                }
             },
         ) { padding ->
             NavHost(
