@@ -148,21 +148,45 @@ export const TunerScreen: React.FC<TunerScreenProps> = ({
     };
   }, []);
 
-  const findClosestString = (pitch: DetectedPitch | null): TuningNote | null => {
-    if (!pitch) return null;
-    let closestNote: TuningNote | null = null;
-    let minDiff = Number.MAX_VALUE;
-    for (const note of activeTuning.notes) {
-      const diff = Math.abs(note.targetFrequencyHz - pitch.frequencyHz);
+  // Sticky target string with hysteresis
+  const [lockedStringIndex, setLockedStringIndex] = useState<number | null>(null);
+  const [stickyStringIndex, setStickyStringIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    setStickyStringIndex(null);
+    setLockedStringIndex(null);
+  }, [activeTuning.id]);
+
+  useEffect(() => {
+    if (!detectedPitch || !activeTuning) return;
+    const f = detectedPitch.frequencyHz;
+    if (f <= 0) return;
+
+    let bestIdx = 0;
+    let minDiff = Infinity;
+    activeTuning.notes.forEach((note, idx) => {
+      const diff = Math.abs(1200 * Math.log2(f / note.targetFrequencyHz));
       if (diff < minDiff) {
         minDiff = diff;
-        closestNote = note;
+        bestIdx = idx;
       }
-    }
-    return closestNote;
-  };
+    });
 
-  const closestString = findClosestString(detectedPitch);
+    setStickyStringIndex((prev) => {
+      if (prev === null) return bestIdx;
+      const curTarget = activeTuning.notes[prev]?.targetFrequencyHz ?? 0;
+      if (curTarget <= 0) return bestIdx;
+      const curDiff = Math.abs(1200 * Math.log2(f / curTarget));
+      if (minDiff < curDiff - 80 || curDiff > 160) {
+        return bestIdx;
+      }
+      return prev;
+    });
+  }, [detectedPitch, activeTuning]);
+
+  const activeTargetNote: TuningNote | null = (lockedStringIndex !== null)
+    ? (activeTuning.notes[lockedStringIndex] ?? null)
+    : (stickyStringIndex !== null ? (activeTuning.notes[stickyStringIndex] ?? null) : (activeTuning.notes[0] ?? null));
 
   const handlePlayString = (stringIndex: number, note: TuningNote) => {
     if (playingStringIndex === stringIndex) {
@@ -179,8 +203,13 @@ export const TunerScreen: React.FC<TunerScreenProps> = ({
     }
   };
 
-  const cents = detectedPitch ? Math.max(-50, Math.min(50, detectedPitch.cents)) : 0;
-  const isInTune = detectedPitch && Math.abs(cents) <= 3;
+  // Continuous monotonic deviation relative to target string:
+  const rawCents = (detectedPitch && activeTargetNote)
+    ? 1200 * Math.log2(detectedPitch.frequencyHz / activeTargetNote.targetFrequencyHz)
+    : (detectedPitch ? detectedPitch.cents : 0);
+
+  const cents = Math.max(-50, Math.min(50, rawCents));
+  const isInTune = detectedPitch && Math.abs(rawCents) <= 3;
   const needleRotation = (cents / 50) * 45;
 
   return (
@@ -261,7 +290,7 @@ export const TunerScreen: React.FC<TunerScreenProps> = ({
                     : 'text-zinc-500'
                 }`}
               >
-                {detectedPitch ? detectedPitch.noteName : closestString?.noteName || 'E'}
+                {detectedPitch ? detectedPitch.noteName : activeTargetNote?.noteName || 'E'}
               </span>
               {detectedPitch && (
                 <span className="text-xl font-bold text-amber-400 ml-1 mb-6">
@@ -385,7 +414,7 @@ export const TunerScreen: React.FC<TunerScreenProps> = ({
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
             {(activeTuning?.notes || []).map((note, index) => {
               const isPlaying = playingStringIndex === index;
-              const isTarget = closestString?.stringNumber === note.stringNumber && detectedPitch;
+              const isTarget = activeTargetNote?.stringNumber === note.stringNumber && detectedPitch;
               return (
                 <button
                   key={note.stringNumber}
