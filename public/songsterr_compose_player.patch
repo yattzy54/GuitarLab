@@ -1,0 +1,291 @@
+From f1639501179004f518e0e54e37cb38edb323f6f3 Mon Sep 17 00:00:00 2001
+From: AI Studio <aistudio@google.com>
+Date: Wed, 23 Sep 2026 13:19:11 +0000
+Subject: [PATCH 1/4] fix(audio): make when expression exhaustive for all
+ InstrumentType variants
+
+---
+ .../com/mmt/guitarlab/audio/tab/TabPlaybackEngine.kt  | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/app/src/main/java/com/mmt/guitarlab/audio/tab/TabPlaybackEngine.kt b/app/src/main/java/com/mmt/guitarlab/audio/tab/TabPlaybackEngine.kt
+index ceea135..703edbb 100644
+--- a/app/src/main/java/com/mmt/guitarlab/audio/tab/TabPlaybackEngine.kt
++++ b/app/src/main/java/com/mmt/guitarlab/audio/tab/TabPlaybackEngine.kt
+@@ -113,8 +113,8 @@ class TabPlaybackEngine @Inject constructor() {
+             notes.forEach { note ->
+                 when (track.instrumentType) {
+                     InstrumentType.DRUMS -> playDrumHit(note.stringIndex)
+-                    InstrumentType.BASS -> {
+-                        val base = floatArrayOf(98.00f, 73.42f, 55.00f, 41.20f)
++                    InstrumentType.BASS, InstrumentType.BASS_5 -> {
++                        val base = floatArrayOf(98.00f, 73.42f, 55.00f, 41.20f, 30.87f)
+                         val freq = base.getOrElse(note.stringIndex) { 41.20f } * 2.0f.pow(note.fret / 12.0f)
+                         playSynthesizedTone(freq, durationMs = 350, isBass = true)
+                     }
+@@ -128,7 +128,12 @@ class TabPlaybackEngine @Inject constructor() {
+                         val freq = base.getOrElse(note.stringIndex) { 261.63f } * 2.0f.pow(note.fret / 12.0f)
+                         playSynthesizedTone(freq, durationMs = 400, isBass = false)
+                     }
+-                    InstrumentType.GUITAR -> {
++                    InstrumentType.GUITAR, InstrumentType.GUITAR_7, InstrumentType.GUITAR_8 -> {
++                        val base = floatArrayOf(329.63f, 246.94f, 196.00f, 146.83f, 110.00f, 82.41f, 61.74f, 46.25f)
++                        val freq = base.getOrElse(note.stringIndex) { 110.00f } * 2.0f.pow(note.fret / 12.0f)
++                        playSynthesizedTone(freq, durationMs = 280, isBass = false)
++                    }
++                    else -> {
+                         val base = floatArrayOf(329.63f, 246.94f, 196.00f, 146.83f, 110.00f, 82.41f)
+                         val freq = base.getOrElse(note.stringIndex) { 110.00f } * 2.0f.pow(note.fret / 12.0f)
+                         playSynthesizedTone(freq, durationMs = 280, isBass = false)
+-- 
+2.34.1
+
+
+From 73b78d7173310d23e8e9cc5d333876b0532a489d Mon Sep 17 00:00:00 2001
+From: AI Studio <aistudio@google.com>
+Date: Wed, 23 Sep 2026 13:20:57 +0000
+Subject: [PATCH 2/4] fix(nav): correct Scaffold padding modifier for Songsterr
+ player route
+
+---
+ .../main/java/com/mmt/guitarlab/ui/navigation/GuitarLabApp.kt   | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/app/src/main/java/com/mmt/guitarlab/ui/navigation/GuitarLabApp.kt b/app/src/main/java/com/mmt/guitarlab/ui/navigation/GuitarLabApp.kt
+index 5858f10..206e559 100644
+--- a/app/src/main/java/com/mmt/guitarlab/ui/navigation/GuitarLabApp.kt
++++ b/app/src/main/java/com/mmt/guitarlab/ui/navigation/GuitarLabApp.kt
+@@ -194,7 +194,7 @@ fun GuitarLabApp() {
+             NavHost(
+                 navController = navController,
+                 startDestination = AppDest.Player.route,
+-                modifier = Modifier.padding(if (currentRoute == AppDest.Player.route) Modifier.padding(0.dp) else Modifier.padding(padding)),
++                modifier = if (currentRoute == AppDest.Player.route) Modifier else Modifier.padding(padding),
+             ) {
+                 composable(AppDest.Player.route) {
+                     val tabViewModel: TabViewModel = hiltViewModel()
+-- 
+2.34.1
+
+
+From 6445883a7eaa5292e4edea79bece19efb36ed994 Mon Sep 17 00:00:00 2001
+From: AI Studio <aistudio@google.com>
+Date: Wed, 23 Sep 2026 13:25:14 +0000
+Subject: [PATCH 3/4] refactor(nav): restore all 8 original app sections and
+ embed Songsterr player inside Tablature Suite
+
+---
+ .../guitarlab/ui/navigation/GuitarLabApp.kt   | 65 ++++++++-----------
+ .../mmt/guitarlab/ui/tab/TabViewerScreen.kt   | 35 +++++++++-
+ 2 files changed, 61 insertions(+), 39 deletions(-)
+
+diff --git a/app/src/main/java/com/mmt/guitarlab/ui/navigation/GuitarLabApp.kt b/app/src/main/java/com/mmt/guitarlab/ui/navigation/GuitarLabApp.kt
+index 206e559..c430129 100644
+--- a/app/src/main/java/com/mmt/guitarlab/ui/navigation/GuitarLabApp.kt
++++ b/app/src/main/java/com/mmt/guitarlab/ui/navigation/GuitarLabApp.kt
+@@ -16,7 +16,6 @@ import androidx.compose.material.icons.filled.LibraryMusic
+ import androidx.compose.material.icons.filled.Menu
+ import androidx.compose.material.icons.filled.Mic
+ import androidx.compose.material.icons.filled.MusicNote
+-import androidx.compose.material.icons.filled.PlayCircle
+ import androidx.compose.material.icons.filled.SlowMotionVideo
+ import androidx.compose.material.icons.filled.Speed
+ import androidx.compose.material.icons.filled.Timeline
+@@ -25,7 +24,6 @@ import androidx.compose.material.icons.outlined.GraphicEq
+ import androidx.compose.material.icons.outlined.GridOn
+ import androidx.compose.material.icons.outlined.LibraryMusic
+ import androidx.compose.material.icons.outlined.Mic
+-import androidx.compose.material.icons.outlined.PlayCircle
+ import androidx.compose.material.icons.outlined.SlowMotionVideo
+ import androidx.compose.material.icons.outlined.Speed
+ import androidx.compose.material.icons.outlined.Timeline
+@@ -52,7 +50,6 @@ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.graphics.vector.ImageVector
+ import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.unit.dp
+-import androidx.hilt.navigation.compose.hiltViewModel
+ import androidx.navigation.NavGraph.Companion.findStartDestination
+ import androidx.navigation.compose.NavHost
+ import androidx.navigation.compose.composable
+@@ -64,8 +61,6 @@ import com.mmt.guitarlab.ui.practice.ChordScaleScreen
+ import com.mmt.guitarlab.ui.practice.PracticeTrackerScreen
+ import com.mmt.guitarlab.ui.practice.RiffRecorderScreen
+ import com.mmt.guitarlab.ui.practice.SlowDownerScreen
+-import com.mmt.guitarlab.ui.tab.SongsterrTabPlayerScreen
+-import com.mmt.guitarlab.ui.tab.TabViewModel
+ import com.mmt.guitarlab.ui.tab.TabViewerScreen
+ import com.mmt.guitarlab.ui.tuner.TunerScreen
+ import kotlinx.coroutines.launch
+@@ -76,11 +71,10 @@ enum class AppDest(
+     val selectedIcon: ImageVector,
+     val unselectedIcon: ImageVector,
+ ) {
+-    Player("player", "Songsterr Tab Player", Icons.Filled.PlayCircle, Icons.Outlined.PlayCircle),
+     Tuner("tuner", "Guitar Tuner", Icons.Filled.GraphicEq, Icons.Outlined.GraphicEq),
+     Metronome("metronome", "Metronome", Icons.Filled.Timer, Icons.Outlined.Timer),
+     Trainer("trainer", "Auto-Speed Trainer", Icons.Filled.Speed, Icons.Outlined.Speed),
+-    Tabs("tabs", "Tablature Suite", Icons.Filled.LibraryMusic, Icons.Outlined.LibraryMusic),
++    Tabs("tabs", "Tablature & MIDI Suite", Icons.Filled.LibraryMusic, Icons.Outlined.LibraryMusic),
+     Fretboard("fretboard", "Fretboard & Chords", Icons.Filled.GridOn, Icons.Outlined.GridOn),
+     SlowDowner("slowdowner", "Audio Slow-Downer", Icons.Filled.SlowMotionVideo, Icons.Outlined.SlowMotionVideo),
+     Recorder("recorder", "Riff Quick Recorder", Icons.Filled.Mic, Icons.Outlined.Mic),
+@@ -92,10 +86,12 @@ enum class AppDest(
+ fun GuitarLabApp() {
+     val navController = rememberNavController()
+     val backStack by navController.currentBackStackEntryAsState()
+-    val currentRoute = backStack?.destination?.route ?: AppDest.Player.route
++    val currentRoute = backStack?.destination?.route ?: AppDest.Tuner.route
++
+     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+     val scope = rememberCoroutineScope()
+-    val currentDest = AppDest.entries.find { it.route == currentRoute } ?: AppDest.Player
++
++    val currentDest = AppDest.entries.find { it.route == currentRoute } ?: AppDest.Tuner
+ 
+     ModalNavigationDrawer(
+         drawerState = drawerState,
+@@ -165,41 +161,34 @@ fun GuitarLabApp() {
+     ) {
+         Scaffold(
+             topBar = {
+-                // When in Songsterr player, keep top bar minimal or let player own header
+-                if (currentRoute != AppDest.Player.route) {
+-                    CenterAlignedTopAppBar(
+-                        title = {
+-                            Text(
+-                                text = currentDest.title,
+-                                style = MaterialTheme.typography.titleMedium,
+-                                fontWeight = FontWeight.Bold,
++                CenterAlignedTopAppBar(
++                    title = {
++                        Text(
++                            text = currentDest.title,
++                            style = MaterialTheme.typography.titleMedium,
++                            fontWeight = FontWeight.Bold,
++                        )
++                    },
++                    navigationIcon = {
++                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
++                            Icon(
++                                imageVector = Icons.Default.Menu,
++                                contentDescription = "Open Menu",
++                                tint = MaterialTheme.colorScheme.primary,
+                             )
+-                        },
+-                        navigationIcon = {
+-                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
+-                                Icon(
+-                                    imageVector = Icons.Default.Menu,
+-                                    contentDescription = "Open Menu",
+-                                    tint = MaterialTheme.colorScheme.primary,
+-                                )
+-                            }
+-                        },
+-                        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+-                            containerColor = MaterialTheme.colorScheme.surface,
+-                        ),
+-                    )
+-                }
++                        }
++                    },
++                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
++                        containerColor = MaterialTheme.colorScheme.surface,
++                    ),
++                )
+             },
+         ) { padding ->
+             NavHost(
+                 navController = navController,
+-                startDestination = AppDest.Player.route,
+-                modifier = if (currentRoute == AppDest.Player.route) Modifier else Modifier.padding(padding),
++                startDestination = AppDest.Tuner.route,
++                modifier = Modifier.padding(padding),
+             ) {
+-                composable(AppDest.Player.route) {
+-                    val tabViewModel: TabViewModel = hiltViewModel()
+-                    SongsterrTabPlayerScreen(viewModel = tabViewModel)
+-                }
+                 composable(AppDest.Tuner.route) { TunerScreen() }
+                 composable(AppDest.Metronome.route) { MetronomeScreen() }
+                 composable(AppDest.Trainer.route) { AutoSpeedTrainerScreen() }
+diff --git a/app/src/main/java/com/mmt/guitarlab/ui/tab/TabViewerScreen.kt b/app/src/main/java/com/mmt/guitarlab/ui/tab/TabViewerScreen.kt
+index 6c8ea6e..65c0415 100644
+--- a/app/src/main/java/com/mmt/guitarlab/ui/tab/TabViewerScreen.kt
++++ b/app/src/main/java/com/mmt/guitarlab/ui/tab/TabViewerScreen.kt
+@@ -130,7 +130,38 @@ fun TabViewerScreen(viewModel: TabViewModel = hiltViewModel()) {
+         }
+     }
+ 
+-    Box(modifier = Modifier.fillMaxSize()) {
++    var selectedTabMode by remember { mutableStateOf(0) }
++
++    Column(modifier = Modifier.fillMaxSize()) {
++        TabRow(
++            selectedTabIndex = selectedTabMode,
++            containerColor = MaterialTheme.colorScheme.surface,
++            contentColor = MaterialTheme.colorScheme.primary,
++        ) {
++            Tab(
++                selected = selectedTabMode == 0,
++                onClick = { selectedTabMode = 0 },
++                text = { Text("Songsterr Player", fontWeight = FontWeight.Bold) },
++                icon = { Icon(Icons.Default.PlayArrow, contentDescription = null) },
++            )
++            Tab(
++                selected = selectedTabMode == 1,
++                onClick = { selectedTabMode = 1 },
++                text = { Text("Tab Editor & Studio", fontWeight = FontWeight.Bold) },
++                icon = { Icon(Icons.Default.Tune, contentDescription = null) },
++            )
++        }
++
++        if (selectedTabMode == 0) {
++            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
++                SongsterrTabPlayerScreen(viewModel = viewModel)
++            }
++        } else {
++            Box(
++                modifier = Modifier
++                    .weight(1f)
++                    .fillMaxWidth()
++            ) {
+         Column(
+             modifier = Modifier
+                 .fillMaxSize()
+@@ -437,6 +468,8 @@ fun TabViewerScreen(viewModel: TabViewModel = hiltViewModel()) {
+             hostState = snackbarHostState,
+             modifier = Modifier.align(Alignment.BottomCenter),
+         )
++            }
++        }
+     }
+ 
+     if (showMixerDialog) {
+-- 
+2.34.1
+
+
+From 313f20fe2e3ad96cf2cc4aaed7954769f3d3c9a0 Mon Sep 17 00:00:00 2001
+From: AI Studio <aistudio@google.com>
+Date: Wed, 23 Sep 2026 13:26:46 +0000
+Subject: [PATCH 4/4] fix(tab): import TabRow in TabViewerScreen
+
+---
+ app/src/main/java/com/mmt/guitarlab/ui/tab/TabViewerScreen.kt | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/app/src/main/java/com/mmt/guitarlab/ui/tab/TabViewerScreen.kt b/app/src/main/java/com/mmt/guitarlab/ui/tab/TabViewerScreen.kt
+index 65c0415..a13a88e 100644
+--- a/app/src/main/java/com/mmt/guitarlab/ui/tab/TabViewerScreen.kt
++++ b/app/src/main/java/com/mmt/guitarlab/ui/tab/TabViewerScreen.kt
+@@ -52,6 +52,7 @@ import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.OutlinedButton
+ import androidx.compose.material3.OutlinedTextField
+ import androidx.compose.material3.ScrollableTabRow
++import androidx.compose.material3.TabRow
+ import androidx.compose.material3.Slider
+ import androidx.compose.material3.SnackbarHost
+ import androidx.compose.material3.SnackbarHostState
+-- 
+2.34.1
+

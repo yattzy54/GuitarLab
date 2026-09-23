@@ -1,0 +1,26 @@
+From b86251ef6ffdd101697c1d23f80e8ba5c5f5decb Mon Sep 17 00:00:00 2001
+From: AI Studio <aistudio@google.com>
+Date: Wed, 23 Sep 2026 13:48:35 +0000
+Subject: [PATCH] fix(tab): use Alignment.CenterHorizontally for Column in
+ SongsterrBottomControlBar
+
+---
+ .../guitarlab/ui/tab/components/SongsterrBottomControlBar.kt    | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/app/src/main/java/com/mmt/guitarlab/ui/tab/components/SongsterrBottomControlBar.kt b/app/src/main/java/com/mmt/guitarlab/ui/tab/components/SongsterrBottomControlBar.kt
+index 7661e09..27d7d1d 100644
+--- a/app/src/main/java/com/mmt/guitarlab/ui/tab/components/SongsterrBottomControlBar.kt
++++ b/app/src/main/java/com/mmt/guitarlab/ui/tab/components/SongsterrBottomControlBar.kt
+@@ -82,7 +82,7 @@ fun SongsterrBottomControlBar(
+         contentAlignment = Alignment.Center
+     ) {
+         Column(
+-            horizontalAlignment = Alignment.CenterVertically,
++            horizontalAlignment = Alignment.CenterHorizontally,
+             modifier = Modifier
+                 .shadow(elevation = 16.dp, shape = RoundedCornerShape(24.dp), spotColor = Color(0x66000000))
+                 .clip(RoundedCornerShape(24.dp))
+-- 
+2.34.1
+

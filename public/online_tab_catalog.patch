@@ -1,0 +1,950 @@
+From 457581b4173cca84f0f8e95a9199bb3dfb2a10cd Mon Sep 17 00:00:00 2001
+From: AI Studio <aistudio@google.com>
+Date: Wed, 23 Sep 2026 13:56:35 +0000
+Subject: [PATCH] feat(tab): implement online tab catalog search and direct
+ loading via Songsterr API
+
+---
+ app/src/main/AndroidManifest.xml              |   1 +
+ .../data/remote/SongsterrApiService.kt        | 429 ++++++++++++++++++
+ .../ui/tab/SongsterrTabPlayerScreen.kt        |  60 ++-
+ .../com/mmt/guitarlab/ui/tab/TabViewModel.kt  |  52 +++
+ .../sheets/SongCatalogBottomSheet.kt          | 317 +++++++++++++
+ 5 files changed, 857 insertions(+), 2 deletions(-)
+ create mode 100644 app/src/main/java/com/mmt/guitarlab/data/remote/SongsterrApiService.kt
+ create mode 100644 app/src/main/java/com/mmt/guitarlab/ui/tab/components/sheets/SongCatalogBottomSheet.kt
+
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+index 412963a..9442d5b 100644
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -1,5 +1,6 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android">
++    <uses-permission android:name="android.permission.INTERNET" />
+ 
+     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+diff --git a/app/src/main/java/com/mmt/guitarlab/data/remote/SongsterrApiService.kt b/app/src/main/java/com/mmt/guitarlab/data/remote/SongsterrApiService.kt
+new file mode 100644
+index 0000000..f44f8ab
+--- /dev/null
++++ b/app/src/main/java/com/mmt/guitarlab/data/remote/SongsterrApiService.kt
+@@ -0,0 +1,429 @@
++package com.mmt.guitarlab.data.remote
++
++import android.util.Log
++import com.mmt.guitarlab.domain.model.InstrumentType
++import com.mmt.guitarlab.domain.model.NoteDuration
++import com.mmt.guitarlab.domain.model.NoteEffect
++import com.mmt.guitarlab.domain.model.TabBeat
++import com.mmt.guitarlab.domain.model.TabMeasure
++import com.mmt.guitarlab.domain.model.TabNote
++import com.mmt.guitarlab.domain.model.TabScore
++import com.mmt.guitarlab.domain.model.TabTrack
++import kotlinx.coroutines.Dispatchers
++import kotlinx.coroutines.withContext
++import org.json.JSONArray
++import org.json.JSONObject
++import java.io.BufferedReader
++import java.io.InputStream
++import java.io.InputStreamReader
++import java.net.HttpURLConnection
++import java.net.URL
++import java.net.URLEncoder
++import java.util.UUID
++import java.util.zip.GZIPInputStream
++import javax.inject.Inject
++import javax.inject.Singleton
++
++data class SongsterrTrackSummary(
++    val index: Int,
++    val name: String,
++    val instrument: String,
++    val views: Int,
++    val tuning: List<Int>,
++)
++
++data class SongsterrSearchResult(
++    val songId: Int,
++    val title: String,
++    val artist: String,
++    val hasChords: Boolean,
++    val tracks: List<SongsterrTrackSummary>,
++)
++
++@Singleton
++class SongsterrApiService @Inject constructor() {
++
++    private val primaryCdn = "https://dqsljvtekg760.cloudfront.net"
++    private val fallbackCdn = "https://d3d3l6a6rcgkaf.cloudfront.net"
++
++    suspend fun searchSongs(query: String): Result<List<SongsterrSearchResult>> = withContext(Dispatchers.IO) {
++        runCatching {
++            val encoded = URLEncoder.encode(query.trim(), "UTF-8")
++            val urlString = "https://www.songsterr.com/api/songs?pattern=$encoded"
++            val jsonString = fetchStringFromUrl(urlString)
++            val jsonArray = JSONArray(jsonString)
++            val results = mutableListOf<SongsterrSearchResult>()
++
++            for (i in 0 until jsonArray.length().coerceAtMost(30)) {
++                val obj = jsonArray.getJSONObject(i)
++                val songId = obj.optInt("songId", 0)
++                if (songId <= 0) continue
++
++                val title = obj.optString("title", "Unknown Title")
++                val artist = obj.optString("artist", "Unknown Artist")
++                val hasChords = obj.optBoolean("hasChords", false)
++
++                val tracksArray = obj.optJSONArray("tracks")
++                val tracksList = mutableListOf<SongsterrTrackSummary>()
++                if (tracksArray != null) {
++                    for (t in 0 until tracksArray.length()) {
++                        val trkObj = tracksArray.getJSONObject(t)
++                        val trkName = trkObj.optString("name", "Track ${t + 1}")
++                        val trkInstrument = trkObj.optString("instrument", "Guitar")
++                        val views = trkObj.optInt("views", 0)
++
++                        val tuningArray = trkObj.optJSONArray("tuning")
++                        val tuning = mutableListOf<Int>()
++                        if (tuningArray != null) {
++                            for (tn in 0 until tuningArray.length()) {
++                                tuning.add(tuningArray.getInt(tn))
++                            }
++                        }
++
++                        tracksList.add(
++                            SongsterrTrackSummary(
++                                index = t,
++                                name = trkName,
++                                instrument = trkInstrument,
++                                views = views,
++                                tuning = tuning
++                            )
++                        )
++                    }
++                }
++
++                results.add(
++                    SongsterrSearchResult(
++                        songId = songId,
++                        title = title,
++                        artist = artist,
++                        hasChords = hasChords,
++                        tracks = tracksList
++                    )
++                )
++            }
++            results
++        }
++    }
++
++    suspend fun fetchSongScore(songId: Int, requestedTrackIndex: Int? = null): Result<TabScore> = withContext(Dispatchers.IO) {
++        runCatching {
++            // 1. Fetch metadata
++            val metaUrl = "https://www.songsterr.com/api/meta/$songId"
++            val metaString = fetchStringFromUrl(metaUrl)
++            val metaJson = JSONObject(metaString)
++
++            val title = metaJson.optString("title", "Song")
++            val artist = metaJson.optString("artist", "Artist")
++            val revisionId = metaJson.getInt("revisionId")
++            val image = metaJson.getString("image")
++
++            val tracksArray = metaJson.getJSONArray("tracks")
++            if (tracksArray.length() == 0) {
++                error("В табулатуре нет дорожек")
++            }
++
++            // Find best track index if not specified (prefer distortion/electric guitar or bass)
++            val targetTrackIndex = requestedTrackIndex ?: run {
++                var bestIdx = 0
++                var bestViews = -1
++                for (t in 0 until tracksArray.length()) {
++                    val trk = tracksArray.getJSONObject(t)
++                    val isVocal = trk.optBoolean("isVocalTrack", false)
++                    val isEmpty = trk.optBoolean("isEmpty", false)
++                    if (isVocal || isEmpty) continue
++
++                    val views = trk.optInt("views", 0)
++                    val instrument = trk.optString("instrument", "")
++                    val isGuitar = instrument.contains("Guitar", ignoreCase = true) || instrument.contains("Bass", ignoreCase = true)
++                    val scoreWeight = views + (if (isGuitar) 50000 else 0)
++
++                    if (scoreWeight > bestViews) {
++                        bestViews = scoreWeight
++                        bestIdx = t
++                    }
++                }
++                bestIdx
++            }
++
++            // 2. Fetch track JSON from CDN
++            val trackJsonString = fetchTrackJsonFromCdn(songId, revisionId, image, targetTrackIndex)
++            val trackJson = JSONObject(trackJsonString)
++
++            // 3. Parse track JSON into TabScore
++            parseSongsterrTrackToScore(
++                songId = songId,
++                title = title,
++                artist = artist,
++                metaTracks = tracksArray,
++                activeTrackIdx = targetTrackIndex,
++                trackJson = trackJson
++            )
++        }
++    }
++
++    private fun fetchTrackJsonFromCdn(songId: Int, revisionId: Int, image: String, trackIndex: Int): String {
++        return try {
++            val primaryUrl = "$primaryCdn/$songId/$revisionId/$image/$trackIndex.json"
++            fetchStringFromUrl(primaryUrl)
++        } catch (e: Exception) {
++            Log.w("SongsterrApiService", "Primary CDN failed, falling back: ${e.message}")
++            val fallbackUrl = "$fallbackCdn/$songId/$revisionId/$image/$trackIndex.json"
++            fetchStringFromUrl(fallbackUrl)
++        }
++    }
++
++    private fun fetchStringFromUrl(urlString: String): String {
++        val url = URL(urlString)
++        val conn = (url.openConnection() as HttpURLConnection).apply {
++            requestMethod = "GET"
++            connectTimeout = 12000
++            readTimeout = 12000
++            setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
++            setRequestProperty("Accept", "application/json, text/plain, */*")
++            setRequestProperty("Accept-Encoding", "gzip, deflate")
++        }
++
++        val code = conn.responseCode
++        if (code !in 200..299) {
++            throw java.io.IOException("HTTP $code for $urlString")
++        }
++
++        val rawBytes = conn.inputStream.use { it.readBytes() }
++        val isGzipped = (rawBytes.size >= 2 && rawBytes[0] == 0x1f.toByte() && (rawBytes[1].toInt() and 0xFF) == 0x8b)
++        return if (isGzipped) {
++            java.util.zip.GZIPInputStream(java.io.ByteArrayInputStream(rawBytes))
++                .bufferedReader(Charsets.UTF_8)
++                .use { it.readText() }
++        } else {
++            String(rawBytes, Charsets.UTF_8)
++        }
++    }
++
++    private fun parseSongsterrTrackToScore(
++        songId: Int,
++        title: String,
++        artist: String,
++        metaTracks: JSONArray,
++        activeTrackIdx: Int,
++        trackJson: JSONObject
++    ): TabScore {
++        val trackName = trackJson.optString("name", "Guitar")
++        val instrumentName = trackJson.optString("instrument", "Guitar")
++
++        // Parse tuning
++        val tuningArray = trackJson.optJSONArray("tuning")
++        val tuningMidi = mutableListOf<Int>()
++        if (tuningArray != null) {
++            for (i in 0 until tuningArray.length()) {
++                tuningMidi.add(tuningArray.getInt(i))
++            }
++        } else {
++            tuningMidi.addAll(listOf(64, 59, 55, 50, 45, 40))
++        }
++
++        val stringCount = tuningMidi.size.coerceIn(4, 8)
++        val tuningNotes = tuningMidi.map { midiToPitchName(it) }
++        val stringLabels = tuningNotes.map { it.replace(Regex("[0-9]"), "") }
++        val tuningDisplayName = detectTuningName(tuningMidi)
++
++        // Parse tempo from automations
++        var tempoBpm = 120
++        val automations = trackJson.optJSONObject("automations")
++        if (automations != null) {
++            val tempoList = automations.optJSONArray("tempo")
++            if (tempoList != null && tempoList.length() > 0) {
++                tempoBpm = tempoList.getJSONObject(0).optInt("bpm", 120)
++            }
++        }
++
++        // Determine instrument type
++        val instrumentType = when {
++            instrumentName.contains("Bass", ignoreCase = true) -> if (stringCount >= 5) InstrumentType.BASS_5 else InstrumentType.BASS
++            stringCount == 7 -> InstrumentType.GUITAR_7
++            stringCount == 8 -> InstrumentType.GUITAR_8
++            instrumentName.contains("Drum", ignoreCase = true) -> InstrumentType.DRUMS
++            else -> InstrumentType.GUITAR
++        }
++
++        // Parse measures
++        val measuresArray = trackJson.optJSONArray("measures") ?: JSONArray()
++        val parsedMeasures = mutableListOf<TabMeasure>()
++
++        var currentNumerator = 4
++        var currentDenominator = 4
++
++        for (m in 0 until measuresArray.length()) {
++            val mObj = measuresArray.getJSONObject(m)
++            val barNumber = m + 1
++
++            // Signature
++            val sigArray = mObj.optJSONArray("signature")
++            if (sigArray != null && sigArray.length() >= 2) {
++                currentNumerator = sigArray.getInt(0)
++                currentDenominator = sigArray.getInt(1)
++            }
++
++            // Voices
++            val voicesArray = mObj.optJSONArray("voices")
++            val beatsList = mutableListOf<TabBeat>()
++            var measureHasPalmMute = false
++
++            if (voicesArray != null && voicesArray.length() > 0) {
++                val v0 = voicesArray.getJSONObject(0)
++                val beatsArray = v0.optJSONArray("beats")
++                if (beatsArray != null) {
++                    var beatStart = 0f
++
++                    for (b in 0 until beatsArray.length()) {
++                        val bObj = beatsArray.getJSONObject(b)
++                        val durationArray = bObj.optJSONArray("duration")
++                        val durNum = durationArray?.optInt(0, 1) ?: 1
++                        val durDen = durationArray?.optInt(1, 4) ?: 4
++
++                        val durBeats = (durNum.toFloat() / durDen.toFloat()) * 4f
++                        val durationType = when (durDen) {
++                            1 -> NoteDuration.WHOLE
++                            2 -> NoteDuration.HALF
++                            4 -> NoteDuration.QUARTER
++                            8 -> NoteDuration.EIGHTH
++                            16 -> NoteDuration.SIXTEENTH
++                            else -> NoteDuration.EIGHTH
++                        }
++
++                        // Notes in beat
++                        val notesArray = bObj.optJSONArray("notes")
++                        val notesList = mutableListOf<TabNote>()
++
++                        if (notesArray != null) {
++                            for (n in 0 until notesArray.length()) {
++                                val nObj = notesArray.getJSONObject(n)
++                                val isRest = nObj.optBoolean("rest", false)
++                                if (isRest) continue
++
++                                val fret = nObj.optInt("fret", 0)
++                                val stringIdx = nObj.optInt("string", 0).coerceIn(0, stringCount - 1)
++
++                                val isPalmMute = nObj.optBoolean("palmMute", false) || bObj.optBoolean("palmMute", false)
++                                if (isPalmMute) measureHasPalmMute = true
++
++                                val effect = when {
++                                    isPalmMute -> NoteEffect.PALM_MUTE
++                                    nObj.optBoolean("dead", false) -> NoteEffect.DEAD_NOTE
++                                    nObj.has("bend") -> NoteEffect.BEND
++                                    nObj.has("slide") -> NoteEffect.SLIDE
++                                    nObj.optBoolean("vibrato", false) -> NoteEffect.VIBRATO
++                                    nObj.optBoolean("hammer", false) -> NoteEffect.HAMMER_ON
++                                    else -> NoteEffect.NONE
++                                }
++
++                                notesList.add(
++                                    TabNote(
++                                        stringIndex = stringIdx,
++                                        fret = fret,
++                                        effect = effect,
++                                        startBeat = beatStart,
++                                        durationBeats = durBeats
++                                    )
++                                )
++                            }
++                        }
++
++                        beatsList.add(
++                            TabBeat(
++                                notes = notesList,
++                                startBeat = beatStart,
++                                durationBeats = durBeats,
++                                durationType = durationType
++                            )
++                        )
++                        beatStart += durBeats
++                    }
++                }
++            }
++
++            parsedMeasures.add(
++                TabMeasure(
++                    number = barNumber,
++                    timeSignatureNumerator = currentNumerator,
++                    timeSignatureDenominator = currentDenominator,
++                    tempoBpm = tempoBpm,
++                    palmMute = measureHasPalmMute,
++                    palmMuteLabel = if (measureHasPalmMute) "P.M." else null,
++                    beats = beatsList
++                )
++            )
++        }
++
++        // Build Track list for score
++        val tracksList = mutableListOf<TabTrack>()
++        tracksList.add(
++            TabTrack(
++                id = UUID.randomUUID().toString(),
++                name = trackName.ifBlank { "Guitar" },
++                instrumentType = instrumentType,
++                stringCount = stringCount,
++                stringLabels = stringLabels,
++                tuningName = tuningDisplayName,
++                tuningNotes = tuningNotes,
++                volume = 1.0f,
++                pan = 0.0f,
++                measures = parsedMeasures
++            )
++        )
++
++        // Also add metadata summaries for other tracks so mixer shows them
++        for (t in 0 until metaTracks.length()) {
++            if (t == activeTrackIdx) continue
++            val trkObj = metaTracks.getJSONObject(t)
++            val isVocal = trkObj.optBoolean("isVocalTrack", false)
++            if (isVocal) continue
++
++            val name = trkObj.optString("name", "Track ${t + 1}")
++            val inst = trkObj.optString("instrument", "Guitar")
++            val trkType = if (inst.contains("Bass", ignoreCase = true)) InstrumentType.BASS else InstrumentType.GUITAR
++            tracksList.add(
++                TabTrack(
++                    id = UUID.randomUUID().toString(),
++                    name = name,
++                    instrumentType = trkType,
++                    measures = emptyList() // lazy loaded when selected
++                )
++            )
++        }
++
++        return TabScore(
++            id = UUID.randomUUID().toString(),
++            title = title,
++            artist = artist,
++            revisionDate = "Songsterr #$songId",
++            tempo = tempoBpm,
++            timeSignatureNumerator = currentNumerator,
++            timeSignatureDenominator = currentDenominator,
++            tracks = tracksList
++        )
++    }
++
++    private fun midiToPitchName(midi: Int): String {
++        val noteNames = listOf("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
++        val octave = (midi / 12) - 1
++        val note = noteNames[(midi % 12 + 12) % 12]
++        return "$note$octave"
++    }
++
++    private fun detectTuningName(midiNotes: List<Int>): String {
++        return when (midiNotes) {
++            listOf(64, 59, 55, 50, 45, 40) -> "Standard E"
++            listOf(62, 59, 55, 50, 45, 38) -> "Drop D"
++            listOf(60, 57, 53, 48, 43, 36) -> "Drop C"
++            listOf(58, 55, 51, 46, 41, 34) -> "Drop Bb"
++            listOf(62, 57, 53, 48, 43, 38) -> "D Standard"
++            listOf(60, 55, 51, 46, 41, 36) -> "C Standard"
++            listOf(63, 58, 54, 49, 44, 39) -> "Eb Standard"
++            listOf(43, 38, 33, 28) -> "Standard Bass"
++            listOf(43, 38, 33, 26) -> "Drop D Bass"
++            listOf(43, 38, 33, 28, 23) -> "5-String Bass"
++            else -> "Кастомный строй"
++        }
++    }
++}
+diff --git a/app/src/main/java/com/mmt/guitarlab/ui/tab/SongsterrTabPlayerScreen.kt b/app/src/main/java/com/mmt/guitarlab/ui/tab/SongsterrTabPlayerScreen.kt
+index 576fd87..ffe1b8d 100644
+--- a/app/src/main/java/com/mmt/guitarlab/ui/tab/SongsterrTabPlayerScreen.kt
++++ b/app/src/main/java/com/mmt/guitarlab/ui/tab/SongsterrTabPlayerScreen.kt
+@@ -61,6 +61,8 @@ import com.mmt.guitarlab.ui.tab.components.TabCanvasRenderer
+ import com.mmt.guitarlab.ui.tab.components.sheets.ChromaticTunerBottomSheet
+ import com.mmt.guitarlab.ui.tab.components.sheets.MixerBottomSheet
+ import com.mmt.guitarlab.ui.tab.components.sheets.MoreOptionsBottomSheet
++import com.mmt.guitarlab.ui.tab.components.sheets.SongCatalogBottomSheet
++import androidx.compose.material.icons.filled.LibraryMusic
+ import com.mmt.guitarlab.ui.tab.components.sheets.TempoBottomSheet
+ import com.mmt.guitarlab.ui.tab.components.sheets.TranspositionBottomSheet
+ import kotlinx.coroutines.delay
+@@ -98,6 +100,13 @@ fun SongsterrTabPlayerScreen(
+     val currentBeatIndex by viewModel.currentBeatIndex.collectAsState()
+     val speedMultiplier by viewModel.speedMultiplier.collectAsState()
+ 
++    val searchResults by viewModel.searchResults.collectAsState()
++    val isSearchingOnline by viewModel.isSearchingOnline.collectAsState()
++    val isLoadingOnlineSong by viewModel.isLoadingOnlineSong.collectAsState()
++
++    var isCatalogOpen by remember { mutableStateOf(false) }
++    val catalogSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
++
+     // Interactive Loop state
+     var isLoopActive by remember { mutableStateOf(false) }
+     var loopRange by remember { mutableStateOf<Pair<Int, Int>?>(Pair(1, 4)) }
+@@ -248,7 +257,36 @@ fun SongsterrTabPlayerScreen(
+                     }
+                 }
+ 
+-                // BUTTON: Load Tablature from Device
++                Row(
++                    horizontalArrangement = Arrangement.spacedBy(8.dp),
++                    verticalAlignment = Alignment.CenterVertically
++                ) {
++                    // BUTTON: Online Catalog
++                    Row(
++                        modifier = Modifier
++                            .clip(RoundedCornerShape(12.dp))
++                            .background(Color(0xFF222731))
++                            .border(1.dp, Color(0xFF384050), RoundedCornerShape(12.dp))
++                            .clickable { isCatalogOpen = true }
++                            .padding(horizontal = 10.dp, vertical = 7.dp),
++                        verticalAlignment = Alignment.CenterVertically,
++                        horizontalArrangement = Arrangement.spacedBy(6.dp)
++                    ) {
++                        Icon(
++                            imageVector = Icons.Default.LibraryMusic,
++                            contentDescription = "Каталог онлайн",
++                            tint = Color(0xFFFBBF24),
++                            modifier = Modifier.size(16.dp)
++                        )
++                        Text(
++                            text = "Каталог",
++                            color = Color(0xFFF3F4F6),
++                            fontSize = 12.sp,
++                            fontWeight = FontWeight.Bold
++                        )
++                    }
++
++                    // BUTTON: Load Tablature from Device
+                 Row(
+                     modifier = Modifier
+                         .clip(RoundedCornerShape(12.dp))
+@@ -553,7 +591,7 @@ fun SongsterrTabPlayerScreen(
+             },
+             onOpenSongCatalog = {
+                 isMoreOpen = false
+-                Toast.makeText(context, "Каталог песен доступен в меню", Toast.LENGTH_SHORT).show()
++                isCatalogOpen = true
+             },
+             countInEnabled = countInEnabled,
+             onToggleCountIn = {
+@@ -575,4 +613,22 @@ fun SongsterrTabPlayerScreen(
+             }
+         )
+     }
++}    // 6. Song Catalog Sheet
++    if (isCatalogOpen) {
++        SongCatalogBottomSheet(
++            sheetState = catalogSheetState,
++            onDismissRequest = { isCatalogOpen = false },
++            searchResults = searchResults,
++            isSearching = isSearchingOnline,
++            isLoadingSong = isLoadingOnlineSong,
++            onSearch = { query ->
++                viewModel.searchOnlineSongs(query)
++            },
++            onSelectSong = { songId ->
++                viewModel.loadOnlineSong(songId) {
++                    isCatalogOpen = false
++                }
++            }
++        )
++    }
+ }
+diff --git a/app/src/main/java/com/mmt/guitarlab/ui/tab/TabViewModel.kt b/app/src/main/java/com/mmt/guitarlab/ui/tab/TabViewModel.kt
+index 37687cc..2a63135 100644
+--- a/app/src/main/java/com/mmt/guitarlab/ui/tab/TabViewModel.kt
++++ b/app/src/main/java/com/mmt/guitarlab/ui/tab/TabViewModel.kt
+@@ -32,8 +32,60 @@ import javax.inject.Inject
+ class TabViewModel @Inject constructor(
+     private val tabRepository: TabRepository,
+     private val playbackEngine: TabPlaybackEngine,
++    private val songsterrApi: com.mmt.guitarlab.data.remote.SongsterrApiService,
+ ) : ViewModel() {
+ 
++    // Online Songsterr Catalog state
++    private val _searchResults = MutableStateFlow<List<com.mmt.guitarlab.data.remote.SongsterrSearchResult>>(emptyList())
++    val searchResults: StateFlow<List<com.mmt.guitarlab.data.remote.SongsterrSearchResult>> = _searchResults.asStateFlow()
++
++    private val _isSearchingOnline = MutableStateFlow(false)
++    val isSearchingOnline: StateFlow<Boolean> = _isSearchingOnline.asStateFlow()
++
++    private val _isLoadingOnlineSong = MutableStateFlow(false)
++    val isLoadingOnlineSong: StateFlow<Boolean> = _isLoadingOnlineSong.asStateFlow()
++
++    fun searchOnlineSongs(query: String) {
++        if (query.isBlank()) {
++            _searchResults.value = emptyList()
++            return
++        }
++        viewModelScope.launch {
++            _isSearchingOnline.value = true
++            songsterrApi.searchSongs(query)
++                .onSuccess {
++                    _searchResults.value = it
++                    _isSearchingOnline.value = false
++                }
++                .onFailure {
++                    _isSearchingOnline.value = false
++                    _statusMessage.value = "Ошибка поиска: ${it.message}"
++                }
++        }
++    }
++
++    fun loadOnlineSong(songId: Int, specificTrackIdx: Int? = null, onLoaded: (() -> Unit)? = null) {
++        viewModelScope.launch {
++            _isLoadingOnlineSong.value = true
++            _statusMessage.value = "Загрузка из каталога Songsterr..."
++            playbackEngine.stop()
++            songsterrApi.fetchSongScore(songId, specificTrackIdx)
++                .onSuccess { newScore ->
++                    _score.value = newScore
++                    _selectedTrackIndex.value = 0
++                    _selectedMeasureIndex.value = 0
++                    _selectedBeatIndex.value = 0
++                    _isLoadingOnlineSong.value = false
++                    _statusMessage.value = "Загружено: ${newScore.title} — ${newScore.artist}"
++                    onLoaded?.invoke()
++                }
++                .onFailure {
++                    _isLoadingOnlineSong.value = false
++                    _statusMessage.value = "Ошибка загрузки: ${it.message}"
++                }
++        }
++    }
++
+     private val _score = MutableStateFlow<TabScore?>(createSampleScore())
+     val score: StateFlow<TabScore?> = _score.asStateFlow()
+ 
+diff --git a/app/src/main/java/com/mmt/guitarlab/ui/tab/components/sheets/SongCatalogBottomSheet.kt b/app/src/main/java/com/mmt/guitarlab/ui/tab/components/sheets/SongCatalogBottomSheet.kt
+new file mode 100644
+index 0000000..4a125f8
+--- /dev/null
++++ b/app/src/main/java/com/mmt/guitarlab/ui/tab/components/sheets/SongCatalogBottomSheet.kt
+@@ -0,0 +1,317 @@
++package com.mmt.guitarlab.ui.tab.components.sheets
++
++import androidx.compose.foundation.background
++import androidx.compose.foundation.border
++import androidx.compose.foundation.clickable
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Box
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.Spacer
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.height
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.layout.size
++import androidx.compose.foundation.layout.width
++import androidx.compose.foundation.lazy.LazyColumn
++import androidx.compose.foundation.lazy.LazyRow
++import androidx.compose.foundation.lazy.items
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.material.icons.Icons
++import androidx.compose.material.icons.filled.Close
++import androidx.compose.material.icons.filled.Download
++import androidx.compose.material.icons.filled.LibraryMusic
++import androidx.compose.material.icons.filled.MusicNote
++import androidx.compose.material.icons.filled.Search
++import androidx.compose.material3.CircularProgressIndicator
++import androidx.compose.material3.ExperimentalMaterial3Api
++import androidx.compose.material3.Icon
++import androidx.compose.material3.IconButton
++import androidx.compose.material3.ModalBottomSheet
++import androidx.compose.material3.OutlinedTextField
++import androidx.compose.material3.SheetState
++import androidx.compose.material3.Text
++import androidx.compose.material3.TextFieldDefaults
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.getValue
++import androidx.compose.runtime.mutableStateOf
++import androidx.compose.runtime.remember
++import androidx.compose.runtime.setValue
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.draw.clip
++import androidx.compose.ui.graphics.Color
++import androidx.compose.ui.text.font.FontFamily
++import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.text.style.TextOverflow
++import androidx.compose.ui.unit.dp
++import androidx.compose.ui.unit.sp
++import com.mmt.guitarlab.data.remote.SongsterrSearchResult
++
++@OptIn(ExperimentalMaterial3Api::class)
++@Composable
++fun SongCatalogBottomSheet(
++    sheetState: SheetState,
++    onDismissRequest: () -> Unit,
++    searchResults: List<SongsterrSearchResult>,
++    isSearching: Boolean,
++    isLoadingSong: Boolean,
++    onSearch: (String) -> Unit,
++    onSelectSong: (songId: Int) -> Unit,
++    modifier: Modifier = Modifier,
++) {
++    var searchQuery by remember { mutableStateOf("") }
++    val quickPicks = listOf("Metallica", "Nirvana", "Led Zeppelin", "AC/DC", "Pink Floyd", "Polyphia", "Queen", "Rammstein")
++
++    ModalBottomSheet(
++        onDismissRequest = onDismissRequest,
++        sheetState = sheetState,
++        containerColor = Color(0xFF101318),
++        contentColor = Color.White,
++        modifier = modifier
++    ) {
++        Column(
++            modifier = Modifier
++                .fillMaxWidth()
++                .padding(horizontal = 16.dp)
++                .padding(bottom = 28.dp)
++        ) {
++            // Header
++            Row(
++                verticalAlignment = Alignment.CenterVertically,
++                horizontalArrangement = Arrangement.spacedBy(10.dp),
++                modifier = Modifier.padding(bottom = 12.dp)
++            ) {
++                Box(
++                    modifier = Modifier
++                        .size(36.dp)
++                        .clip(RoundedCornerShape(10.dp))
++                        .background(Color(0x33FBBF24)),
++                    contentAlignment = Alignment.Center
++                ) {
++                    Icon(
++                        imageVector = Icons.Default.LibraryMusic,
++                        contentDescription = null,
++                        tint = Color(0xFFFBBF24),
++                        modifier = Modifier.size(20.dp)
++                    )
++                }
++                Column {
++                    Text(
++                        text = "Каталог табулатур онлайн",
++                        fontSize = 17.sp,
++                        fontWeight = FontWeight.Bold,
++                        color = Color.White
++                    )
++                    Text(
++                        text = "Поиск по базе Songsterr (сотни тысяч песен)",
++                        fontSize = 12.sp,
++                        color = Color(0xFF9CA3AF)
++                    )
++                }
++            }
++
++            // Search Bar
++            OutlinedTextField(
++                value = searchQuery,
++                onValueChange = {
++                    searchQuery = it
++                    if (it.length >= 2) onSearch(it)
++                },
++                placeholder = { Text("Название песни или артист...", color = Color(0xFF6B7280), fontSize = 14.sp) },
++                leadingIcon = {
++                    Icon(Icons.Default.Search, contentDescription = "Поиск", tint = Color(0xFFFBBF24))
++                },
++                trailingIcon = {
++                    if (searchQuery.isNotEmpty()) {
++                        IconButton(onClick = {
++                            searchQuery = ""
++                            onSearch("")
++                        }) {
++                            Icon(Icons.Default.Close, contentDescription = "Очистить", tint = Color(0xFF9CA3AF))
++                        }
++                    }
++                },
++                singleLine = true,
++                shape = RoundedCornerShape(14.dp),
++                colors = TextFieldDefaults.colors(
++                    focusedContainerColor = Color(0xFF181C24),
++                    unfocusedContainerColor = Color(0xFF181C24),
++                    focusedIndicatorColor = Color(0xFFFBBF24),
++                    unfocusedIndicatorColor = Color(0xFF2C3240),
++                    focusedTextColor = Color.White,
++                    unfocusedTextColor = Color.White
++                ),
++                modifier = Modifier.fillMaxWidth()
++            )
++
++            Spacer(modifier = Modifier.height(10.dp))
++
++            // Quick recommendations chips
++            LazyRow(
++                horizontalArrangement = Arrangement.spacedBy(8.dp),
++                modifier = Modifier.fillMaxWidth()
++            ) {
++                items(quickPicks) { artist ->
++                    Box(
++                        modifier = Modifier
++                            .clip(RoundedCornerShape(10.dp))
++                            .background(if (searchQuery == artist) Color(0x33FBBF24) else Color(0xFF1A1F29))
++                            .border(
++                                1.dp,
++                                if (searchQuery == artist) Color(0xFFFBBF24) else Color(0xFF2C3240),
++                                RoundedCornerShape(10.dp)
++                            )
++                            .clickable {
++                                searchQuery = artist
++                                onSearch(artist)
++                            }
++                            .padding(horizontal = 10.dp, vertical = 6.dp)
++                    ) {
++                        Text(
++                            text = artist,
++                            fontSize = 12.sp,
++                            fontWeight = FontWeight.Medium,
++                            color = if (searchQuery == artist) Color(0xFFFBBF24) else Color(0xFFD1D5DB)
++                        )
++                    }
++                }
++            }
++
++            Spacer(modifier = Modifier.height(14.dp))
++
++            // Progress Indicators
++            if (isSearching) {
++                Box(
++                    modifier = Modifier
++                        .fillMaxWidth()
++                        .height(180.dp),
++                    contentAlignment = Alignment.Center
++                ) {
++                    Column(
++                        horizontalAlignment = Alignment.CenterHorizontally,
++                        verticalArrangement = Arrangement.spacedBy(10.dp)
++                    ) {
++                        CircularProgressIndicator(color = Color(0xFFFBBF24), modifier = Modifier.size(32.dp))
++                        Text("Поиск композиций...", color = Color(0xFF9CA3AF), fontSize = 13.sp)
++                    }
++                }
++            } else if (isLoadingSong) {
++                Box(
++                    modifier = Modifier
++                        .fillMaxWidth()
++                        .height(180.dp),
++                    contentAlignment = Alignment.Center
++                ) {
++                    Column(
++                        horizontalAlignment = Alignment.CenterHorizontally,
++                        verticalArrangement = Arrangement.spacedBy(10.dp)
++                    ) {
++                        CircularProgressIndicator(color = Color(0xFF10B981), modifier = Modifier.size(36.dp))
++                        Text(
++                            text = "Загрузка и парсинг табулатуры с дорожками...",
++                            color = Color(0xFF10B981),
++                            fontSize = 13.sp,
++                            fontWeight = FontWeight.Bold
++                        )
++                    }
++                }
++            } else if (searchResults.isEmpty()) {
++                Box(
++                    modifier = Modifier
++                        .fillMaxWidth()
++                        .height(180.dp),
++                    contentAlignment = Alignment.Center
++                ) {
++                    Text(
++                        text = if (searchQuery.isBlank()) "Введите запрос или выберите артиста выше" else "Ничего не найдено по запросу «$searchQuery»",
++                        color = Color(0xFF6B7280),
++                        fontSize = 13.sp
++                    )
++                }
++            } else {
++                // Results List
++                LazyColumn(
++                    verticalArrangement = Arrangement.spacedBy(8.dp),
++                    modifier = Modifier.height(400.dp)
++                ) {
++                    items(searchResults) { song ->
++                        Row(
++                            modifier = Modifier
++                                .fillMaxWidth()
++                                .clip(RoundedCornerShape(14.dp))
++                                .background(Color(0xFF161A22))
++                                .border(1.dp, Color(0xFF262D3B), RoundedCornerShape(14.dp))
++                                .clickable { onSelectSong(song.songId) }
++                                .padding(12.dp),
++                            verticalAlignment = Alignment.CenterVertically,
++                            horizontalArrangement = Arrangement.SpaceBetween
++                        ) {
++                            Column(modifier = Modifier.weight(1f)) {
++                                Text(
++                                    text = song.title,
++                                    fontSize = 14.sp,
++                                    fontWeight = FontWeight.Bold,
++                                    color = Color.White,
++                                    maxLines = 1,
++                                    overflow = TextOverflow.Ellipsis
++                                )
++                                Text(
++                                    text = song.artist,
++                                    fontSize = 12.sp,
++                                    color = Color(0xFFFBBF24),
++                                    fontWeight = FontWeight.SemiBold
++                                )
++
++                                // Tracks chips
++                                val guitarTracks = song.tracks.filter {
++                                    it.instrument.contains("Guitar", ignoreCase = true) ||
++                                    it.instrument.contains("Bass", ignoreCase = true)
++                                }
++                                if (guitarTracks.isNotEmpty()) {
++                                    Text(
++                                        text = "${guitarTracks.size} партий: " + guitarTracks.take(3).joinToString(", ") { it.name.take(18) },
++                                        fontSize = 10.sp,
++                                        color = Color(0xFF9CA3AF),
++                                        maxLines = 1,
++                                        overflow = TextOverflow.Ellipsis,
++                                        modifier = Modifier.padding(top = 2.dp)
++                                    )
++                                }
++                            }
++
++                            Spacer(modifier = Modifier.width(8.dp))
++
++                            Box(
++                                modifier = Modifier
++                                    .clip(RoundedCornerShape(10.dp))
++                                    .background(Color(0xFF242C3B))
++                                    .padding(horizontal = 10.dp, vertical = 6.dp),
++                                contentAlignment = Alignment.Center
++                            ) {
++                                Row(
++                                    verticalAlignment = Alignment.CenterVertically,
++                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
++                                ) {
++                                    Icon(
++                                        imageVector = Icons.Default.Download,
++                                        contentDescription = "Открыть",
++                                        tint = Color(0xFF10B981),
++                                        modifier = Modifier.size(14.dp)
++                                    )
++                                    Text(
++                                        text = "Открыть",
++                                        color = Color(0xFF10B981),
++                                        fontSize = 12.sp,
++                                        fontWeight = FontWeight.Bold
++                                    )
++                                }
++                            }
++                        }
++                    }
++                }
++            }
++        }
++    }
++}
+-- 
+2.34.1
+
