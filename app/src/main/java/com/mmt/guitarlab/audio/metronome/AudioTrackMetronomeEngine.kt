@@ -23,13 +23,29 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
+import android.content.Context
+import android.os.Vibrator
+import android.os.VibratorManager
+import android.os.VibrationEffect
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Singleton
 import kotlin.math.roundToInt
 
 @Singleton
 class AudioTrackMetronomeEngine @Inject constructor(
     private val audioFocus: AudioFocusHandler,
+    @ApplicationContext private val context: Context,
 ) : MetronomeEngine {
+
+    private val vibrator: Vibrator? by lazy {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val manager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
+            manager?.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+        }
+    }
 
     private val audioExecutor = Executors.newSingleThreadExecutor { r ->
         Thread(r, "guitarlab-metronome").apply { priority = Thread.MAX_PRIORITY }
@@ -84,8 +100,9 @@ class AudioTrackMetronomeEngine @Inject constructor(
         )
         val bufferFrames = maxOf(minBuf, sampleRate / 50)
         val track = buildTrack(sampleRate, bufferFrames)
-        val accentClick = ClickSynthesizer.woodblock(sampleRate, accent = true)
-        val weakClick = ClickSynthesizer.woodblock(sampleRate, accent = false)
+        var currentSound = _config.value.sound
+        var accentClick = ClickSynthesizer.generateClick(currentSound, sampleRate, accent = true)
+        var weakClick = ClickSynthesizer.generateClick(currentSound, sampleRate, accent = false)
         val chunk = ShortArray(CHUNK)
 
         var beatInBar = 1
@@ -150,8 +167,16 @@ class AudioTrackMetronomeEngine @Inject constructor(
             while (running.get() && scope.isActive) {
                 val cfg = _config.value
                 bpm = cfg.bpm
-                val volume = cfg.volume.coerceIn(0f, 1f)
+                val vibrateOnly = cfg.vibrateOnly
+                val volume = if (vibrateOnly) 0f else cfg.volume.coerceIn(0f, 1f)
                 val ts = cfg.timeSignature
+
+                if (cfg.sound != currentSound) {
+                    currentSound = cfg.sound
+                    accentClick = ClickSynthesizer.generateClick(currentSound, sampleRate, accent = true)
+                    weakClick = ClickSynthesizer.generateClick(currentSound, sampleRate, accent = false)
+                }
+
                 refreshTrainer(cfg)
 
                 var i = 0
@@ -189,6 +214,19 @@ class AudioTrackMetronomeEngine @Inject constructor(
                             ) beatsToJump else null,
                             millisUntilJump = millisUntil,
                         )
+
+                        if (vibrateOnly && vibrator?.hasVibrator() == true) {
+                            try {
+                                val duration = if (accent) 32L else 18L
+                                val amplitude = if (accent) VibrationEffect.DEFAULT_AMPLITUDE else 120
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    vibrator?.vibrate(VibrationEffect.createOneShot(duration, amplitude))
+                                } else {
+                                    @Suppress("DEPRECATION")
+                                    vibrator?.vibrate(duration)
+                                }
+                            } catch (_: Exception) {}
+                        }
                         if (beatInBar >= ts.beatsPerBar) {
                             beatInBar = 1
                             barIndex++

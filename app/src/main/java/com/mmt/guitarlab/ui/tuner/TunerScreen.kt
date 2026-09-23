@@ -107,6 +107,7 @@ fun TunerScreen(viewModel: TunerViewModel = hiltViewModel()) {
 
     var showTuningDialog by remember { mutableStateOf(false) }
     var lockedNoteIndex by remember { mutableStateOf<Int?>(null) } // null = Auto-detect mode
+    var isChromaticMode by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     var granted by remember {
@@ -129,8 +130,10 @@ fun TunerScreen(viewModel: TunerViewModel = hiltViewModel()) {
         onDispose { viewModel.stop() }
     }
 
-    // Determine active note: either user locked peg or auto-detected targetNote
-    val activeTuningNote: TuningNote? = if (lockedNoteIndex != null && selectedTuning != null) {
+    // Determine active note: either in chromatic mode (null target note), or user locked peg or auto-detected targetNote
+    val activeTuningNote: TuningNote? = if (isChromaticMode) {
+        null
+    } else if (lockedNoteIndex != null && selectedTuning != null) {
         selectedTuning!!.notes.getOrNull(lockedNoteIndex!!)
     } else {
         targetNote ?: selectedTuning?.notes?.firstOrNull()
@@ -153,15 +156,16 @@ fun TunerScreen(viewModel: TunerViewModel = hiltViewModel()) {
             .padding(horizontal = 18.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Top Bar: Preset Selector & Mic Toggle
+        // Top Bar: Preset Selector & Chromatic Toggle Button & Mic Toggle
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // Preset Button
             Row(
                 modifier = Modifier
+                    .weight(1f)
                     .clip(RoundedCornerShape(16.dp))
                     .background(
                         brush = Brush.verticalGradient(
@@ -170,29 +174,68 @@ fun TunerScreen(viewModel: TunerViewModel = hiltViewModel()) {
                     )
                     .border(1.dp, StudioCardBorder, RoundedCornerShape(16.dp))
                     .clickable { showTuningDialog = true }
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Studio3DIconBadge(
                     icon = Icons.Default.Tune,
                     contentDescription = null,
-                    size = 32.dp,
+                    size = 30.dp,
                     accent = Studio3DAccent.AMBER,
                 )
-                Spacer(Modifier.width(10.dp))
-                Column {
+                Spacer(Modifier.width(8.dp))
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = selectedTuning?.name ?: "Standard E",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = StudioTextPrimary,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     )
                     Text(
                         text = selectedTuning?.notes?.joinToString(" ") { it.noteName } ?: "E A D G B E",
                         style = MaterialTheme.typography.labelSmall,
                         color = StudioTextSecondary,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     )
                 }
+            }
+
+            // CHROMATIC MODE BUTTON (Отдельная кнопка рядом со строем)
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(
+                        if (isChromaticMode) Brush.verticalGradient(listOf(Color(0xFF2E2413), Color(0xFF1E1609)))
+                        else Brush.verticalGradient(listOf(StudioCardElevated, StudioCardBg))
+                    )
+                    .border(
+                        1.dp,
+                        if (isChromaticMode) ElectricAmber else StudioCardBorder,
+                        RoundedCornerShape(16.dp)
+                    )
+                    .clickable {
+                        isChromaticMode = !isChromaticMode
+                        if (isChromaticMode) lockedNoteIndex = null
+                    }
+                    .padding(horizontal = 10.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.GraphicEq,
+                    contentDescription = "Хроматический тюнер",
+                    tint = if (isChromaticMode) ElectricAmber else StudioTextMuted,
+                    modifier = Modifier.size(18.dp),
+                )
+                Text(
+                    text = "ХРОМ",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isChromaticMode) ElectricAmber else StudioTextSecondary,
+                )
             }
 
             // Mic On/Off 3D Badge
@@ -263,10 +306,10 @@ fun TunerScreen(viewModel: TunerViewModel = hiltViewModel()) {
                 Spacer(Modifier.height(10.dp))
 
                 // Central Note Display
-                val displayNote = activeTuningNote?.noteName ?: (pitch?.noteName ?: "--")
-                val displayOctave = activeTuningNote?.octave?.toString() ?: (pitch?.octave?.toString() ?: "")
+                val displayNote = if (isChromaticMode) (pitch?.noteName ?: "--") else (activeTuningNote?.noteName ?: (pitch?.noteName ?: "--"))
+                val displayOctave = if (isChromaticMode) (pitch?.octave?.toString() ?: "") else (activeTuningNote?.octave?.toString() ?: (pitch?.octave?.toString() ?: ""))
                 val detectedHz = pitch?.frequencyHz ?: 0f
-                val targetHz = activeTuningNote?.targetFrequencyHz ?: 0f
+                val targetHz = if (isChromaticMode) 0f else (activeTuningNote?.targetFrequencyHz ?: 0f)
 
                 Row(
                     verticalAlignment = Alignment.Bottom,
@@ -635,14 +678,13 @@ private fun TuningSelectionDialog(
     onDismiss: () -> Unit,
 ) {
     val categories = remember(tunings) {
-        listOf("Favorites", "All") + tunings.map { it.category }.distinct()
+        listOf("Favorites") + tunings.map { it.category }.distinct()
     }
-    var selectedCategory by remember { mutableStateOf("All") }
+    var selectedCategory by remember { mutableStateOf("Standard") }
 
     val filteredTunings = remember(tunings, selectedCategory) {
         when (selectedCategory) {
             "Favorites" -> tunings.filter { it.isFavorite }
-            "All" -> tunings
             else -> tunings.filter { it.category == selectedCategory }
         }
     }

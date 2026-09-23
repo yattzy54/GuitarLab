@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.mmt.guitarlab.domain.model.MetronomeConfig
+import com.mmt.guitarlab.domain.model.MetronomeSound
 import com.mmt.guitarlab.domain.model.TimeSignature
 import com.mmt.guitarlab.domain.model.TrainerConfig
 import com.mmt.guitarlab.domain.model.TrainerIntervalKind
@@ -51,6 +52,8 @@ object MetronomeConfigCodec {
         put("bpm", config.bpm)
         put("ts", config.timeSignature.name)
         put("volume", config.volume.toDouble())
+        put("sound", config.sound.name)
+        put("vibrateOnly", config.vibrateOnly)
         put("trainer", JSONObject().apply {
             put("enabled", config.trainer.enabled)
             put("startBpm", config.trainer.startBpm)
@@ -72,6 +75,10 @@ object MetronomeConfigCodec {
                     TimeSignature.valueOf(json.optString("ts", TimeSignature.FOUR_FOUR.name))
                 }.getOrDefault(TimeSignature.FOUR_FOUR),
                 volume = json.optDouble("volume", 0.85).toFloat(),
+                sound = runCatching {
+                    MetronomeSound.valueOf(json.optString("sound", MetronomeSound.WOODBLOCK.name))
+                }.getOrDefault(MetronomeSound.WOODBLOCK),
+                vibrateOnly = json.optBoolean("vibrateOnly", false),
                 trainer = TrainerConfig(
                     enabled = trainerJson.optBoolean("enabled", false),
                     startBpm = trainerJson.optInt("startBpm", 80),

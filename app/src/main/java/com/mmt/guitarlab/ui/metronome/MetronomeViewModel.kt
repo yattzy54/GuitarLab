@@ -6,6 +6,7 @@ import com.mmt.guitarlab.data.MetronomeConfigCodec
 import com.mmt.guitarlab.domain.audio.MetronomeEngine
 import com.mmt.guitarlab.domain.model.MetronomeBeat
 import com.mmt.guitarlab.domain.model.MetronomeConfig
+import com.mmt.guitarlab.domain.model.MetronomeSound
 import com.mmt.guitarlab.domain.model.TimeSignature
 import com.mmt.guitarlab.domain.model.TrainerIntervalKind
 import com.mmt.guitarlab.domain.repository.SettingsRepository
@@ -96,6 +97,10 @@ class MetronomeViewModel @Inject constructor(
     fun setTrainerIntervalValue(value: Int) = engine.updateConfig {
         it.copy(trainer = it.trainer.copy(intervalValue = value.coerceIn(1, 60)))
     }
+
+    fun setSound(sound: MetronomeSound) = engine.updateConfig { it.copy(sound = sound) }
+
+    fun setVibrateOnly(vibrate: Boolean) = engine.updateConfig { it.copy(vibrateOnly = vibrate) }
 
     fun toggle() {
         if (engine.isRunning.value) engine.stop() else engine.start()

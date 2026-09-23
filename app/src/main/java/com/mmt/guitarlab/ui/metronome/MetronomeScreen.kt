@@ -56,6 +56,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mmt.guitarlab.domain.model.MetronomeConfig
 import com.mmt.guitarlab.domain.model.TimeSignature
+import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.Vibration
+import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import com.mmt.guitarlab.domain.model.MetronomeSound
 import com.mmt.guitarlab.ui.components.Studio3DAccent
 import com.mmt.guitarlab.ui.components.Studio3DIconBadge
 import com.mmt.guitarlab.ui.components.StudioCard
@@ -294,6 +302,90 @@ fun MetronomeScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
                             onClick = { viewModel.setTimeSignature(ts) },
                             accentColor = ElectricAmber,
                         )
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        // Sound Selection & Silent Vibration Mode Card
+        StudioCard(
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            ) {
+                // Vibration Mode Toggle Row (Vibrate instead of sound)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Studio3DIconBadge(
+                            icon = Icons.Default.Vibration,
+                            contentDescription = "Вибрация",
+                            size = 32.dp,
+                            accent = if (config.vibrateOnly) Studio3DAccent.TEAL else Studio3DAccent.SLATE,
+                        )
+                        Column {
+                            Text(
+                                text = "РЕЖИМ ВИБРАЦИИ",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = StudioTextPrimary,
+                            )
+                            Text(
+                                text = if (config.vibrateOnly) "Тактильные удары вместо звука" else "Звуковые клики включены",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (config.vibrateOnly) ElectricTeal else StudioTextSecondary,
+                            )
+                        }
+                    }
+
+                    Switch(
+                        checked = config.vibrateOnly,
+                        onCheckedChange = { viewModel.setVibrateOnly(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = ElectricTeal,
+                            checkedTrackColor = Color(0xFF134E4A),
+                            uncheckedThumbColor = StudioTextMuted,
+                            uncheckedTrackColor = StudioCardBorder,
+                        ),
+                    )
+                }
+
+                if (!config.vibrateOnly) {
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        text = "ВЫБОР ЗВУКА МЕТРОНОМА",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = StudioTextMuted,
+                        letterSpacing = 1.sp,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        MetronomeSound.entries.forEach { sound ->
+                            val isSelected = config.sound == sound
+                            StudioPill(
+                                text = sound.label,
+                                selected = isSelected,
+                                onClick = { viewModel.setSound(sound) },
+                                accentColor = ElectricAmber,
+                            )
+                        }
                     }
                 }
             }

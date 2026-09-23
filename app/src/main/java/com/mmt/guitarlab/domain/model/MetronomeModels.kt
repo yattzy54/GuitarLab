@@ -1,3 +1,10 @@
+enum class MetronomeSound(val label: String) {
+    WOODBLOCK("Woodblock"),
+    DIGITAL_BEEP("Digital Beep"),
+    MECHANICAL_CLICK("Mechanical"),
+    COWBELL("Cowbell"),
+}
+
 package com.mmt.guitarlab.domain.model
 
 enum class TimeSignature(
@@ -36,6 +43,8 @@ data class MetronomeConfig(
     val bpm: Int = 100,
     val timeSignature: TimeSignature = TimeSignature.FOUR_FOUR,
     val volume: Float = 0.85f,
+    val sound: MetronomeSound = MetronomeSound.WOODBLOCK,
+    val vibrateOnly: Boolean = false,
     val trainer: TrainerConfig = TrainerConfig(),
 ) {
     companion object {
