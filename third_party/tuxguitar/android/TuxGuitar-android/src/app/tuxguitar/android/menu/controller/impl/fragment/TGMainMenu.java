@@ -58,6 +58,18 @@ public class TGMainMenu implements TGMenuController {
 	}
 
 	public void initializeItems(Menu menu) {
+		boolean readerMode = getActivity().getClass().getName().equals("app.tuxguitar.android.activity.TGReaderActivity");
+		if (readerMode) {
+			menu.findItem(R.id.action_tab_keyboard_toggle).setVisible(false);
+			menu.findItem(R.id.action_menu_edit).setVisible(false);
+			menu.findItem(R.id.action_menu_composition).setVisible(false);
+			menu.findItem(R.id.action_menu_track).setVisible(false);
+			menu.findItem(R.id.action_menu_measure).setVisible(false);
+			menu.findItem(R.id.action_menu_beat).setVisible(false);
+			menu.findItem(R.id.action_menu_duration).setVisible(false);
+			menu.findItem(R.id.action_menu_dynamic).setVisible(false);
+			menu.findItem(R.id.action_menu_effects).setVisible(false);
+		}
 		menu.findItem(R.id.action_tab_keyboard_toggle).setOnMenuItemClickListener(createActionProcessor(TGToggleTabKeyboardAction.NAME));
 		menu.findItem(R.id.action_transport_play).setOnMenuItemClickListener(createActionProcessor(TGTransportPlayAction.NAME));
 		menu.findItem(R.id.action_menu_edit).setOnMenuItemClickListener(createContextMenuActionProcessor(new TGEditMenu(getActivity())));
