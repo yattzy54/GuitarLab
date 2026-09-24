@@ -24,6 +24,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name="app.tuxguitar.android.activity.TGActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:launchMode="singleTop"
+            android:label="@string/tab_tuxguitar" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
