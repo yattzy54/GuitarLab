@@ -1,0 +1,30 @@
+# Node & Build artifacts
+node_modules/
+dist/
+build/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+tmp/
+
+# Android / Mobile artifacts (if applicable)
+*.iml
+.gradle
+/local.properties
+/.idea
+/captures
+.externalNativeBuild
+.cxx
+*.apk
+*.ap_
+*.aab
+*.dex
+*.class
+.kotlin
+app/release
+keystore.properties
+*.jks
+*.keystore
+

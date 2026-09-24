@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">GuitarLab</string>
+    <string name="tab_tabs">吉他谱</string>
+    <string name="tab_tuner">调音器</string>
+    <string name="tab_metronome">节拍器</string>
+    <string name="tab_drums">鼓机</string>
+    <string name="tab_fretboard">指板与和弦</string>
+    <string name="tab_chords">和弦反查</string>
+    <string name="tab_trainer">速度训练器</string>
+    <string name="tab_slowdowner">音频慢放</string>
+    <string name="tab_recorder">即兴录音</string>
+    <string name="tab_tracker">练习追踪</string>
+    <string name="tab_language">语言</string>
+</resources>

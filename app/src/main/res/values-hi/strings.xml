@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">GuitarLab</string>
+    <string name="tab_tabs">टैब्स</string>
+    <string name="tab_tuner">ट्यूनर</string>
+    <string name="tab_metronome">मेट्रोनोम</string>
+    <string name="tab_drums">ड्रम</string>
+    <string name="tab_fretboard">फ्रेटबोर्ड</string>
+    <string name="tab_chords">कॉर्ड खोजक</string>
+    <string name="tab_trainer">स्पीड ट्रेनर</string>
+    <string name="tab_slowdowner">ऑडियो धीमा</string>
+    <string name="tab_recorder">रिकॉर्डर</string>
+    <string name="tab_tracker">ट्रैकर</string>
+    <string name="tab_language">भाषा</string>
+</resources>

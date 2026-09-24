@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">GuitarLab</string>
+    <string name="tab_tabs">Tab</string>
+    <string name="tab_tuner">Máy lên dây</string>
+    <string name="tab_metronome">Máy đập nhịp</string>
+    <string name="tab_drums">Máy trống</string>
+    <string name="tab_fretboard">Cần đàn &amp; Hợp âm</string>
+    <string name="tab_chords">Tìm hợp âm</string>
+    <string name="tab_trainer">Luyện tốc độ</string>
+    <string name="tab_slowdowner">Làm chậm</string>
+    <string name="tab_recorder">Ghi âm đoạn riff</string>
+    <string name="tab_tracker">Theo dõi luyện tập</string>
+    <string name="tab_language">Ngôn ngữ</string>
+</resources>

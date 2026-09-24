@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">GuitarLab</string>
+    <string name="tab_tabs">Taby</string>
+    <string name="tab_tuner">Tuner</string>
+    <string name="tab_metronome">Metronom</string>
+    <string name="tab_drums">Perkusja</string>
+    <string name="tab_fretboard">Gryf &amp; Akordy</string>
+    <string name="tab_chords">Wyszukiwarka akordów</string>
+    <string name="tab_trainer">Trener prędkości</string>
+    <string name="tab_slowdowner">Zwalniacz</string>
+    <string name="tab_recorder">Dyktafon</string>
+    <string name="tab_tracker">Dziennik ćwiczeń</string>
+    <string name="tab_language">Język</string>
+</resources>

@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">GuitarLab</string>
+    <string name="tab_tabs">تب‌ها</string>
+    <string name="tab_tuner">تیونر</string>
+    <string name="tab_metronome">مترونوم</string>
+    <string name="tab_drums">درامز</string>
+    <string name="tab_fretboard">فرت‌بورد و آکوردها</string>
+    <string name="tab_chords">یابنده آکورد</string>
+    <string name="tab_trainer">تمرین‌دهنده سرعت</string>
+    <string name="tab_slowdowner">آهسته‌کننده صدا</string>
+    <string name="tab_recorder">ضبط‌کننده</string>
+    <string name="tab_tracker">پیگیری تمرین</string>
+    <string name="tab_language">زبان</string>
+</resources>
