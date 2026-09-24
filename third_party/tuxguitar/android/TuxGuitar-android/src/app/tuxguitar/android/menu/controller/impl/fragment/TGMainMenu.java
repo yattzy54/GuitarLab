@@ -2,8 +2,10 @@ package app.tuxguitar.android.menu.controller.impl.fragment;
 
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
+import android.content.Intent;
 
 import app.tuxguitar.android.R;
 import app.tuxguitar.android.action.TGActionProcessorListener;
@@ -69,6 +71,15 @@ public class TGMainMenu implements TGMenuController {
 		menu.findItem(R.id.action_menu_effects).setOnMenuItemClickListener(createContextMenuActionProcessor(new TGEffectMenu(getActivity())));
 		menu.findItem(R.id.action_menu_transport).setOnMenuItemClickListener(createContextMenuActionProcessor(new TGTransportMenu(getActivity())));
 		menu.findItem(R.id.action_menu_settings).setOnMenuItemClickListener(createFragmentActionProcessor(new TGPreferencesFragmentController()));
+		menu.findItem(R.id.action_songsterr_import).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+			@Override
+			public boolean onMenuItemClick(MenuItem item) {
+				Intent intent = new Intent();
+				intent.setClassName(getActivity(), "com.mmt.guitarlab.ui.tab.SongsterrImportActivity");
+				getActivity().startActivity(intent);
+				return true;
+			}
+		});
 
 		this.tempoDisplayItem =  (TextView) menu.findItem(R.id.action_tempo_display).getActionView().findViewById(R.id.tempo_display_item);
 		this.tempoDisplayItem.setOnClickListener(new View.OnClickListener() {

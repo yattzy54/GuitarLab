@@ -31,6 +31,11 @@
             android:launchMode="singleTop"
             android:label="@string/tab_tuxguitar"
             android:theme="@style/TGTheme" />
+        <activity
+            android:name=".ui.tab.SongsterrImportActivity"
+            android:exported="false"
+            android:label="@string/tab_tuxguitar"
+            android:theme="@style/Theme.GuitarLab" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
