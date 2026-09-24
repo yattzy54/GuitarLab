@@ -22,6 +22,7 @@ import { TranslationKey } from '../i18n/types';
 
 export type AppDestination =
   | 'player'
+  | 'guitartabedit'
   | 'tuxguitar'
   | 'tuner'
   | 'metronome'
@@ -50,6 +51,13 @@ export const NAV_ITEM_CONFIGS: NavItemConfig[] = [
     subtitleKey: 'nav_player_sub',
     icon: PlayCircle,
     accent: 'green',
+  },
+  {
+    id: 'guitartabedit',
+    titleKey: 'nav_guitartabedit',
+    subtitleKey: 'nav_guitartabedit_sub',
+    icon: TuxGuitarIcon,
+    accent: 'amber',
   },
   {
     id: 'tuxguitar',

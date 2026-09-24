@@ -101,7 +101,7 @@ function AppContent() {
           </div>
         )}
 
-        {currentRoute === 'tuxguitar' && (
+        {(currentRoute === 'tuxguitar' || currentRoute === 'guitartabedit') && (
           <div className="pb-24 sm:pb-10">
             <TuxGuitarScreen />
           </div>

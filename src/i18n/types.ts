@@ -31,6 +31,8 @@ export interface LanguageInfo {
 export type TranslationKey =
   | 'nav_player'
   | 'nav_player_sub'
+  | 'nav_guitartabedit'
+  | 'nav_guitartabedit_sub'
   | 'nav_tuxguitar'
   | 'nav_tuxguitar_sub'
   | 'nav_tuner'

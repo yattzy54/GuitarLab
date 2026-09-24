@@ -21,6 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.GridOn
 import androidx.compose.material.icons.filled.Language
@@ -35,6 +36,7 @@ import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.outlined.Album
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.GridOn
 import androidx.compose.material.icons.outlined.Language
@@ -87,6 +89,7 @@ import com.mmt.guitarlab.ui.practice.PracticeTrackerScreen
 import com.mmt.guitarlab.ui.practice.ReverseChordFinderScreen
 import com.mmt.guitarlab.ui.practice.RiffRecorderScreen
 import com.mmt.guitarlab.ui.practice.SlowDownerScreen
+import com.mmt.guitarlab.ui.guitartabedit.GuitarTabEditScreen
 import com.mmt.guitarlab.ui.settings.LanguageScreen
 import com.mmt.guitarlab.ui.tab.TabEditorScreen
 import com.mmt.guitarlab.ui.tab.TabViewerScreen
@@ -111,6 +114,7 @@ enum class AppDest(
     val badge: String? = null,
 ) {
     Tabs("tabs", R.string.tab_tabs, Icons.Filled.LibraryMusic, Icons.Outlined.LibraryMusic),
+    GuitarTabEdit("guitartabedit", R.string.tab_guitartabedit, Icons.Filled.Edit, Icons.Outlined.Edit, "NEW"),
     TabEditor("tab_editor", R.string.tab_tab_editor, Icons.Filled.Tune, Icons.Outlined.Tune, "GP5"),
     Drums("drums", R.string.tab_drums, Icons.Filled.Album, Icons.Outlined.Album),
     Tuner("tuner", R.string.tab_tuner, Icons.Filled.GraphicEq, Icons.Outlined.GraphicEq),
@@ -254,7 +258,7 @@ fun GuitarLabApp() {
             }
         },
     ) {
-        val isTabsScreen = currentRoute == AppDest.Tabs.route
+        val isTabsScreen = currentRoute == AppDest.Tabs.route || currentRoute == AppDest.GuitarTabEdit.route
         Scaffold(
             topBar = {
                 if (!isTabsScreen) {
@@ -302,6 +306,7 @@ fun GuitarLabApp() {
                         }
                     )
                 }
+                composable(AppDest.GuitarTabEdit.route) { GuitarTabEditScreen() }
                 composable(AppDest.Drums.route) { DrumsScreen() }
                 composable(AppDest.Tuner.route) { TunerScreen() }
                 composable(AppDest.Metronome.route) { MetronomeScreen() }

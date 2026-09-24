@@ -13,6 +13,7 @@
     <string name="tab_recorder">Диктофон риффов</string>
     <string name="tab_tracker">Трекер практики</string>
     <string name="tab_language">Язык</string>
+    <string name="tab_guitartabedit">GuitarTabEdit</string>
     <string name="tab_tab_editor">TabLab</string>
     <string name="tab_tablab">TabLab</string>
     <string name="tab_tuxguitar">TabLab (TuxGuitar)</string>
