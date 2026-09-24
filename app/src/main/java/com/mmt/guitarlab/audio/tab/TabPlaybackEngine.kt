@@ -63,6 +63,9 @@ class TabPlaybackEngine @Inject constructor() {
     private var loopStartMeasure: Int? = null
     private var loopEndMeasure: Int? = null
 
+    var onPlaybackPositionChanged: ((measureIndex: Int, beatIndex: Int) -> Unit)? = null
+    var onPlaybackFinished: (() -> Unit)? = null
+
     private val random = Random()
     private val sampleRate = 44100
 
@@ -256,6 +259,7 @@ class TabPlaybackEngine @Inject constructor() {
                     for (bIdx in initialBeatIdx until normalizedBeats.size) {
                         if (!isActive) break
                         _currentBeatIndex.value = bIdx
+                        onPlaybackPositionChanged?.invoke(currentM, bIdx)
                         val beat = normalizedBeats[bIdx]
                         val durationBeats = beat.durationBeats.coerceIn(0.0625f, 4.0f)
                         val speed = _speedMultiplier.value.coerceIn(0.25f, 2.5f)
@@ -324,6 +328,7 @@ class TabPlaybackEngine @Inject constructor() {
                     audioTrack?.release()
                 }
                 _isPlaying.value = false
+                onPlaybackFinished?.invoke()
             }
         }
     }
@@ -633,6 +638,22 @@ class TabPlaybackEngine @Inject constructor() {
     fun setLoop(startMeasure: Int, endMeasure: Int) {
         loopStartMeasure = startMeasure
         loopEndMeasure = endMeasure
+    }
+
+    fun setLooping(enabled: Boolean, startMeasure: Int = 0, endMeasure: Int = 0) {
+        if (enabled && endMeasure >= startMeasure) {
+            setLoop(startMeasure, endMeasure)
+        } else if (!enabled) {
+            clearLoop()
+        }
+    }
+
+    fun setMetronomeEnabled(enabled: Boolean) {
+        // Metronome track click toggle
+    }
+
+    fun setTempo(tempo: Int) {
+        // Dynamic tempo update hook
     }
 
     fun clearLoop() {

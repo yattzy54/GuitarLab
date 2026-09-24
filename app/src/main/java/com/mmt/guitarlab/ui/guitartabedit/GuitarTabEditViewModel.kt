@@ -67,7 +67,12 @@ class GuitarTabEditViewModel @Inject constructor(
     val canRedo: StateFlow<Boolean> = _canRedo.asStateFlow()
 
     init {
-        playbackEngine.onPlaybackPositionChanged = { measureIdx, beatIdx ->
+        viewModelScope.launch {
+            playbackEngine.isPlaying.collect { playing ->
+                _isPlaying.value = playing
+            }
+        }
+        playbackEngine.onPlaybackPositionChanged = { measureIdx: Int, beatIdx: Int ->
             _caret.value = _caret.value.copy(
                 measureIndex = measureIdx,
                 beatIndex = beatIdx
@@ -380,10 +385,20 @@ class GuitarTabEditViewModel @Inject constructor(
             _isPlaying.value = false
         } else {
             val sc = _score.value
-            playbackEngine.setLooping(_isLooping.value)
+            val m = _caret.value.measureIndex
+            if (_isLooping.value) {
+                playbackEngine.setLoop(m, m)
+            } else {
+                playbackEngine.clearLoop()
+            }
             playbackEngine.setMetronomeEnabled(_isMetronomeEnabled.value)
             playbackEngine.setSoundBank(_soundBank.value)
-            playbackEngine.play(sc, _caret.value.measureIndex, _caret.value.beatIndex)
+            playbackEngine.play(
+                score = sc,
+                activeTrackIndex = _caret.value.trackIndex,
+                startMeasureIndex = _caret.value.measureIndex,
+                startBeatIndex = _caret.value.beatIndex
+            )
             _isPlaying.value = true
         }
     }
@@ -396,7 +411,12 @@ class GuitarTabEditViewModel @Inject constructor(
 
     fun toggleLoop() {
         _isLooping.value = !_isLooping.value
-        playbackEngine.setLooping(_isLooping.value)
+        val m = _caret.value.measureIndex
+        if (_isLooping.value) {
+            playbackEngine.setLoop(m, m)
+        } else {
+            playbackEngine.clearLoop()
+        }
     }
 
     fun toggleMetronome() {
@@ -589,7 +609,8 @@ class GuitarTabEditViewModel @Inject constructor(
     }
 
     fun playFretPreview(stringIndex: Int, fret: Int) {
-        playbackEngine.playPreviewFret(stringIndex, fret)
+        val track = currentTrack() ?: return
+        playbackEngine.playPreviewFret(track, stringIndex, fret)
     }
 
     private fun playPreviewForCaret() {
@@ -598,7 +619,8 @@ class GuitarTabEditViewModel @Inject constructor(
         val beat = track.measures.getOrNull(c.measureIndex)?.beats?.getOrNull(c.beatIndex)
         val note = beat?.notes?.find { it.stringIndex == c.stringIndex }
         val fret = note?.fret ?: 0
-        playFretPreview(c.stringIndex, fret)
+        val effect = note?.effect ?: NoteEffect.NONE
+        playbackEngine.playPreviewFret(track, c.stringIndex, fret, effect)
     }
 
     private fun currentTrack(): TabTrack? {
