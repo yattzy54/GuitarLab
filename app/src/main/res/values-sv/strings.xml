@@ -1,14 +1,55 @@
 <resources>
     <string name="app_name">GuitarLab</string>
-    <string name="tab_tabs">Tabbar</string>
-    <string name="tab_tuner">Stämapparat</string>
+
+    <string name="tab_tabs">Tabulatur</string>
+    <string name="tab_tuner">Stämmare</string>
     <string name="tab_metronome">Metronom</string>
     <string name="tab_drums">Trummor</string>
     <string name="tab_fretboard">Greppbräda &amp; Ackord</string>
     <string name="tab_chords">Ackordsökare</string>
-    <string name="tab_trainer">Hastighetstränare</string>
-    <string name="tab_slowdowner">Saktare</string>
-    <string name="tab_recorder">Riff-inspelare</string>
-    <string name="tab_tracker">Övningsspårare</string>
+    <string name="tab_trainer">Tränare</string>
+    <string name="tab_slowdowner">Ljudsänkare</string>
+    <string name="tab_recorder">Inspelare</string>
+    <string name="tab_tracker">Övningslogg</string>
     <string name="tab_language">Språk</string>
+    <string name="tab_tab_editor">Tab-redigerare</string>
+
+    <string name="nav_core_instruments">HUVUDVERKTYG</string>
+    <string name="nav_studio_subtitle">Pro Gitarrverktyg</string>
+
+    <string name="language_title">Gränssnittsspråk</string>
+    <string name="language_subtitle">Välj bland 20 tillgängliga språk</string>
+    <string name="lang_search_placeholder">Sök språk…</string>
+    <string name="apply_language">Tillämpa Språk</string>
+    <string name="current_active">Aktivt</string>
+    <string name="language_applied">Språk uppdaterat</string>
+
+    <string name="guitar_tuning">GITARRSTÄMNING</string>
+    <string name="chord_finder_title">Ackordsökare</string>
+    <string name="chord_finder_hint">Håll ned 2+ toner på greppbrädan (max 1 per sträng)</string>
+    <string name="chord_finder_selected_count">Valda toner: %1$d. Söker ackord…</string>
+    <string name="chord_finder_detected">Identifierat: %1$s</string>
+    <string name="interactive_fretboard">INTERAKTIV GREPPBRÄDA</string>
+    <string name="tuning_select_title">VÄLJ GITARRSTÄMNING</string>
+    <string name="tuning_select_subtitle">Välj stämning för halsen</string>
+    <string name="clear">Rensa</string>
+    <string name="close">Stäng</string>
+    <string name="select_tuning">Välj Stämning</string>
+
+    <string name="tap_tempo">TAP TEMPO</string>
+    <string name="tap_to_rhythm">Klicka i takt</string>
+    <string name="time_signature">TAKTART</string>
+    <string name="vibration_mode">VIBRATIONSLÄGE</string>
+    <string name="vibration_on_sub">Haptiska pulser istället för klickljud</string>
+    <string name="vibration_off_sub">Ljudklick aktiverade</string>
+    <string name="sound_selection">METRONOMLJUD</string>
+    <string name="metronome_volume">METRONOMVOLYM</string>
+
+    <string name="tuning_standard">Standard E</string>
+    <string name="tuning_drop_d">Drop D</string>
+    <string name="tuning_half_step">Halvton lägre</string>
+    <string name="play">Spela</string>
+    <string name="pause">Paus</string>
+    <string name="stop">Stoppa</string>
+    <string name="strings_count">%1$d strängar</string>
 </resources>

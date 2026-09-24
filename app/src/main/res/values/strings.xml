@@ -1,20 +1,60 @@
 <resources>
     <string name="app_name">GuitarLab</string>
+
+    <!-- Navigation Tabs & Drawer -->
     <string name="tab_tabs">Tabs</string>
     <string name="tab_tuner">Tuner</string>
     <string name="tab_metronome">Metronome</string>
     <string name="tab_drums">Drums</string>
     <string name="tab_fretboard">Fretboard</string>
-    <string name="tab_chords">Chords</string>
+    <string name="tab_chords">Chord Finder</string>
     <string name="tab_trainer">Trainer</string>
     <string name="tab_slowdowner">Slow-Downer</string>
     <string name="tab_recorder">Recorder</string>
     <string name="tab_tracker">Tracker</string>
     <string name="tab_language">Language</string>
+    <string name="tab_tab_editor">Tab Editor</string>
+
+    <string name="nav_core_instruments">CORE INSTRUMENTS</string>
+    <string name="nav_studio_subtitle">Pro Guitarist Toolkit</string>
+
+    <!-- Language Screen -->
+    <string name="language_title">Interface Language</string>
+    <string name="language_subtitle">Select interface language from 20 available</string>
+    <string name="lang_search_placeholder">Search language...</string>
+    <string name="apply_language">Apply Language</string>
+    <string name="current_active">Active</string>
+    <string name="language_applied">Language updated successfully</string>
+
+    <!-- Chord Finder Screen -->
+    <string name="guitar_tuning">GUITAR TUNING</string>
+    <string name="chord_finder_title">Chord Finder</string>
+    <string name="chord_finder_hint">Hold 2+ notes on fretboard (max 1 per string)</string>
+    <string name="chord_finder_selected_count">Selected notes: %1$d. Finding chord...</string>
+    <string name="chord_finder_detected">Detected: %1$s</string>
+    <string name="interactive_fretboard">INTERACTIVE FRETBOARD</string>
+    <string name="tuning_select_title">SELECT GUITAR TUNING</string>
+    <string name="tuning_select_subtitle">Choose tuning for guitar neck</string>
+    <string name="clear">Clear</string>
+    <string name="close">Close</string>
+    <string name="select_tuning">Select Tuning</string>
+
+    <!-- Metronome Screen -->
+    <string name="tap_tempo">TAP TEMPO</string>
+    <string name="tap_to_rhythm">Tap to rhythm</string>
+    <string name="time_signature">TIME SIGNATURE</string>
+    <string name="vibration_mode">VIBRATION MODE</string>
+    <string name="vibration_on_sub">Haptic pulses instead of click sound</string>
+    <string name="vibration_off_sub">Sound clicks enabled</string>
+    <string name="sound_selection">METRONOME SOUND</string>
+    <string name="metronome_volume">METRONOME VOLUME</string>
+
+    <!-- Tunings & Actions -->
     <string name="tuning_standard">Standard E</string>
     <string name="tuning_drop_d">Drop D</string>
     <string name="tuning_half_step">Half-Step Down</string>
     <string name="play">Play</string>
     <string name="pause">Pause</string>
     <string name="stop">Stop</string>
+    <string name="strings_count">%1$d strings</string>
 </resources>

@@ -1,14 +1,55 @@
 <resources>
     <string name="app_name">GuitarLab</string>
-    <string name="tab_tabs">Taby</string>
+
+    <string name="tab_tabs">Tabulatury</string>
     <string name="tab_tuner">Tuner</string>
     <string name="tab_metronome">Metronom</string>
     <string name="tab_drums">Perkusja</string>
     <string name="tab_fretboard">Gryf &amp; Akordy</string>
-    <string name="tab_chords">Wyszukiwarka akordów</string>
-    <string name="tab_trainer">Trener prędkości</string>
+    <string name="tab_chords">Wyszukiwarka Akordów</string>
+    <string name="tab_trainer">Trener</string>
     <string name="tab_slowdowner">Zwalniacz</string>
-    <string name="tab_recorder">Dyktafon</string>
-    <string name="tab_tracker">Dziennik ćwiczeń</string>
+    <string name="tab_recorder">Rejestrator</string>
+    <string name="tab_tracker">Dziennik</string>
     <string name="tab_language">Język</string>
+    <string name="tab_tab_editor">Edytor Tabulatur</string>
+
+    <string name="nav_core_instruments">GŁÓWNE NARZĘDZIA</string>
+    <string name="nav_studio_subtitle">Zestaw Pro dla Gitarzysty</string>
+
+    <string name="language_title">Język Interfejsu</string>
+    <string name="language_subtitle">Wybierz spośród 20 dostępnych języków</string>
+    <string name="lang_search_placeholder">Szukaj języka…</string>
+    <string name="apply_language">Zastosuj Język</string>
+    <string name="current_active">Aktywny</string>
+    <string name="language_applied">Pomyślnie zaktualizowano język</string>
+
+    <string name="guitar_tuning">STRÓJ GITARY</string>
+    <string name="chord_finder_title">Rozpoznawanie Akordów</string>
+    <string name="chord_finder_hint">Przytrzymaj 2+ nuty na gryfie (maks 1 na strunę)</string>
+    <string name="chord_finder_selected_count">Wybrane nuty: %1$d. Szukanie akordu…</string>
+    <string name="chord_finder_detected">Wykryto: %1$s</string>
+    <string name="interactive_fretboard">INTERAKTYWNY GRYF</string>
+    <string name="tuning_select_title">WYBIERZ STRÓJ GITARY</string>
+    <string name="tuning_select_subtitle">Wybierz strój dla gryfu</string>
+    <string name="clear">Wyczyść</string>
+    <string name="close">Zamknij</string>
+    <string name="select_tuning">Wybierz Strój</string>
+
+    <string name="tap_tempo">TAP TEMPO</string>
+    <string name="tap_to_rhythm">Stukaj w rytm</string>
+    <string name="time_signature">METRUM</string>
+    <string name="vibration_mode">TRYB WIBRACJI</string>
+    <string name="vibration_on_sub">Impulsy haptyczne zamiast dźwięku</string>
+    <string name="vibration_off_sub">Kliknięcia dźwiękowe włączone</string>
+    <string name="sound_selection">DŹWIĘK METRONOMU</string>
+    <string name="metronome_volume">GŁOŚNOŚĆ METRONOMU</string>
+
+    <string name="tuning_standard">Standardowy E</string>
+    <string name="tuning_drop_d">Drop D</string>
+    <string name="tuning_half_step">Pół tonu niżej</string>
+    <string name="play">Odtwórz</string>
+    <string name="pause">Pauza</string>
+    <string name="stop">Zatrzymaj</string>
+    <string name="strings_count">%1$d strun</string>
 </resources>

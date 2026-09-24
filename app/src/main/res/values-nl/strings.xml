@@ -1,14 +1,55 @@
 <resources>
     <string name="app_name">GuitarLab</string>
+
     <string name="tab_tabs">Tabs</string>
-    <string name="tab_tuner">Stemapparaat</string>
+    <string name="tab_tuner">Stemmer</string>
     <string name="tab_metronome">Metronoom</string>
     <string name="tab_drums">Drums</string>
-    <string name="tab_fretboard">Toets &amp; Akkoorden</string>
+    <string name="tab_fretboard">Fretboard &amp; Akkoorden</string>
     <string name="tab_chords">Akkoordenzoeker</string>
-    <string name="tab_trainer">Snelheidstrainer</string>
+    <string name="tab_trainer">Trainer</string>
     <string name="tab_slowdowner">Vertrager</string>
-    <string name="tab_recorder">Riff-recorder</string>
+    <string name="tab_recorder">Recorder</string>
     <string name="tab_tracker">Oefenlog</string>
     <string name="tab_language">Taal</string>
+    <string name="tab_tab_editor">Tab Editor</string>
+
+    <string name="nav_core_instruments">BELANGRIJKSTE TOOLS</string>
+    <string name="nav_studio_subtitle">Pro Gitaristen Toolkit</string>
+
+    <string name="language_title">Interfacetaal</string>
+    <string name="language_subtitle">Kies uit 20 beschikbare talen</string>
+    <string name="lang_search_placeholder">Zoek taal…</string>
+    <string name="apply_language">Taal Toepassen</string>
+    <string name="current_active">Actief</string>
+    <string name="language_applied">Taal succesvol bijgewerkt</string>
+
+    <string name="guitar_tuning">GITAARSTEMMING</string>
+    <string name="chord_finder_title">Akkoordenzoeker</string>
+    <string name="chord_finder_hint">Houd 2+ noten ingedrukt op de hals (max 1 per snaar)</string>
+    <string name="chord_finder_selected_count">Geselecteerde noten: %1$d. Akkoord zoeken…</string>
+    <string name="chord_finder_detected">Gedetecteerd: %1$s</string>
+    <string name="interactive_fretboard">INTERACTIEF FRETBOARD</string>
+    <string name="tuning_select_title">SELECTEER GITAARSTEMMING</string>
+    <string name="tuning_select_subtitle">Kies stemming voor de hals</string>
+    <string name="clear">Wissen</string>
+    <string name="close">Sluiten</string>
+    <string name="select_tuning">Selecteer Stemming</string>
+
+    <string name="tap_tempo">TAP TEMPO</string>
+    <string name="tap_to_rhythm">Tik in het ritme</string>
+    <string name="time_signature">MAATSOORT</string>
+    <string name="vibration_mode">TRILMODUS</string>
+    <string name="vibration_on_sub">Haptische pulsen in plaats van geluid</string>
+    <string name="vibration_off_sub">Geluidsklikken ingeschakeld</string>
+    <string name="sound_selection">METRONOOM GELUID</string>
+    <string name="metronome_volume">METRONOOM VOLUME</string>
+
+    <string name="tuning_standard">Standaard E</string>
+    <string name="tuning_drop_d">Drop D</string>
+    <string name="tuning_half_step">Halve toon lager</string>
+    <string name="play">Afspelen</string>
+    <string name="pause">Pauze</string>
+    <string name="stop">Stoppen</string>
+    <string name="strings_count">%1$d snaren</string>
 </resources>

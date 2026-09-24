@@ -100,25 +100,27 @@ import com.mmt.guitarlab.ui.theme.StudioTextSecondary
 import com.mmt.guitarlab.ui.tuner.TunerScreen
 import kotlinx.coroutines.launch
 
+import androidx.compose.ui.res.stringResource
+import com.mmt.guitarlab.R
+
 enum class AppDest(
     val route: String,
-    val title: String,
-    val shortLabel: String,
+    val titleRes: Int,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector,
 ) {
-    Tabs("tabs", "Табы (Tabs)", "Табы", Icons.Filled.LibraryMusic, Icons.Outlined.LibraryMusic),
-    Drums("drums", "Драм-машина (Drums)", "Ударные", Icons.Filled.Album, Icons.Outlined.Album),
-    TabEditor("tab_editor", "Tab Editor", "Редактор", Icons.Filled.Tune, Icons.Outlined.Tune),
-    Tuner("tuner", "Guitar Tuner", "Тюнер", Icons.Filled.GraphicEq, Icons.Outlined.GraphicEq),
-    Metronome("metronome", "Metronome", "Метроном", Icons.Filled.Timer, Icons.Outlined.Timer),
-    Fretboard("fretboard", "Гриф & Аккорды", "Гриф", Icons.Filled.GridOn, Icons.Outlined.GridOn),
-    ReverseChord("reverse_chord", "Reverse Chord Finder", "Аккорды", Icons.Filled.Search, Icons.Outlined.Search),
-    Trainer("trainer", "Auto-Speed Trainer", "Тренер", Icons.Filled.Speed, Icons.Outlined.Speed),
-    SlowDowner("slowdowner", "Audio Slow-Downer", "Плеер", Icons.Filled.SlowMotionVideo, Icons.Outlined.SlowMotionVideo),
-    Recorder("recorder", "Riff Quick Recorder", "Диктофон", Icons.Filled.Mic, Icons.Outlined.Mic),
-    Tracker("tracker", "Practice Tracker", "Трекер", Icons.Filled.Timeline, Icons.Outlined.Timeline),
-    Language("language", "Язык (Language)", "Язык", Icons.Filled.Language, Icons.Outlined.Language),
+    Tabs("tabs", R.string.tab_tabs, Icons.Filled.LibraryMusic, Icons.Outlined.LibraryMusic),
+    Drums("drums", R.string.tab_drums, Icons.Filled.Album, Icons.Outlined.Album),
+    TabEditor("tab_editor", R.string.tab_tab_editor, Icons.Filled.Tune, Icons.Outlined.Tune),
+    Tuner("tuner", R.string.tab_tuner, Icons.Filled.GraphicEq, Icons.Outlined.GraphicEq),
+    Metronome("metronome", R.string.tab_metronome, Icons.Filled.Timer, Icons.Outlined.Timer),
+    Fretboard("fretboard", R.string.tab_fretboard, Icons.Filled.GridOn, Icons.Outlined.GridOn),
+    ReverseChord("reverse_chord", R.string.tab_chords, Icons.Filled.Search, Icons.Outlined.Search),
+    Trainer("trainer", R.string.tab_trainer, Icons.Filled.Speed, Icons.Outlined.Speed),
+    SlowDowner("slowdowner", R.string.tab_slowdowner, Icons.Filled.SlowMotionVideo, Icons.Outlined.SlowMotionVideo),
+    Recorder("recorder", R.string.tab_recorder, Icons.Filled.Mic, Icons.Outlined.Mic),
+    Tracker("tracker", R.string.tab_tracker, Icons.Filled.Timeline, Icons.Outlined.Timeline),
+    Language("language", R.string.tab_language, Icons.Filled.Language, Icons.Outlined.Language),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -163,7 +165,7 @@ fun GuitarLabApp() {
                                 color = StudioTextPrimary,
                             )
                             Text(
-                                text = "Pro Guitarist Toolkit",
+                                text = stringResource(R.string.nav_studio_subtitle),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = ElectricTeal,
                                 fontWeight = FontWeight.SemiBold,
@@ -178,7 +180,7 @@ fun GuitarLabApp() {
 
                     // Core Navigation Items
                     Text(
-                        text = "CORE INSTRUMENTS",
+                        text = stringResource(R.string.nav_core_instruments),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = StudioTextMuted,
@@ -188,10 +190,11 @@ fun GuitarLabApp() {
 
                     AppDest.entries.forEach { dest ->
                         val selected = currentRoute == dest.route
+                        val destTitle = stringResource(dest.titleRes)
                         NavigationDrawerItem(
                             label = {
                                 Text(
-                                    text = dest.title,
+                                    text = destTitle,
                                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                                     color = if (selected) ElectricAmber else StudioTextPrimary,
                                 )
@@ -212,7 +215,7 @@ fun GuitarLabApp() {
                             icon = {
                                 Icon(
                                     imageVector = if (selected) dest.selectedIcon else dest.unselectedIcon,
-                                    contentDescription = dest.title,
+                                    contentDescription = destTitle,
                                     tint = if (selected) ElectricAmber else StudioTextSecondary,
                                 )
                             },
@@ -235,7 +238,7 @@ fun GuitarLabApp() {
                     CenterAlignedTopAppBar(
                         title = {
                             Text(
-                                text = currentDest.title,
+                                text = stringResource(currentDest.titleRes),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = StudioTextPrimary,

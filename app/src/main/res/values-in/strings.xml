@@ -1,14 +1,55 @@
 <resources>
     <string name="app_name">GuitarLab</string>
-    <string name="tab_tabs">Tab</string>
-    <string name="tab_tuner">Tuner</string>
+
+    <string name="tab_tabs">Tab Gitar</string>
+    <string name="tab_tuner">Penstem</string>
     <string name="tab_metronome">Metronom</string>
     <string name="tab_drums">Drum</string>
     <string name="tab_fretboard">Fretboard &amp; Akor</string>
     <string name="tab_chords">Pencari Akor</string>
-    <string name="tab_trainer">Pelatih Kecepatan</string>
+    <string name="tab_trainer">Pelatih</string>
     <string name="tab_slowdowner">Peredam Kecepatan</string>
-    <string name="tab_recorder">Perekam Riff</string>
-    <string name="tab_tracker">Pelacak Latihan</string>
+    <string name="tab_recorder">Perekam</string>
+    <string name="tab_tracker">Pelacak</string>
     <string name="tab_language">Bahasa</string>
+    <string name="tab_tab_editor">Editor Tab</string>
+
+    <string name="nav_core_instruments">ALAT UTAMA</string>
+    <string name="nav_studio_subtitle">Perangkat Gitaris Profesional</string>
+
+    <string name="language_title">Bahasa Antarmuka</string>
+    <string name="language_subtitle">Pilih dari 20 bahasa yang tersedia</string>
+    <string name="lang_search_placeholder">Cari bahasa…</string>
+    <string name="apply_language">Terapkan Bahasa</string>
+    <string name="current_active">Aktif</string>
+    <string name="language_applied">Bahasa berhasil diperbarui</string>
+
+    <string name="guitar_tuning">STEMAN GITAR</string>
+    <string name="chord_finder_title">Pencari Akor</string>
+    <string name="chord_finder_hint">Tekan 2+ nada pada fretboard (maks 1 per senar)</string>
+    <string name="chord_finder_selected_count">Nada terpilih: %1$d. Mencari akor…</string>
+    <string name="chord_finder_detected">Terdeteksi: %1$s</string>
+    <string name="interactive_fretboard">FRETBOARD INTERAKTIF</string>
+    <string name="tuning_select_title">PILIH STEMAN GITAR</string>
+    <string name="tuning_select_subtitle">Pilih steman untuk neck gitar</string>
+    <string name="clear">Bersihkan</string>
+    <string name="close">Tutup</string>
+    <string name="select_tuning">Pilih Steman</string>
+
+    <string name="tap_tempo">TAP TEMPO</string>
+    <string name="tap_to_rhythm">Ketuk sesuai irama</string>
+    <string name="time_signature">TANDA BIRAMA</string>
+    <string name="vibration_mode">MODE GETAR</string>
+    <string name="vibration_on_sub">Pulsa haptic alih-alih suara klik</string>
+    <string name="vibration_off_sub">Suara klik diaktifkan</string>
+    <string name="sound_selection">SUARA METRONOM</string>
+    <string name="metronome_volume">VOLUME METRONOM</string>
+
+    <string name="tuning_standard">Standar E</string>
+    <string name="tuning_drop_d">Drop D</string>
+    <string name="tuning_half_step">Turun setengah nada</string>
+    <string name="play">Putar</string>
+    <string name="pause">Jeda</string>
+    <string name="stop">Berhenti</string>
+    <string name="strings_count">%1$d senar</string>
 </resources>

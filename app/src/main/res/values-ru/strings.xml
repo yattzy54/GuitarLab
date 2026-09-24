@@ -1,20 +1,60 @@
 <resources>
     <string name="app_name">GuitarLab</string>
+
+    <!-- Navigation Tabs & Drawer -->
     <string name="tab_tabs">Табы</string>
     <string name="tab_tuner">Тюнер</string>
     <string name="tab_metronome">Метроном</string>
     <string name="tab_drums">Драм-машина</string>
-    <string name="tab_fretboard">Гриф &amp; Аккорды</string>
-    <string name="tab_chords">Поиск аккордов</string>
+    <string name="tab_fretboard">Гриф &amp; Гаммы</string>
+    <string name="tab_chords">Chord Finder</string>
     <string name="tab_trainer">Тренер скорости</string>
     <string name="tab_slowdowner">Замедлитель</string>
     <string name="tab_recorder">Диктофон риффов</string>
     <string name="tab_tracker">Трекер практики</string>
     <string name="tab_language">Язык</string>
+    <string name="tab_tab_editor">Редактор табов</string>
+
+    <string name="nav_core_instruments">ОСНОВНЫЕ ИНСТРУМЕНТЫ</string>
+    <string name="nav_studio_subtitle">Профи-набор гитариста</string>
+
+    <!-- Language Screen -->
+    <string name="language_title">Язык интерфейса</string>
+    <string name="language_subtitle">Выберите язык из 20 доступных</string>
+    <string name="lang_search_placeholder">Поиск языка...</string>
+    <string name="apply_language">Применить язык</string>
+    <string name="current_active">Активен</string>
+    <string name="language_applied">Язык успешно изменен</string>
+
+    <!-- Chord Finder Screen -->
+    <string name="guitar_tuning">СТРОЙ ГИТАРЫ</string>
+    <string name="chord_finder_title">Определитель аккордов</string>
+    <string name="chord_finder_hint">Зажмите 2+ ноты на грифе (макс. 1 на струну)</string>
+    <string name="chord_finder_selected_count">Выбрано нот: %1$d. Ищем аккорд...</string>
+    <string name="chord_finder_detected">Определен: %1$s</string>
+    <string name="interactive_fretboard">ИНТЕРАКТИВНЫЙ ГРИФ</string>
+    <string name="tuning_select_title">ВЫБОР СТРОЯ ГИТАРЫ</string>
+    <string name="tuning_select_subtitle">Выберите строй для гитарного грифа</string>
+    <string name="clear">Очистить</string>
+    <string name="close">Закрыть</string>
+    <string name="select_tuning">Выбрать строй</string>
+
+    <!-- Metronome Screen -->
+    <string name="tap_tempo">TAP TEMPO</string>
+    <string name="tap_to_rhythm">Нажимайте в ритм</string>
+    <string name="time_signature">МУЗЫКАЛЬНЫЙ РАЗМЕР</string>
+    <string name="vibration_mode">РЕЖИМ ВИБРАЦИИ</string>
+    <string name="vibration_on_sub">Тактильные удары вместо звука</string>
+    <string name="vibration_off_sub">Звуковые клики включены</string>
+    <string name="sound_selection">ВЫБОР ЗВУКА МЕТРОНОМА</string>
+    <string name="metronome_volume">ГРОМКОСТЬ МЕТРОНОМА</string>
+
+    <!-- Tunings & Actions -->
     <string name="tuning_standard">Стандартный E</string>
     <string name="tuning_drop_d">Дроп D</string>
     <string name="tuning_half_step">На полтона ниже</string>
     <string name="play">Играть</string>
     <string name="pause">Пауза</string>
     <string name="stop">Стоп</string>
+    <string name="strings_count">%1$d струн</string>
 </resources>

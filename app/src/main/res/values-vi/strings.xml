@@ -1,14 +1,55 @@
 <resources>
     <string name="app_name">GuitarLab</string>
-    <string name="tab_tabs">Tab</string>
-    <string name="tab_tuner">Máy lên dây</string>
-    <string name="tab_metronome">Máy đập nhịp</string>
-    <string name="tab_drums">Máy trống</string>
-    <string name="tab_fretboard">Cần đàn &amp; Hợp âm</string>
-    <string name="tab_chords">Tìm hợp âm</string>
-    <string name="tab_trainer">Luyện tốc độ</string>
-    <string name="tab_slowdowner">Làm chậm</string>
-    <string name="tab_recorder">Ghi âm đoạn riff</string>
-    <string name="tab_tracker">Theo dõi luyện tập</string>
-    <string name="tab_language">Ngôn ngữ</string>
+
+    <string name="tab_tabs">Tab Guitar</string>
+    <string name="tab_tuner">Lên Dây</string>
+    <string name="tab_metronome">Máy Đánh Nhịp</string>
+    <string name="tab_drums">Trống</string>
+    <string name="tab_fretboard">Cần Đàn &amp; Hợp Âm</string>
+    <string name="tab_chords">Tra Cứu Hợp Âm</string>
+    <string name="tab_trainer">Luyện Tốc Độ</string>
+    <string name="tab_slowdowner">Làm Chậm</string>
+    <string name="tab_recorder">Ghi Âm</string>
+    <string name="tab_tracker">Theo Dõi</string>
+    <string name="tab_language">Ngôn Ngữ</string>
+    <string name="tab_tab_editor">Biên Tập Tab</string>
+
+    <string name="nav_core_instruments">CÔNG CỤ CHÍNH</string>
+    <string name="nav_studio_subtitle">Bộ Công Cụ Guitar Chuyên Nghiệp</string>
+
+    <string name="language_title">Ngôn Ngữ Giao Diện</string>
+    <string name="language_subtitle">Chọn trong số 20 ngôn ngữ có sẵn</string>
+    <string name="lang_search_placeholder">Tìm kiếm ngôn ngữ…</string>
+    <string name="apply_language">Áp Dụng Ngôn Ngữ</string>
+    <string name="current_active">Đang Dùng</string>
+    <string name="language_applied">Đã cập nhật ngôn ngữ thành công</string>
+
+    <string name="guitar_tuning">LÊN DÂY GUITAR</string>
+    <string name="chord_finder_title">Tra Cứu Hợp Âm</string>
+    <string name="chord_finder_hint">Bấm 2+ nốt trên cần đàn (tối đa 1 nốt mỗi dây)</string>
+    <string name="chord_finder_selected_count">Đã chọn: %1$d nốt. Đang tìm hợp âm…</string>
+    <string name="chord_finder_detected">Phát hiện: %1$s</string>
+    <string name="interactive_fretboard">CẦN ĐÀN TƯƠNG TÁC</string>
+    <string name="tuning_select_title">CHỌN KIỂU LÊN DÂY</string>
+    <string name="tuning_select_subtitle">Chọn kiểu lên dây cho cần đàn</string>
+    <string name="clear">Xoá</string>
+    <string name="close">Đóng</string>
+    <string name="select_tuning">Chọn Kiểu Lên Dây</string>
+
+    <string name="tap_tempo">TAP TEMPO</string>
+    <string name="tap_to_rhythm">Chạm theo nhịp</string>
+    <string name="time_signature">SỐ NHỊP</string>
+    <string name="vibration_mode">CHẾ ĐỘ RUNG</string>
+    <string name="vibration_on_sub">Xung cảm ứng thay cho tiếng gõ</string>
+    <string name="vibration_off_sub">Đã bật tiếng gõ nhịp</string>
+    <string name="sound_selection">ÂM THANH MÁY ĐÁNH NHỊP</string>
+    <string name="metronome_volume">ÂM LƯỢNG MÁY ĐÁNH NHỊP</string>
+
+    <string name="tuning_standard">Chuẩn E</string>
+    <string name="tuning_drop_d">Drop D</string>
+    <string name="tuning_half_step">Thấp hơn nửa cung</string>
+    <string name="play">Phát</string>
+    <string name="pause">Tạm dừng</string>
+    <string name="stop">Dừng</string>
+    <string name="strings_count">%1$d dây</string>
 </resources>

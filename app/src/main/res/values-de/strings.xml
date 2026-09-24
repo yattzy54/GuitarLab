@@ -1,14 +1,55 @@
 <resources>
     <string name="app_name">GuitarLab</string>
+
     <string name="tab_tabs">Tabs</string>
     <string name="tab_tuner">Stimmgerät</string>
     <string name="tab_metronome">Metronom</string>
     <string name="tab_drums">Schlagzeug</string>
     <string name="tab_fretboard">Griffbrett &amp; Akkorde</string>
-    <string name="tab_chords">Akkordfinder</string>
-    <string name="tab_trainer">Geschwindigkeitstrainer</string>
-    <string name="tab_slowdowner">Verlangsamer</string>
-    <string name="tab_recorder">Riff-Rekorder</string>
-    <string name="tab_tracker">Übungs-Tracker</string>
+    <string name="tab_chords">Akkord-Finder</string>
+    <string name="tab_trainer">Trainer</string>
+    <string name="tab_slowdowner">Audio-Bremse</string>
+    <string name="tab_recorder">Aufnahme</string>
+    <string name="tab_tracker">Protokoll</string>
     <string name="tab_language">Sprache</string>
+    <string name="tab_tab_editor">Tab-Editor</string>
+
+    <string name="nav_core_instruments">HAUPTWERKZEUGE</string>
+    <string name="nav_studio_subtitle">Profi-Gitarren-Kit</string>
+
+    <string name="language_title">Oberflächensprache</string>
+    <string name="language_subtitle">Wählen Sie eine aus 20 verfügbaren Sprachen</string>
+    <string name="lang_search_placeholder">Sprache suchen…</string>
+    <string name="apply_language">Sprache anwenden</string>
+    <string name="current_active">Aktiv</string>
+    <string name="language_applied">Sprache erfolgreich aktualisiert</string>
+
+    <string name="guitar_tuning">GITARRENSTIMMUNG</string>
+    <string name="chord_finder_title">Akkord-Finder</string>
+    <string name="chord_finder_hint">Halten Sie 2+ Noten auf dem Griffbrett gedrückt (max 1 pro Saite)</string>
+    <string name="chord_finder_selected_count">Ausgewählte Noten: %1$d. Akkord wird gesucht…</string>
+    <string name="chord_finder_detected">Erkannt: %1$s</string>
+    <string name="interactive_fretboard">INTERAKTIVES GRIFFBRETT</string>
+    <string name="tuning_select_title">GITARRENSTIMMUNG AUSWÄHLEN</string>
+    <string name="tuning_select_subtitle">Wählen Sie die Stimmung für den Hals</string>
+    <string name="clear">Löschen</string>
+    <string name="close">Schließen</string>
+    <string name="select_tuning">Stimmung auswählen</string>
+
+    <string name="tap_tempo">TAP TEMPO</string>
+    <string name="tap_to_rhythm">Im Rhythmus tippen</string>
+    <string name="time_signature">TAKTART</string>
+    <string name="vibration_mode">VIBRATIONSMODUS</string>
+    <string name="vibration_on_sub">Haptische Impulse statt Klickton</string>
+    <string name="vibration_off_sub">Tonsignale aktiviert</string>
+    <string name="sound_selection">METRONOM-SOUND</string>
+    <string name="metronome_volume">METRONOM-LAUTSTÄRKE</string>
+
+    <string name="tuning_standard">Standard-Stimmung E</string>
+    <string name="tuning_drop_d">Drop D</string>
+    <string name="tuning_half_step">Halbton tiefer</string>
+    <string name="play">Abspielen</string>
+    <string name="pause">Pause</string>
+    <string name="stop">Stopp</string>
+    <string name="strings_count">%1$d Saiten</string>
 </resources>

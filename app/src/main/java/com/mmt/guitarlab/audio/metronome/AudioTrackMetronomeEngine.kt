@@ -71,6 +71,10 @@ class AudioTrackMetronomeEngine @Inject constructor(
 
     override fun start() {
         if (!running.compareAndSet(false, true)) return
+        val cfg = _config.value
+        if (cfg.trainer.enabled) {
+            _config.value = cfg.copy(bpm = cfg.trainer.startBpm)
+        }
         audioFocus.request()
         _isRunning.value = true
         scope.launch { runLoop() }
@@ -115,6 +119,7 @@ class AudioTrackMetronomeEngine @Inject constructor(
         var barsSinceJump = 0
         var beatsToJump = 0
         var jumpIntervalMs = 0L
+        var isFirstBeat = true
 
         fun framesPerBeat(currentBpm: Int): Int {
             val safe = currentBpm.coerceIn(MetronomeConfig.MIN_BPM, MetronomeConfig.MAX_BPM)
@@ -133,8 +138,9 @@ class AudioTrackMetronomeEngine @Inject constructor(
                     val remainingBars = (t.intervalValue - barsSinceJump).coerceAtLeast(1)
                     beatsToJump = remainingBars * cfg.timeSignature.beatsPerBar - (beatInBar - 1)
                 }
-                TrainerIntervalKind.MINUTES -> {
-                    jumpIntervalMs = t.intervalValue * 60_000L
+                TrainerIntervalKind.SECONDS, TrainerIntervalKind.MINUTES -> {
+                    val factor = if (t.intervalKind == TrainerIntervalKind.MINUTES) 60_000L else 1_000L
+                    jumpIntervalMs = t.intervalValue * factor
                     beatsToJump = 0
                 }
             }
@@ -146,9 +152,10 @@ class AudioTrackMetronomeEngine @Inject constructor(
             val atTarget = bpm >= t.targetBpm && t.targetBpm >= t.startBpm ||
                 bpm <= t.targetBpm && t.targetBpm < t.startBpm
             if (atTarget && bpm == t.targetBpm) return bpm
+            val factor = if (t.intervalKind == TrainerIntervalKind.MINUTES) 60_000L else 1_000L
             val shouldJump = when (t.intervalKind) {
                 TrainerIntervalKind.BARS -> barsSinceJump >= t.intervalValue
-                TrainerIntervalKind.MINUTES -> nowMs - trainerAnchorMs >= t.intervalValue * 60_000L
+                TrainerIntervalKind.SECONDS, TrainerIntervalKind.MINUTES -> nowMs - trainerAnchorMs >= t.intervalValue * factor
             }
             if (!shouldJump) return bpm
             val direction = if (t.targetBpm >= t.startBpm) 1 else -1
@@ -183,11 +190,16 @@ class AudioTrackMetronomeEngine @Inject constructor(
                 while (i < chunk.size) {
                     if (samplesUntilClick <= 0) {
                         val now = System.currentTimeMillis()
+                        if (isFirstBeat) {
+                            isFirstBeat = false
+                            trainerAnchorMs = now
+                            barsSinceJump = 0
+                        }
                         val accent = beatInBar in ts.accentBeats
                         currentClick = if (accent) accentClick else weakClick
                         clickPos = 0
                         val millisUntil = when {
-                            cfg.trainer.enabled && cfg.trainer.intervalKind == TrainerIntervalKind.MINUTES ->
+                            cfg.trainer.enabled && (cfg.trainer.intervalKind == TrainerIntervalKind.SECONDS || cfg.trainer.intervalKind == TrainerIntervalKind.MINUTES) ->
                                 (jumpIntervalMs - (now - trainerAnchorMs)).coerceAtLeast(0L)
                             else -> null
                         }

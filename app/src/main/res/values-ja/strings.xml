@@ -1,14 +1,55 @@
 <resources>
     <string name="app_name">GuitarLab</string>
+
     <string name="tab_tabs">タブ譜</string>
     <string name="tab_tuner">チューナー</string>
     <string name="tab_metronome">メトロノーム</string>
-    <string name="tab_drums">ドラムマシン</string>
-    <string name="tab_fretboard">フレットボード</string>
-    <string name="tab_chords">コード検索</string>
+    <string name="tab_drums">ドラム</string>
+    <string name="tab_fretboard">指板＆コード</string>
+    <string name="tab_chords">コードファインダー</string>
     <string name="tab_trainer">スピードトレーナー</string>
     <string name="tab_slowdowner">スローダウン</string>
-    <string name="tab_recorder">リフレコーダー</string>
+    <string name="tab_recorder">録音</string>
     <string name="tab_tracker">練習記録</string>
     <string name="tab_language">言語</string>
+    <string name="tab_tab_editor">タブ譜エディタ</string>
+
+    <string name="nav_core_instruments">メインツール</string>
+    <string name="nav_studio_subtitle">プロギタリストツールキット</string>
+
+    <string name="language_title">インターフェース言語</string>
+    <string name="language_subtitle">20種類の言語から選択</string>
+    <string name="lang_search_placeholder">言語を検索…</string>
+    <string name="apply_language">言語を適用</string>
+    <string name="current_active">選択中</string>
+    <string name="language_applied">言語を更新しました</string>
+
+    <string name="guitar_tuning">ギターチューニング</string>
+    <string name="chord_finder_title">コード判定器</string>
+    <string name="chord_finder_hint">指板のフレットを2つ以上押さえてください</string>
+    <string name="chord_finder_selected_count">選択音数: %1$d。コードを検索中…</string>
+    <string name="chord_finder_detected">検出コード: %1$s</string>
+    <string name="interactive_fretboard">インタラクティブ指板</string>
+    <string name="tuning_select_title">チューニングを選択</string>
+    <string name="tuning_select_subtitle">指板のチューニングを選択してください</string>
+    <string name="clear">クリア</string>
+    <string name="close">閉じる</string>
+    <string name="select_tuning">チューニング選択</string>
+
+    <string name="tap_tempo">TAP TEMPO</string>
+    <string name="tap_to_rhythm">リズムに合わせてタップ</string>
+    <string name="time_signature">拍子</string>
+    <string name="vibration_mode">バイブレーション</string>
+    <string name="vibration_on_sub">クリック音の代わりに振動</string>
+    <string name="vibration_off_sub">クリック音有効</string>
+    <string name="sound_selection">メトロノーム音色</string>
+    <string name="metronome_volume">音量</string>
+
+    <string name="tuning_standard">レギュラー E</string>
+    <string name="tuning_drop_d">ドロップ D</string>
+    <string name="tuning_half_step">半音下げ</string>
+    <string name="play">再生</string>
+    <string name="pause">一時停止</string>
+    <string name="stop">停止</string>
+    <string name="strings_count">%1$d 弦</string>
 </resources>

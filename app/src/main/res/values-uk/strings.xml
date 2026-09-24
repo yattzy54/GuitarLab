@@ -1,14 +1,55 @@
 <resources>
     <string name="app_name">GuitarLab</string>
+
     <string name="tab_tabs">Таби</string>
     <string name="tab_tuner">Тюнер</string>
     <string name="tab_metronome">Метроном</string>
     <string name="tab_drums">Драм-машина</string>
     <string name="tab_fretboard">Гриф &amp; Акорди</string>
-    <string name="tab_chords">Пошук акордів</string>
+    <string name="tab_chords">Chord Finder</string>
     <string name="tab_trainer">Тренер швидкості</string>
     <string name="tab_slowdowner">Сповільнювач</string>
     <string name="tab_recorder">Диктофон рифів</string>
     <string name="tab_tracker">Трекер занять</string>
     <string name="tab_language">Мова</string>
+    <string name="tab_tab_editor">Редактор табів</string>
+
+    <string name="nav_core_instruments">ОСНОВНІ ІНСТРУМЕНТИ</string>
+    <string name="nav_studio_subtitle">Набір гітариста</string>
+
+    <string name="language_title">Мова інтерфейсу</string>
+    <string name="language_subtitle">Оберіть мову з 20 доступних</string>
+    <string name="lang_search_placeholder">Пошук мови…</string>
+    <string name="apply_language">Застосувати мову</string>
+    <string name="current_active">Активна</string>
+    <string name="language_applied">Мову успішно оновлено</string>
+
+    <string name="guitar_tuning">СТРІЙ ГІТАРИ</string>
+    <string name="chord_finder_title">Визначник акордів</string>
+    <string name="chord_finder_hint">Затисніть 2+ ноти на грифі (макс. 1 на струну)</string>
+    <string name="chord_finder_selected_count">Обрано нот: %1$d. Шукаємо акорд…</string>
+    <string name="chord_finder_detected">Визначено: %1$s</string>
+    <string name="interactive_fretboard">ІНТЕРАКТИВНИЙ ГРИФ</string>
+    <string name="tuning_select_title">ВИБІР СТРОЮ ГІТАРИ</string>
+    <string name="tuning_select_subtitle">Оберіть стрій для гітарного грифу</string>
+    <string name="clear">Очистити</string>
+    <string name="close">Закрити</string>
+    <string name="select_tuning">Обрати стрій</string>
+
+    <string name="tap_tempo">TAP TEMPO</string>
+    <string name="tap_to_rhythm">Натискайте в ритм</string>
+    <string name="time_signature">МУЗИЧНИЙ РОЗМІР</string>
+    <string name="vibration_mode">РЕЖИМ ВІБРАЦІЇ</string>
+    <string name="vibration_on_sub">Тактильні удари замість звуку</string>
+    <string name="vibration_off_sub">Звуковий клік увімкнено</string>
+    <string name="sound_selection">ЗВУК МЕТРОНОМУ</string>
+    <string name="metronome_volume">ГУЧНІСТЬ МЕТРОНОМУ</string>
+
+    <string name="tuning_standard">Стандартний E</string>
+    <string name="tuning_drop_d">Дроп D</string>
+    <string name="tuning_half_step">На півтону нижче</string>
+    <string name="play">Грати</string>
+    <string name="pause">Пауза</string>
+    <string name="stop">Стоп</string>
+    <string name="strings_count">%1$d струн</string>
 </resources>

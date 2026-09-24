@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">GuitarLab</string>
+
     <string name="tab_tabs">Tablaturas</string>
     <string name="tab_tuner">Afinador</string>
     <string name="tab_metronome">Metrónomo</string>
@@ -11,4 +12,44 @@
     <string name="tab_recorder">Grabadora</string>
     <string name="tab_tracker">Seguimiento</string>
     <string name="tab_language">Idioma</string>
+    <string name="tab_tab_editor">Editor de Tablaturas</string>
+
+    <string name="nav_core_instruments">HERRAMIENTAS PRINCIPALES</string>
+    <string name="nav_studio_subtitle">Kit Profesional de Guitarra</string>
+
+    <string name="language_title">Idioma de la Interfaz</string>
+    <string name="language_subtitle">Seleccione idioma entre 20 disponibles</string>
+    <string name="lang_search_placeholder">Buscar idioma…</string>
+    <string name="apply_language">Aplicar Idioma</string>
+    <string name="current_active">Activo</string>
+    <string name="language_applied">Idioma actualizado correctamente</string>
+
+    <string name="guitar_tuning">AFINACIÓN DE GUITARRA</string>
+    <string name="chord_finder_title">Buscador de acordes</string>
+    <string name="chord_finder_hint">Mantenga 2+ notas en el mástil (máx 1 por cuerda)</string>
+    <string name="chord_finder_selected_count">Notas seleccionadas: %1$d. Buscando acorde…</string>
+    <string name="chord_finder_detected">Detectado: %1$s</string>
+    <string name="interactive_fretboard">MÁSTIL INTERACTIVO</string>
+    <string name="tuning_select_title">SELECCIONAR AFINACIÓN DE GUITARRA</string>
+    <string name="tuning_select_subtitle">Elija afinación para el mástil</string>
+    <string name="clear">Limpiar</string>
+    <string name="close">Cerrar</string>
+    <string name="select_tuning">Seleccionar afinación</string>
+
+    <string name="tap_tempo">TAP TEMPO</string>
+    <string name="tap_to_rhythm">Toque al ritmo</string>
+    <string name="time_signature">COMPÁS</string>
+    <string name="vibration_mode">MODO VIBRACIÓN</string>
+    <string name="vibration_on_sub">Pulsos hápticos en lugar de sonido</string>
+    <string name="vibration_off_sub">Clicks de sonido activados</string>
+    <string name="sound_selection">SONIDO DE METRÓNOMO</string>
+    <string name="metronome_volume">VOLUMEN DEL METRÓNOMO</string>
+
+    <string name="tuning_standard">Afinación Estándar E</string>
+    <string name="tuning_drop_d">Drop D</string>
+    <string name="tuning_half_step">Medio tono abajo</string>
+    <string name="play">Reproducir</string>
+    <string name="pause">Pausa</string>
+    <string name="stop">Detener</string>
+    <string name="strings_count">%1$d cuerdas</string>
 </resources>

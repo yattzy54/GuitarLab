@@ -1,14 +1,55 @@
 <resources>
     <string name="app_name">GuitarLab</string>
+
     <string name="tab_tabs">टैब्स</string>
     <string name="tab_tuner">ट्यूनर</string>
     <string name="tab_metronome">मेट्रोनोम</string>
-    <string name="tab_drums">ड्रम</string>
-    <string name="tab_fretboard">फ्रेटबोर्ड</string>
-    <string name="tab_chords">कॉर्ड खोजक</string>
-    <string name="tab_trainer">स्पीड ट्रेनर</string>
-    <string name="tab_slowdowner">ऑडियो धीमा</string>
+    <string name="tab_drums">ड्रम्स</string>
+    <string name="tab_fretboard">फ्रेटबोर्ड &amp; कॉर्ड्स</string>
+    <string name="tab_chords">कॉर्ड फाइंडर</string>
+    <string name="tab_trainer">ट्रेनर</string>
+    <string name="tab_slowdowner">स्लो-डाउनर</string>
     <string name="tab_recorder">रिकॉर्डर</string>
     <string name="tab_tracker">ट्रैकर</string>
     <string name="tab_language">भाषा</string>
+    <string name="tab_tab_editor">टैब एडिटर</string>
+
+    <string name="nav_core_instruments">मुख्य उपकरण</string>
+    <string name="nav_studio_subtitle">प्रो गिटारिस्ट टूलकिट</string>
+
+    <string name="language_title">इंटरफ़ेस भाषा</string>
+    <string name="language_subtitle">20 उपलब्ध भाषाओं में से चुनें</string>
+    <string name="lang_search_placeholder">भाषा खोजें…</string>
+    <string name="apply_language">भाषा लागू करें</string>
+    <string name="current_active">सक्रिय</string>
+    <string name="language_applied">भाषा सफलतापूर्वक अपडेट की गई</string>
+
+    <string name="guitar_tuning">गिटार ट्यूनिंग</string>
+    <string name="chord_finder_title">कॉर्ड फाइंडर</string>
+    <string name="chord_finder_hint">फ्रेटबोर्ड पर 2+ नोट्स दबाएं (प्रति तार अधिकतम 1)</string>
+    <string name="chord_finder_selected_count">चयनित नोट्स: %1$d। कॉर्ड खोज रहे हैं…</string>
+    <string name="chord_finder_detected">पहचाना गया: %1$s</string>
+    <string name="interactive_fretboard">इंटरएक्टिव फ्रेटबोर्ड</string>
+    <string name="tuning_select_title">गिटार ट्यूनिंग चुनें</string>
+    <string name="tuning_select_subtitle">गिटार की गर्दन के लिए ट्यूनिंग चुनें</string>
+    <string name="clear">साफ़ करें</string>
+    <string name="close">बंद करें</string>
+    <string name="select_tuning">ट्यूनिंग चुनें</string>
+
+    <string name="tap_tempo">TAP TEMPO</string>
+    <string name="tap_to_rhythm">ताल पर टैप करें</string>
+    <string name="time_signature">ताल हस्ताक्षर</string>
+    <string name="vibration_mode">वाइब्रेशन मोड</string>
+    <string name="vibration_on_sub">ध्वनि के बजाय स्पर्श पल्स</string>
+    <string name="vibration_off_sub">ध्वनि क्लिक सक्षम</string>
+    <string name="sound_selection">मेट्रोनोम साउंड</string>
+    <string name="metronome_volume">मेट्रोनोम वॉल्यूम</string>
+
+    <string name="tuning_standard">स्टैंडर्ड E</string>
+    <string name="tuning_drop_d">ड्रॉप D</string>
+    <string name="tuning_half_step">हाफ-स्टेप डाउन</string>
+    <string name="play">चलाएं</string>
+    <string name="pause">रोकें</string>
+    <string name="stop">बंद करें</string>
+    <string name="strings_count">%1$d तार</string>
 </resources>

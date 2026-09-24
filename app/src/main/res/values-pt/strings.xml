@@ -1,14 +1,55 @@
 <resources>
     <string name="app_name">GuitarLab</string>
+
     <string name="tab_tabs">Tablaturas</string>
     <string name="tab_tuner">Afinador</string>
     <string name="tab_metronome">Metrônomo</string>
     <string name="tab_drums">Bateria</string>
-    <string name="tab_fretboard">Escala &amp; Acordes</string>
-    <string name="tab_chords">Buscador de acordes</string>
+    <string name="tab_fretboard">Braço &amp; Acordes</string>
+    <string name="tab_chords">Buscador de Acordes</string>
     <string name="tab_trainer">Treinador</string>
-    <string name="tab_slowdowner">Desacelerador</string>
+    <string name="tab_slowdowner">Redutor</string>
     <string name="tab_recorder">Gravador</string>
-    <string name="tab_tracker">Rastreador</string>
+    <string name="tab_tracker">Diário</string>
     <string name="tab_language">Idioma</string>
+    <string name="tab_tab_editor">Editor de Tablaturas</string>
+
+    <string name="nav_core_instruments">FERRAMENTAS PRINCIPAIS</string>
+    <string name="nav_studio_subtitle">Kit Pro para Guitarrista</string>
+
+    <string name="language_title">Idioma da Interface</string>
+    <string name="language_subtitle">Selecione entre 20 idiomas disponíveis</string>
+    <string name="lang_search_placeholder">Buscar idioma…</string>
+    <string name="apply_language">Aplicar Idioma</string>
+    <string name="current_active">Ativo</string>
+    <string name="language_applied">Idioma atualizado com sucesso</string>
+
+    <string name="guitar_tuning">AFINAÇÃO DA GUITARRA</string>
+    <string name="chord_finder_title">Identificador de Acordes</string>
+    <string name="chord_finder_hint">Pressione 2+ notas no braço (máx 1 por corda)</string>
+    <string name="chord_finder_selected_count">Notas selecionadas: %1$d. Buscando acorde…</string>
+    <string name="chord_finder_detected">Detectado: %1$s</string>
+    <string name="interactive_fretboard">BRAÇO INTERATIVO</string>
+    <string name="tuning_select_title">SELECIONAR AFINAÇÃO</string>
+    <string name="tuning_select_subtitle">Escolha a afinação para o braço</string>
+    <string name="clear">Limpar</string>
+    <string name="close">Fechar</string>
+    <string name="select_tuning">Selecionar afinação</string>
+
+    <string name="tap_tempo">TAP TEMPO</string>
+    <string name="tap_to_rhythm">Toque no ritmo</string>
+    <string name="time_signature">FÓRMULA DE BASS</string>
+    <string name="vibration_mode">MODO VIBRAÇÃO</string>
+    <string name="vibration_on_sub">Pulsos hápticos em vez de som</string>
+    <string name="vibration_off_sub">Cliques sonoros ativados</string>
+    <string name="sound_selection">SOM DO METRÔNOMO</string>
+    <string name="metronome_volume">VOLUME DO METRÔNOMO</string>
+
+    <string name="tuning_standard">Padrão E</string>
+    <string name="tuning_drop_d">Drop D</string>
+    <string name="tuning_half_step">Meio tom abaixo</string>
+    <string name="play">Tocar</string>
+    <string name="pause">Pausa</string>
+    <string name="stop">Parar</string>
+    <string name="strings_count">%1$d cordas</string>
 </resources>

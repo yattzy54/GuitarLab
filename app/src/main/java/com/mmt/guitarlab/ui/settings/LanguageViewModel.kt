@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -24,13 +24,13 @@ class LanguageViewModel @Inject constructor(
     val currentLanguageCode: StateFlow<String> = LanguageManager.getLanguageStream(context)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LanguageManager.getInitialLanguageCode(context))
 
+    private val _selectedLanguageCode = MutableStateFlow<String?>(null)
+    val selectedLanguageCode: StateFlow<String?> = _selectedLanguageCode.asStateFlow()
+
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    val filteredLanguages: StateFlow<List<AppLanguage>> = combine(
-        currentLanguageCode,
-        searchQuery
-    ) { _, query ->
+    val filteredLanguages: StateFlow<List<AppLanguage>> = searchQuery.map { query ->
         if (query.isBlank()) {
             LanguageManager.SUPPORTED_LANGUAGES
         } else {
@@ -48,6 +48,10 @@ class LanguageViewModel @Inject constructor(
     }
 
     fun selectLanguage(code: String) {
+        _selectedLanguageCode.value = code
+    }
+
+    fun applyLanguage(code: String) {
         viewModelScope.launch {
             LanguageManager.setLanguage(context, code)
         }
