@@ -3,9 +3,6 @@ package com.mmt.guitarlab.config
 enum class FlavorType(val flavorName: String) {
     STANDARD("standard"),
     TABS("tabs");
-
-    val isTabs: Boolean get() = this == TABS
-    val isStandard: Boolean get() = this == STANDARD
 }
 
 object AppFlavorConfig {
@@ -23,7 +20,10 @@ object AppFlavorConfig {
      * otherwise falls back to build-time Gradle productFlavor configuration.
      */
     val currentFlavor: FlavorType
-        get() = overrideFlavor ?: if (isTabsFlavorBuild) FlavorType.TABS else FlavorType.STANDARD
+        get() = overrideFlavor ?: when (com.mmt.guitarlab.BuildConfig.FLAVOR_TYPE) {
+            "tabs" -> FlavorType.TABS
+            else -> FlavorType.STANDARD
+        }
 
     val isTabsFlavor: Boolean
         get() = currentFlavor == FlavorType.TABS
