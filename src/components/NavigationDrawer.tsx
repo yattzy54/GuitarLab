@@ -14,11 +14,13 @@ import {
   Volume2,
   Drum,
   Globe,
+  Layers,
 } from 'lucide-react';
 import { TuxGuitarIcon } from './tuxguitar/TuxGuitarIcon';
 import { Studio3DBadge, StudioAccent } from './common/Studio3DComponents';
 import { useLanguage } from '../i18n/LanguageContext';
 import { TranslationKey } from '../i18n/types';
+import { AppFlavor, getAppFlavor, setAppFlavor, TAB_EXCLUSIVE_ROUTES } from '../config/flavor';
 
 export type AppDestination =
   | 'player'
@@ -42,15 +44,17 @@ interface NavItemConfig {
   subtitleKey: TranslationKey;
   icon: any;
   accent: StudioAccent;
+  isTabFeature?: boolean;
 }
 
 export const NAV_ITEM_CONFIGS: NavItemConfig[] = [
   {
-    id: 'player',
-    titleKey: 'nav_player',
-    subtitleKey: 'nav_player_sub',
-    icon: PlayCircle,
-    accent: 'green',
+    id: 'tabs',
+    titleKey: 'nav_tabs',
+    subtitleKey: 'nav_tabs_sub',
+    icon: Music,
+    accent: 'amber',
+    isTabFeature: true,
   },
   {
     id: 'guitartabedit',
@@ -58,6 +62,7 @@ export const NAV_ITEM_CONFIGS: NavItemConfig[] = [
     subtitleKey: 'nav_guitartabedit_sub',
     icon: TuxGuitarIcon,
     accent: 'amber',
+    isTabFeature: true,
   },
   {
     id: 'tuxguitar',
@@ -65,6 +70,7 @@ export const NAV_ITEM_CONFIGS: NavItemConfig[] = [
     subtitleKey: 'nav_tuxguitar_sub',
     icon: TuxGuitarIcon,
     accent: 'amber',
+    isTabFeature: true,
   },
   {
     id: 'tuner',
@@ -93,13 +99,6 @@ export const NAV_ITEM_CONFIGS: NavItemConfig[] = [
     subtitleKey: 'nav_trainer_sub',
     icon: Gauge,
     accent: 'teal',
-  },
-  {
-    id: 'tabs',
-    titleKey: 'nav_tabs',
-    subtitleKey: 'nav_tabs_sub',
-    icon: Music,
-    accent: 'amber',
   },
   {
     id: 'fretboard',
@@ -159,6 +158,18 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
   onNavigate,
 }) => {
   const { t, languageInfo } = useLanguage();
+  const currentFlavor = getAppFlavor();
+
+  // Filter items strictly by flavor:
+  // In tabs flavor: ONLY show the 3 tab sections (Tabs, GuitarTabEdit, TabLab)
+  // In standard flavor: HIDE the 3 tab sections
+  const filteredNavItems = NAV_ITEM_CONFIGS.filter((item) => {
+    if (currentFlavor === 'tabs') {
+      return item.isTabFeature === true;
+    } else {
+      return !item.isTabFeature;
+    }
+  });
 
   return (
     <>
@@ -179,12 +190,22 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
         {/* Header */}
         <div className="p-5 flex items-center justify-between border-b border-[#222B3D]">
           <div className="flex items-center space-x-3">
-            <Studio3DBadge icon={Volume2} accent="amber" size="md" />
+            <Studio3DBadge
+              icon={currentFlavor === 'tabs' ? Music : Volume2}
+              accent={currentFlavor === 'tabs' ? 'amber' : 'teal'}
+              size="md"
+            />
             <div>
               <h2 className="font-black text-lg tracking-tight text-white flex items-center gap-1.5">
-                Guitar<span className="text-amber-400">Lab</span>
+                {currentFlavor === 'tabs' ? (
+                  <>Tab<span className="text-amber-400">Lab</span></>
+                ) : (
+                  <>Guitar<span className="text-teal-400">Lab</span></>
+                )}
               </h2>
-              <p className="text-xs text-teal-400 font-semibold">Pro Musician's Suite</p>
+              <p className="text-xs text-zinc-400 font-semibold">
+                {currentFlavor === 'tabs' ? 'Tab Suite Edition' : "Pro Musician's Suite"}
+              </p>
             </div>
           </div>
           <button
@@ -196,13 +217,48 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
           </button>
         </div>
 
+        {/* Flavor Switcher Segment */}
+        <div className="px-4 py-3 bg-[#0A0D14] border-b border-[#222B3D]">
+          <div className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold mb-1.5 flex items-center gap-1.5">
+            <Layers className="w-3 h-3 text-amber-400" />
+            <span>App Flavor</span>
+          </div>
+          <div className="grid grid-cols-2 gap-1.5 p-1 bg-[#141B28] rounded-xl border border-[#232F42]">
+            <button
+              onClick={() => setAppFlavor('standard')}
+              className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer text-center ${
+                currentFlavor === 'standard'
+                  ? 'bg-teal-500/20 text-teal-300 border border-teal-500/50 shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              Main Flavor
+            </button>
+            <button
+              onClick={() => setAppFlavor('tabs')}
+              className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer text-center ${
+                currentFlavor === 'tabs'
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50 shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              Tabs Flavor
+            </button>
+          </div>
+          <div className="text-[10px] text-zinc-400 mt-1.5 text-center">
+            {currentFlavor === 'tabs'
+              ? 'Showing ONLY 3 Tab sections'
+              : 'Main flavor: 3 Tab sections hidden'}
+          </div>
+        </div>
+
         {/* Navigation Items List */}
         <nav className="flex-1 overflow-y-auto p-3 space-y-1.5">
           <div className="px-3 py-1.5 text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
-            {t('all_tools')}
+            {currentFlavor === 'tabs' ? 'Tab Suite (3 Sections)' : t('all_tools')}
           </div>
 
-          {NAV_ITEM_CONFIGS.map((item) => {
+          {filteredNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentRoute === item.id;
             const title = t(item.titleKey);
@@ -242,27 +298,29 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({
 
         {/* Footer info & Quick Language Switcher Button */}
         <div className="p-4 border-t border-[#222B3D] bg-[#0A0D14] space-y-2">
-          <button
-            onClick={() => {
-              onNavigate('language');
-              onClose();
-            }}
-            className="w-full py-2 px-3 rounded-xl bg-[#141B28] hover:bg-[#1C2538] border border-[#232F42] text-xs font-bold text-zinc-300 flex items-center justify-between transition-colors cursor-pointer"
-          >
-            <div className="flex items-center space-x-2">
-              <Globe className="w-3.5 h-3.5 text-teal-400" />
-              <span>{t('language_title')}</span>
-            </div>
-            <div className="flex items-center space-x-1.5 font-semibold text-white">
-              <span>{languageInfo.flag}</span>
-              <span>{languageInfo.nativeName}</span>
-            </div>
-          </button>
+          {currentFlavor !== 'tabs' && (
+            <button
+              onClick={() => {
+                onNavigate('language');
+                onClose();
+              }}
+              className="w-full py-2 px-3 rounded-xl bg-[#141B28] hover:bg-[#1C2538] border border-[#232F42] text-xs font-bold text-zinc-300 flex items-center justify-between transition-colors cursor-pointer"
+            >
+              <div className="flex items-center space-x-2">
+                <Globe className="w-3.5 h-3.5 text-teal-400" />
+                <span>{t('language_title')}</span>
+              </div>
+              <div className="flex items-center space-x-1.5 font-semibold text-white">
+                <span>{languageInfo.flag}</span>
+                <span>{languageInfo.nativeName}</span>
+              </div>
+            </button>
+          )}
 
           <div className="flex items-center justify-between text-xs text-zinc-500 pt-1">
-            <span>GuitarLab Studio</span>
+            <span>{currentFlavor === 'tabs' ? 'TabLab Flavor' : 'GuitarLab Flavor'}</span>
             <span className="px-2.5 py-0.5 rounded-full bg-[#161D2B] border border-[#27344D] text-amber-400 font-mono text-[10px] font-bold">
-              v2.5 PRO
+              {currentFlavor === 'tabs' ? 'TABS' : 'MAIN'}
             </span>
           </div>
         </div>

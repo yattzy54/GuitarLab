@@ -33,6 +33,25 @@ android {
         }
     }
 
+    flavorDimensions += listOf("mode")
+
+    productFlavors {
+        create("standard") {
+            dimension = "mode"
+            buildConfigField("String", "FLAVOR_TYPE", "\"standard\"")
+            buildConfigField("Boolean", "IS_TABS_FLAVOR", "false")
+            resValue("string", "app_flavor_name", "GuitarLab")
+        }
+        create("tabs") {
+            dimension = "mode"
+            applicationIdSuffix = ".tabs"
+            versionNameSuffix = "-tabs"
+            buildConfigField("String", "FLAVOR_TYPE", "\"tabs\"")
+            buildConfigField("Boolean", "IS_TABS_FLAVOR", "true")
+            resValue("string", "app_flavor_name", "TabLab")
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -44,6 +63,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     packaging {

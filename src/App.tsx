@@ -29,15 +29,41 @@ import {
   Timer,
   Grid,
   Menu,
+  Music,
+  Drum,
 } from 'lucide-react';
 import { TuxGuitarIcon } from './components/tuxguitar/TuxGuitarIcon';
 import { Studio3DBadge } from './components/common/Studio3DComponents';
+import { getAppFlavor, TAB_EXCLUSIVE_ROUTES } from './config/flavor';
 
 function AppContent() {
   const { t } = useLanguage();
-  const [currentRoute, setCurrentRoute] = useState<AppDestination>('player');
+  const currentFlavor = getAppFlavor();
+
+  const [currentRoute, setCurrentRoute] = useState<AppDestination>(() => {
+    return currentFlavor === 'tabs' ? 'tabs' : 'tuner';
+  });
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [a4Pitch, setA4Pitch] = useState(440);
+
+  // Validate route according to active flavor
+  useEffect(() => {
+    const isTabRoute =
+      currentRoute === 'tabs' ||
+      currentRoute === 'guitartabedit' ||
+      currentRoute === 'tuxguitar';
+
+    if (currentFlavor === 'tabs') {
+      if (!isTabRoute) {
+        setCurrentRoute('tabs');
+      }
+    } else {
+      // Standard flavor: hide tabs, guitartabedit, tuxguitar (and songsterr player)
+      if (isTabRoute || currentRoute === 'player') {
+        setCurrentRoute('tuner');
+      }
+    }
+  }, [currentFlavor, currentRoute]);
 
   const [activeTuning, setActiveTuning] = useState<Tuning>(() => {
     const tunings = getAllTunings(440);
@@ -92,7 +118,7 @@ function AppContent() {
 
       {/* Main Content Viewport */}
       <main className="flex-1">
-        {currentRoute === 'player' && (
+        {currentFlavor !== 'tabs' && currentRoute === 'player' && (
           <div className="relative">
             <SongsterrPlayer
               onOpenStudioTools={() => setIsDrawerOpen(true)}
@@ -107,7 +133,13 @@ function AppContent() {
           </div>
         )}
 
-        {currentRoute === 'tuner' && (
+        {currentRoute === 'tabs' && (
+          <div className="pb-24 sm:pb-10">
+            <TabViewerScreen />
+          </div>
+        )}
+
+        {currentFlavor !== 'tabs' && currentRoute === 'tuner' && (
           <div className="pb-24 sm:pb-10">
             <TunerScreen
               activeTuning={activeTuning}
@@ -118,31 +150,25 @@ function AppContent() {
           </div>
         )}
 
-        {currentRoute === 'metronome' && (
+        {currentFlavor !== 'tabs' && currentRoute === 'metronome' && (
           <div className="pb-24 sm:pb-10">
             <MetronomeScreen onGoToTrainer={() => setCurrentRoute('trainer')} />
           </div>
         )}
 
-        {currentRoute === 'drums' && (
+        {currentFlavor !== 'tabs' && currentRoute === 'drums' && (
           <div className="pb-24 sm:pb-10">
             <DrumsScreen />
           </div>
         )}
 
-        {currentRoute === 'trainer' && (
+        {currentFlavor !== 'tabs' && currentRoute === 'trainer' && (
           <div className="pb-24 sm:pb-10">
             <AutoSpeedTrainerScreen />
           </div>
         )}
 
-        {currentRoute === 'tabs' && (
-          <div className="pb-24 sm:pb-10">
-            <TabViewerScreen />
-          </div>
-        )}
-
-        {currentRoute === 'fretboard' && (
+        {currentFlavor !== 'tabs' && currentRoute === 'fretboard' && (
           <div className="pb-24 sm:pb-10">
             <ChordScaleScreen
               activeTuning={activeTuning}
@@ -150,7 +176,7 @@ function AppContent() {
             />
           </div>
         )}
-        {currentRoute === 'reverse_chord' && (
+        {currentFlavor !== 'tabs' && currentRoute === 'reverse_chord' && (
           <div className="pb-24 sm:pb-10">
             <ReverseChordFinderScreen
               activeTuning={activeTuning}
@@ -159,19 +185,19 @@ function AppContent() {
           </div>
         )}
 
-        {currentRoute === 'slowdowner' && (
+        {currentFlavor !== 'tabs' && currentRoute === 'slowdowner' && (
           <div className="pb-24 sm:pb-10">
             <SlowDownerScreen />
           </div>
         )}
 
-        {currentRoute === 'recorder' && (
+        {currentFlavor !== 'tabs' && currentRoute === 'recorder' && (
           <div className="pb-24 sm:pb-10">
             <RiffRecorderScreen activeTuning={activeTuning} />
           </div>
         )}
 
-        {currentRoute === 'tracker' && (
+        {currentFlavor !== 'tabs' && currentRoute === 'tracker' && (
           <div className="pb-24 sm:pb-10">
             <PracticeTrackerScreen />
           </div>
@@ -184,90 +210,142 @@ function AppContent() {
         )}
       </main>
 
-      {/* Floating Bottom Navigation Bar for Standalone Studio Screens */}
+      {/* Floating Bottom Navigation Bar */}
       {currentRoute !== 'player' && (
         <div className="sm:hidden fixed bottom-0 left-0 right-0 z-30 bg-[#0C1018]/95 backdrop-blur-md border-t border-[#222B3D] py-2 px-3 flex items-center justify-around shadow-2xl">
-          <button
-            onClick={() => setCurrentRoute('player')}
-            className="flex flex-col items-center py-1 px-2 rounded-xl text-emerald-400 font-bold transition-all cursor-pointer"
-          >
-            <Studio3DBadge icon={PlayCircle} accent="green" size="sm" />
-            <span className="text-[10px] font-bold mt-1 text-zinc-300">
-              {t('nav_player')}
-            </span>
-          </button>
+          {currentFlavor === 'tabs' ? (
+            <>
+              {/* 3 Tab Sections Only in Tabs Flavor */}
+              <button
+                onClick={() => setCurrentRoute('tabs')}
+                className="flex flex-col items-center py-1 px-2 rounded-xl transition-all cursor-pointer"
+              >
+                <Studio3DBadge
+                  icon={Music}
+                  accent={currentRoute === 'tabs' ? 'amber' : 'slate'}
+                  size="sm"
+                />
+                <span
+                  className={`text-[10px] font-bold mt-1 ${
+                    currentRoute === 'tabs' ? 'text-amber-400' : 'text-zinc-400'
+                  }`}
+                >
+                  {t('nav_tabs')}
+                </span>
+              </button>
 
-          <button
-            onClick={() => setCurrentRoute('tuxguitar')}
-            className="flex flex-col items-center py-1 px-2 rounded-xl transition-all cursor-pointer"
-          >
-            <Studio3DBadge
-              icon={TuxGuitarIcon}
-              accent={currentRoute === 'tuxguitar' ? 'amber' : 'slate'}
-              size="sm"
-            />
-            <span
-              className={`text-[10px] font-bold mt-1 ${
-                currentRoute === 'tuxguitar' ? 'text-amber-400' : 'text-zinc-400'
-              }`}
-            >
-              TabLab
-            </span>
-          </button>
+              <button
+                onClick={() => setCurrentRoute('guitartabedit')}
+                className="flex flex-col items-center py-1 px-2 rounded-xl transition-all cursor-pointer"
+              >
+                <Studio3DBadge
+                  icon={TuxGuitarIcon}
+                  accent={currentRoute === 'guitartabedit' ? 'amber' : 'slate'}
+                  size="sm"
+                />
+                <span
+                  className={`text-[10px] font-bold mt-1 ${
+                    currentRoute === 'guitartabedit' ? 'text-amber-400' : 'text-zinc-400'
+                  }`}
+                >
+                  GuitarTabEdit
+                </span>
+              </button>
 
-          <button
-            onClick={() => setCurrentRoute('tuner')}
-            className="flex flex-col items-center py-1 px-2 rounded-xl transition-all cursor-pointer"
-          >
-            <Studio3DBadge
-              icon={Activity}
-              accent={currentRoute === 'tuner' ? 'amber' : 'slate'}
-              size="sm"
-            />
-            <span
-              className={`text-[10px] font-bold mt-1 ${
-                currentRoute === 'tuner' ? 'text-amber-400' : 'text-zinc-400'
-              }`}
-            >
-              {t('nav_tuner')}
-            </span>
-          </button>
+              <button
+                onClick={() => setCurrentRoute('tuxguitar')}
+                className="flex flex-col items-center py-1 px-2 rounded-xl transition-all cursor-pointer"
+              >
+                <Studio3DBadge
+                  icon={TuxGuitarIcon}
+                  accent={currentRoute === 'tuxguitar' ? 'amber' : 'slate'}
+                  size="sm"
+                />
+                <span
+                  className={`text-[10px] font-bold mt-1 ${
+                    currentRoute === 'tuxguitar' ? 'text-amber-400' : 'text-zinc-400'
+                  }`}
+                >
+                  TabLab
+                </span>
+              </button>
+            </>
+          ) : (
+            <>
+              {/* Main Flavor: Core Instruments (Tabs hidden) */}
+              <button
+                onClick={() => setCurrentRoute('tuner')}
+                className="flex flex-col items-center py-1 px-2 rounded-xl transition-all cursor-pointer"
+              >
+                <Studio3DBadge
+                  icon={Activity}
+                  accent={currentRoute === 'tuner' ? 'teal' : 'slate'}
+                  size="sm"
+                />
+                <span
+                  className={`text-[10px] font-bold mt-1 ${
+                    currentRoute === 'tuner' ? 'text-teal-400' : 'text-zinc-400'
+                  }`}
+                >
+                  {t('nav_tuner')}
+                </span>
+              </button>
 
-          <button
-            onClick={() => setCurrentRoute('metronome')}
-            className="flex flex-col items-center py-1 px-2 rounded-xl transition-all cursor-pointer"
-          >
-            <Studio3DBadge
-              icon={Timer}
-              accent={currentRoute === 'metronome' ? 'teal' : 'slate'}
-              size="sm"
-            />
-            <span
-              className={`text-[10px] font-bold mt-1 ${
-                currentRoute === 'metronome' ? 'text-teal-400' : 'text-zinc-400'
-              }`}
-            >
-              {t('tempo')}
-            </span>
-          </button>
+              <button
+                onClick={() => setCurrentRoute('metronome')}
+                className="flex flex-col items-center py-1 px-2 rounded-xl transition-all cursor-pointer"
+              >
+                <Studio3DBadge
+                  icon={Timer}
+                  accent={currentRoute === 'metronome' ? 'teal' : 'slate'}
+                  size="sm"
+                />
+                <span
+                  className={`text-[10px] font-bold mt-1 ${
+                    currentRoute === 'metronome' ? 'text-teal-400' : 'text-zinc-400'
+                  }`}
+                >
+                  {t('tempo')}
+                </span>
+              </button>
 
-          <button
-            onClick={() => setCurrentRoute('fretboard')}
-            className="flex flex-col items-center py-1 px-2 rounded-xl transition-all cursor-pointer"
-          >
-            <Studio3DBadge
-              icon={Grid}
-              accent={currentRoute === 'fretboard' ? 'amber' : 'slate'}
-              size="sm"
-            />
-            <span
-              className={`text-[10px] font-bold mt-1 ${
-                currentRoute === 'fretboard' ? 'text-amber-400' : 'text-zinc-400'
-              }`}
-            >
-              {t('nav_fretboard')}
-            </span>
-          </button>
+              <button
+                onClick={() => setCurrentRoute('drums')}
+                className="flex flex-col items-center py-1 px-2 rounded-xl transition-all cursor-pointer"
+              >
+                <Studio3DBadge
+                  icon={Drum}
+                  accent={currentRoute === 'drums' ? 'ruby' : 'slate'}
+                  size="sm"
+                />
+                <span
+                  className={`text-[10px] font-bold mt-1 ${
+                    currentRoute === 'drums' ? 'text-rose-400' : 'text-zinc-400'
+                  }`}
+                >
+                  {t('nav_drums')}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setCurrentRoute('fretboard')}
+                className="flex flex-col items-center py-1 px-2 rounded-xl transition-all cursor-pointer"
+              >
+                <Studio3DBadge
+                  icon={Grid}
+                  accent={currentRoute === 'fretboard' ? 'amber' : 'slate'}
+                  size="sm"
+                />
+                <span
+                  className={`text-[10px] font-bold mt-1 ${
+                    currentRoute === 'fretboard' ? 'text-amber-400' : 'text-zinc-400'
+                  }`}
+                >
+                  {t('nav_fretboard')}
+                </span>
+              </button>
+            </>
+          )}
 
           <button
             onClick={() => setIsDrawerOpen(true)}

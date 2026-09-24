@@ -65,7 +65,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -79,6 +82,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.mmt.guitarlab.config.AppFlavorConfig
+import com.mmt.guitarlab.config.FlavorType
 import com.mmt.guitarlab.ui.components.Studio3DAccent
 import com.mmt.guitarlab.ui.components.Studio3DIconBadge
 import com.mmt.guitarlab.ui.drums.DrumsScreen
@@ -112,13 +117,14 @@ enum class AppDest(
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector,
     val badge: String? = null,
+    val isTabFeature: Boolean = false,
 ) {
-    Tabs("tabs", R.string.tab_tabs, Icons.Filled.LibraryMusic, Icons.Outlined.LibraryMusic),
-    GuitarTabEdit("guitartabedit", R.string.tab_guitartabedit, Icons.Filled.Edit, Icons.Outlined.Edit, "NEW"),
-    TabEditor("tab_editor", R.string.tab_tab_editor, Icons.Filled.Tune, Icons.Outlined.Tune, "GP5"),
-    Drums("drums", R.string.tab_drums, Icons.Filled.Album, Icons.Outlined.Album),
+    Tabs("tabs", R.string.tab_tabs, Icons.Filled.LibraryMusic, Icons.Outlined.LibraryMusic, isTabFeature = true),
+    GuitarTabEdit("guitartabedit", R.string.tab_guitartabedit, Icons.Filled.Edit, Icons.Outlined.Edit, "NEW", isTabFeature = true),
+    TabEditor("tab_editor", R.string.tab_tab_editor, Icons.Filled.Tune, Icons.Outlined.Tune, "GP5", isTabFeature = true),
     Tuner("tuner", R.string.tab_tuner, Icons.Filled.GraphicEq, Icons.Outlined.GraphicEq),
     Metronome("metronome", R.string.tab_metronome, Icons.Filled.Timer, Icons.Outlined.Timer),
+    Drums("drums", R.string.tab_drums, Icons.Filled.Album, Icons.Outlined.Album),
     Fretboard("fretboard", R.string.tab_fretboard, Icons.Filled.GridOn, Icons.Outlined.GridOn),
     ReverseChord("reverse_chord", R.string.tab_chords, Icons.Filled.Search, Icons.Outlined.Search),
     Trainer("trainer", R.string.tab_trainer, Icons.Filled.Speed, Icons.Outlined.Speed),
@@ -126,17 +132,36 @@ enum class AppDest(
     Recorder("recorder", R.string.tab_recorder, Icons.Filled.Mic, Icons.Outlined.Mic),
     Tracker("tracker", R.string.tab_tracker, Icons.Filled.Timeline, Icons.Outlined.Timeline),
     Language("language", R.string.tab_language, Icons.Filled.Language, Icons.Outlined.Language),
+    ;
+
+    companion object {
+        fun availableDestinations(isTabsFlavor: Boolean = AppFlavorConfig.isTabsFlavor): List<AppDest> {
+            return if (isTabsFlavor) {
+                // В новом флейворе показывай только эти 3 раздела (Табы, GuitarTabEdit, TabLab)
+                entries.filter { it.isTabFeature }
+            } else {
+                // В основном флейворе скрой эти 3 раздела (Табы, GuitarTabEdit, TabLab)
+                entries.filter { !it.isTabFeature }
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GuitarLabApp() {
+    var isTabsFlavor by remember { mutableStateOf(AppFlavorConfig.isTabsFlavor) }
+    val availableDests = remember(isTabsFlavor) { AppDest.availableDestinations(isTabsFlavor) }
+    val defaultStartDest = remember(isTabsFlavor) {
+        if (isTabsFlavor) AppDest.Tabs.route else AppDest.Tuner.route
+    }
+
     val navController = rememberNavController()
     val backStack by navController.currentBackStackEntryAsState()
-    val currentRoute = backStack?.destination?.route ?: AppDest.Tabs.route
+    val currentRoute = backStack?.destination?.route ?: defaultStartDest
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    val currentDest = AppDest.entries.find { it.route == currentRoute } ?: AppDest.Tabs
+    val currentDest = availableDests.find { it.route == currentRoute } ?: availableDests.firstOrNull() ?: AppDest.Tuner
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -156,23 +181,23 @@ fun GuitarLabApp() {
                         modifier = Modifier.padding(bottom = 20.dp),
                     ) {
                         Studio3DIconBadge(
-                            icon = Icons.Default.MusicNote,
+                            icon = if (isTabsFlavor) Icons.Default.LibraryMusic else Icons.Default.MusicNote,
                             contentDescription = null,
                             size = 46.dp,
-                            accent = Studio3DAccent.AMBER,
+                            accent = if (isTabsFlavor) Studio3DAccent.AMBER else Studio3DAccent.TEAL,
                         )
                         Spacer(Modifier.width(14.dp))
                         Column {
                             Text(
-                                text = "GuitarLab Studio",
+                                text = if (isTabsFlavor) "TabLab Studio" else "GuitarLab Studio",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Black,
                                 color = StudioTextPrimary,
                             )
                             Text(
-                                text = stringResource(R.string.nav_studio_subtitle),
+                                text = if (isTabsFlavor) "Tabs & Scores Suite" else stringResource(R.string.nav_studio_subtitle),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = ElectricTeal,
+                                color = if (isTabsFlavor) ElectricAmber else ElectricTeal,
                                 fontWeight = FontWeight.SemiBold,
                             )
                         }
@@ -185,7 +210,7 @@ fun GuitarLabApp() {
 
                     // Core Navigation Items
                     Text(
-                        text = stringResource(R.string.nav_core_instruments),
+                        text = if (isTabsFlavor) "TAB SUITE" else stringResource(R.string.nav_core_instruments),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = StudioTextMuted,
@@ -193,7 +218,7 @@ fun GuitarLabApp() {
                         modifier = Modifier.padding(start = 12.dp, bottom = 8.dp),
                     )
 
-                    AppDest.entries.forEach { dest ->
+                    availableDests.forEach { dest ->
                         val selected = currentRoute == dest.route
                         val destTitle = stringResource(dest.titleRes)
                         NavigationDrawerItem(
@@ -244,6 +269,7 @@ fun GuitarLabApp() {
                                     imageVector = if (selected) dest.selectedIcon else dest.unselectedIcon,
                                     contentDescription = destTitle,
                                     tint = if (selected) ElectricAmber else StudioTextSecondary,
+                                    modifier = Modifier.size(22.dp)
                                 )
                             },
                             colors = NavigationDrawerItemDefaults.colors(
@@ -254,11 +280,44 @@ fun GuitarLabApp() {
                             modifier = Modifier.padding(vertical = 3.dp),
                         )
                     }
+
+                    Spacer(Modifier.height(24.dp))
+                    HorizontalDivider(
+                        color = StudioCardBorder,
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    )
+
+                    // Flavor Mode Information / Switcher Indicator
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color(0xFF161B26))
+                            .border(1.dp, StudioCardBorder, RoundedCornerShape(10.dp))
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Column {
+                            Text(
+                                text = "FLAVOR: ${if (isTabsFlavor) "TABS" else "MAIN"}",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isTabsFlavor) ElectricAmber else ElectricTeal,
+                            )
+                            Text(
+                                text = if (isTabsFlavor) "Showing 3 tab sections" else "3 tab sections hidden",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontSize = 11.sp,
+                                color = StudioTextMuted,
+                            )
+                        }
+                    }
                 }
             }
         },
     ) {
-        val isTabsScreen = currentRoute == AppDest.Tabs.route || currentRoute == AppDest.GuitarTabEdit.route
+        val isTabsScreen = isTabsFlavor && (currentRoute == AppDest.Tabs.route || currentRoute == AppDest.GuitarTabEdit.route)
         Scaffold(
             topBar = {
                 if (!isTabsScreen) {
@@ -289,7 +348,7 @@ fun GuitarLabApp() {
         ) { padding ->
             NavHost(
                 navController = navController,
-                startDestination = AppDest.Tabs.route,
+                startDestination = defaultStartDest,
                 modifier = Modifier.padding(if (isTabsScreen) androidx.compose.foundation.layout.PaddingValues(0.dp) else padding),
             ) {
                 composable(AppDest.Tabs.route) { 
