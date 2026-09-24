@@ -257,6 +257,10 @@ class TabViewModel @Inject constructor(
         _selectedStringIndex.value = stringIdx
     }
 
+    fun selectString(stringIdx: Int) {
+        _selectedStringIndex.value = stringIdx
+    }
+
     fun togglePlay() {
         val currentScore = _score.value ?: return
         if (isPlaying.value) {
