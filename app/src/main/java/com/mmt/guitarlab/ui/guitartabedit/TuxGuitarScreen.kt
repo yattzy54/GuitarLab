@@ -13,15 +13,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import app.tuxguitar.android.activity.TGActivity
+import app.tuxguitar.android.activity.TGReaderActivity
 
 @Composable
 fun TuxGuitarScreen() {
+    TuxGuitarLaunchScreen(TGActivity::class.java)
+}
+
+@Composable
+fun TuxGuitarReaderScreen() {
+    TuxGuitarLaunchScreen(TGReaderActivity::class.java)
+}
+
+@Composable
+private fun TuxGuitarLaunchScreen(activityClass: Class<out TGActivity>) {
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         context.startActivity(
             Intent().setComponent(
-                ComponentName(context, TGActivity::class.java)
+                ComponentName(context, activityClass)
             )
         )
     }

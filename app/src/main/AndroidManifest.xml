@@ -32,6 +32,13 @@
             android:label="@string/tab_tuxguitar"
             android:theme="@style/TGTheme" />
         <activity
+            android:name="app.tuxguitar.android.activity.TGReaderActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:launchMode="singleTop"
+            android:label="@string/tab_tuxguitar_reader"
+            android:theme="@style/TGTheme" />
+        <activity
             android:name=".ui.tab.SongsterrImportActivity"
             android:exported="false"
             android:label="@string/tab_tuxguitar"
