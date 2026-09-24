@@ -19,6 +19,8 @@
     <string name="tab_tuxguitar">TabLab (TuxGuitar)</string>
     <string name="tab_tuxguitar_sub">Multi-track GP tab studio &amp; player</string>
     <string name="tab_tuxguitar_reader">TuxGuitar Reader</string>
+    <string name="tuxguitar_reader_description">Просмотр и проигрывание табулатур без редактирования</string>
+    <string name="open_tuxguitar_reader">Открыть Reader</string>
 
     <string name="nav_core_instruments">CORE INSTRUMENTS</string>
     <string name="nav_studio_subtitle">Pro Guitarist Toolkit</string>
