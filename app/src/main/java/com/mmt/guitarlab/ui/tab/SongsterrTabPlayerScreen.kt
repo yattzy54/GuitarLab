@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -350,7 +351,7 @@ fun SongsterrTabPlayerScreen(
                     horizontalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Tune,
+                        imageVector = Icons.Filled.Tune,
                         contentDescription = "TuxGuitar Studio",
                         tint = Color(0xFFF59E0B),
                         modifier = Modifier.size(15.dp)
