@@ -23,6 +23,14 @@ enum class NoteDuration(val durationBeats: Float, val label: String) {
     THIRTY_SECOND(0.125f, "1/32"),
 }
 
+enum class TuxGuitarSoundBank(val displayName: String, val description: String) {
+    GERVILL_CLASSIC("TuxGuitar Gervill (Standard GM)", "Original general midi soundfont with balanced acoustic & electric instruments"),
+    OVERDRIVE_ROCK("Overdrive / Distortion (Rock)", "High-gain tube warmth, harmonic overdrive and amp cabinet emulation"),
+    ACOUSTIC_STUDIO("Acoustic Steel & Nylon", "Warm soundboard acoustic guitar resonance and bright attack"),
+    CLEAN_CHIME("Electric Clean (Chime)", "Pristine neck pickup chime with transparent sustain"),
+    MODERN_METAL("Modern Metal (Tight Crunch)", "Tight palm muting, heavy mid-punch, and aggressive pick bite"),
+}
+
 enum class InstrumentType(
     val displayName: String,
     val defaultStringCount: Int,

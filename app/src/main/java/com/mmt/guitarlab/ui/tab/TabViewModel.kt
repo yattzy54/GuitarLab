@@ -17,6 +17,7 @@ import com.mmt.guitarlab.domain.model.TabMeasure
 import com.mmt.guitarlab.domain.model.TabNote
 import com.mmt.guitarlab.domain.model.TabScore
 import com.mmt.guitarlab.domain.model.TabTrack
+import com.mmt.guitarlab.domain.model.TuxGuitarSoundBank
 import com.mmt.guitarlab.domain.repository.TabRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -125,6 +126,20 @@ class TabViewModel @Inject constructor(
 
     private val _activeDuration = MutableStateFlow(NoteDuration.EIGHTH)
     val activeDuration: StateFlow<NoteDuration> = _activeDuration.asStateFlow()
+
+    val soundBank: StateFlow<TuxGuitarSoundBank> = playbackEngine.soundBank
+
+    fun setSoundBank(bank: TuxGuitarSoundBank) {
+        playbackEngine.setSoundBank(bank)
+    }
+
+    fun playPreview(stringIndex: Int, fret: Int) {
+        val currentScore = _score.value ?: return
+        val tracks = currentScore.tracks
+        val trackIdx = _selectedTrackIndex.value.coerceIn(0, tracks.lastIndex.coerceAtLeast(0))
+        val activeTrack = tracks.getOrNull(trackIdx) ?: return
+        playbackEngine.playPreviewFret(activeTrack, stringIndex, fret, _activeEffect.value)
+    }
 
     fun setZoom(scale: Float) {
         _zoomScale.value = scale.coerceIn(0.5f, 2.5f)
@@ -332,10 +347,12 @@ class TabViewModel @Inject constructor(
         notes.removeAll { it.stringIndex == sIdx }
 
         if (newFret != null) {
+            val clampedFret = newFret.coerceIn(0, 24)
+            playbackEngine.playPreviewFret(activeTrack, sIdx, clampedFret, _activeEffect.value)
             notes.add(
                 TabNote(
                     stringIndex = sIdx,
-                    fret = newFret.coerceIn(0, 24),
+                    fret = clampedFret,
                     effect = _activeEffect.value,
                     durationBeats = _activeDuration.value.durationBeats,
                 ),

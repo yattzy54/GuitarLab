@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -46,8 +47,11 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.GridOn
 import androidx.compose.material.icons.filled.Info
+import com.mmt.guitarlab.domain.model.TuxGuitarSoundBank
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
@@ -140,6 +144,7 @@ fun TabEditorScreen(viewModel: TabViewModel = hiltViewModel()) {
 
     val activeEffect by viewModel.activeEffect.collectAsStateWithLifecycle()
     val activeDuration by viewModel.activeDuration.collectAsStateWithLifecycle()
+    val soundBank by viewModel.soundBank.collectAsStateWithLifecycle()
     val savedProjects by viewModel.savedProjects.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
@@ -156,6 +161,7 @@ fun TabEditorScreen(viewModel: TabViewModel = hiltViewModel()) {
     // Dialogs
     var showSongInfoDialog by remember { mutableStateOf(false) }
     var showMixerDialog by remember { mutableStateOf(false) }
+    var showSoundBankDialog by remember { mutableStateOf(false) }
     var showAddTrackDialog by remember { mutableStateOf(false) }
     var showProjectsDialog by remember { mutableStateOf(false) }
     var showPasteDialog by remember { mutableStateOf(false) }
@@ -343,6 +349,14 @@ fun TabEditorScreen(viewModel: TabViewModel = hiltViewModel()) {
                                 leadingIcon = { Icon(Icons.Default.Tune, null, tint = Color(0xFFF59E0B)) }
                             )
                             DropdownMenuItem(
+                                text = { Text("TuxGuitar SoundBank (Gervill)...", color = Color.White) },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    showSoundBankDialog = true
+                                },
+                                leadingIcon = { Icon(Icons.Default.GraphicEq, null, tint = Color(0xFFF59E0B)) }
+                            )
+                            DropdownMenuItem(
                                 text = { Text("Toggle Piano View", color = Color.White) },
                                 onClick = {
                                     showOverflowMenu = false
@@ -412,7 +426,8 @@ fun TabEditorScreen(viewModel: TabViewModel = hiltViewModel()) {
                     selectedMeasure = selectedMeasureIndex,
                     selectedBeat = selectedBeatIndex,
                     selectedString = selectedStringIndex,
-                    onFretClicked = { fret ->
+                    onFretClicked = { fret, stringIdx ->
+                        viewModel.selectString(stringIdx)
                         viewModel.updateFretAtSelectedCell(fret)
                     }
                 )
@@ -885,6 +900,11 @@ fun TabEditorScreen(viewModel: TabViewModel = hiltViewModel()) {
         score?.let { s ->
             MixerDialog(
                 score = s,
+                currentSoundBank = soundBank,
+                onOpenSoundBank = {
+                    showMixerDialog = false
+                    showSoundBankDialog = true
+                },
                 onVolumeChange = viewModel::setTrackVolume,
                 onPanChange = viewModel::setTrackPan,
                 onMuteToggle = viewModel::toggleMuteTrack,
@@ -923,6 +943,17 @@ fun TabEditorScreen(viewModel: TabViewModel = hiltViewModel()) {
                 showAddTrackDialog = false
             },
             onDismiss = { showAddTrackDialog = false },
+        )
+    }
+
+    if (showSoundBankDialog) {
+        SoundBankDialog(
+            currentBank = soundBank,
+            onSelectBank = { bank ->
+                viewModel.setSoundBank(bank)
+                showSoundBankDialog = false
+            },
+            onDismiss = { showSoundBankDialog = false },
         )
     }
 }
@@ -1124,10 +1155,11 @@ private fun TuxGuitarFretboardView(
     selectedMeasure: Int,
     selectedBeat: Int,
     selectedString: Int,
-    onFretClicked: (Int) -> Unit
+    onFretClicked: (Int, Int) -> Unit
 ) {
     val stringLabels = activeTrack?.stringLabels ?: listOf("E", "B", "G", "D", "A", "E")
     val stringCount = stringLabels.size
+    val activeNotes = activeTrack?.measures?.getOrNull(selectedMeasure)?.beats?.getOrNull(selectedBeat)?.notes ?: emptyList()
 
     Card(
         modifier = Modifier
@@ -1143,7 +1175,20 @@ private fun TuxGuitarFretboardView(
                 .horizontalScroll(rememberScrollState())
                 .padding(vertical = 4.dp)
         ) {
-            Canvas(modifier = Modifier.size(width = 850.dp, height = 120.dp)) {
+            Canvas(
+                modifier = Modifier
+                    .size(width = 850.dp, height = 120.dp)
+                    .pointerInput(stringCount) {
+                        detectTapGestures { offset ->
+                            val fretCount = 24
+                            val fretWidth = size.width / (fretCount + 1)
+                            val stringSpacing = size.height / (stringCount + 1)
+                            val fret = (offset.x / fretWidth).toInt().coerceIn(0, 24)
+                            val sIdx = ((offset.y / stringSpacing) - 0.5f).toInt().coerceIn(0, stringCount - 1)
+                            onFretClicked(fret, sIdx)
+                        }
+                    }
+            ) {
                 val fretCount = 24
                 val fretWidth = size.width / (fretCount + 1)
                 val stringSpacing = size.height / (stringCount + 1)
@@ -1193,6 +1238,19 @@ private fun TuxGuitarFretboardView(
                         end = Offset(size.width, y),
                         strokeWidth = (1f + s * 0.35f).dp.toPx()
                     )
+                }
+
+                // Draw note markers for active notes on fretboard
+                activeNotes.forEach { note ->
+                    if (note.stringIndex in 0 until stringCount) {
+                        val cy = (note.stringIndex + 1) * stringSpacing
+                        val cx = if (note.fret == 0) fretWidth * 0.25f else note.fret * fretWidth - fretWidth / 2
+                        drawCircle(
+                            color = Color(0xFFEF4444),
+                            radius = 7.dp.toPx(),
+                            center = Offset(cx, cy)
+                        )
+                    }
                 }
             }
         }
@@ -1462,6 +1520,8 @@ private fun TuxGuitarSystemRow(
 @Composable
 private fun MixerDialog(
     score: TabScore,
+    currentSoundBank: TuxGuitarSoundBank,
+    onOpenSoundBank: () -> Unit,
     onVolumeChange: (index: Int, volume: Float) -> Unit,
     onPanChange: (index: Int, pan: Float) -> Unit,
     onMuteToggle: (index: Int) -> Unit,
@@ -1477,6 +1537,38 @@ private fun MixerDialog(
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
             ) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 10.dp)
+                        .clickable(onClick = onOpenSoundBank),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF242933)),
+                    border = BorderStroke(1.dp, Color(0xFFF59E0B)),
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column {
+                            Text(
+                                text = "Gervill SoundBank / Timbre",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color(0xFF9CA3AF),
+                            )
+                            Text(
+                                text = currentSoundBank.displayName,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFFBBF24),
+                            )
+                        }
+                        Icon(Icons.Default.GraphicEq, contentDescription = null, tint = Color(0xFFF59E0B))
+                    }
+                }
+
                 score.tracks.forEachIndexed { idx, track ->
                     Card(
                         modifier = Modifier
@@ -1683,5 +1775,72 @@ private fun PasteTabDialog(
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }
         },
+    )
+}
+
+@Composable
+private fun SoundBankDialog(
+    currentBank: TuxGuitarSoundBank,
+    onSelectBank: (TuxGuitarSoundBank) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.GraphicEq, contentDescription = null, tint = Color(0xFFF59E0B))
+                Spacer(Modifier.width(8.dp))
+                Text("TuxGuitar SoundBank (Gervill)", fontWeight = FontWeight.Bold)
+            }
+        },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+                Text(
+                    text = "Select synthesis soundbank & timbre profile for playback and live fretboard input:",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.LightGray,
+                )
+                Spacer(Modifier.height(12.dp))
+                TuxGuitarSoundBank.entries.forEach { bank ->
+                    val isSelected = bank == currentBank
+                    Card(
+                        onClick = { onSelectBank(bank) },
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isSelected) Color(0xFF2E3440) else Color(0xFF1E232B)
+                        ),
+                        border = if (isSelected) BorderStroke(1.5.dp, Color(0xFFF59E0B)) else null,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = bank.displayName,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isSelected) Color(0xFFFBBF24) else Color.White,
+                                    fontSize = 14.sp
+                                )
+                                if (isSelected) {
+                                    Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFFFBBF24), modifier = Modifier.size(18.dp))
+                                }
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = bank.description,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF9CA3AF),
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        }
     )
 }
