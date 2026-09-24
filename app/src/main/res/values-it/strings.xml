@@ -1,14 +1,55 @@
 <resources>
     <string name="app_name">GuitarLab</string>
-    <string name="tab_tabs">Tablature</string>
+
+    <string name="tab_tabs">Intavolature</string>
     <string name="tab_tuner">Accordatore</string>
     <string name="tab_metronome">Metronomo</string>
     <string name="tab_drums">Batteria</string>
     <string name="tab_fretboard">Tastiera &amp; Accordi</string>
-    <string name="tab_chords">Trova accordi</string>
-    <string name="tab_trainer">Trainer di velocità</string>
+    <string name="tab_chords">Trova Accordi</string>
+    <string name="tab_trainer">Trainer</string>
     <string name="tab_slowdowner">Rallentatore</string>
     <string name="tab_recorder">Registratore</string>
-    <string name="tab_tracker">Diario pratica</string>
+    <string name="tab_tracker">Diario</string>
     <string name="tab_language">Lingua</string>
+    <string name="tab_tab_editor">Editor Tablature</string>
+
+    <string name="nav_core_instruments">STRUMENTI PRINCIPALI</string>
+    <string name="nav_studio_subtitle">Toolkit Pro per Chitarrista</string>
+
+    <string name="language_title">Lingua dell\'Interfaccia</string>
+    <string name="language_subtitle">Seleziona tra 20 lingue disponibili</string>
+    <string name="lang_search_placeholder">Cerca lingua…</string>
+    <string name="apply_language">Applica Lingua</string>
+    <string name="current_active">Attivo</string>
+    <string name="language_applied">Lingua aggiornata con successo</string>
+
+    <string name="guitar_tuning">ACCORDATURA CHITARRA</string>
+    <string name="chord_finder_title">Riconoscitore Accordi</string>
+    <string name="chord_finder_hint">Premi 2+ note sulla tastiera (max 1 per corda)</string>
+    <string name="chord_finder_selected_count">Note selezionate: %1$d. Ricerca accordo…</string>
+    <string name="chord_finder_detected">Rilevato: %1$s</string>
+    <string name="interactive_fretboard">TASTIERA INTERATTIVA</string>
+    <string name="tuning_select_title">SELEZIONA ACCORDATURA CHITARRA</string>
+    <string name="tuning_select_subtitle">Scegli accordatura per il manico</string>
+    <string name="clear">Cancella</string>
+    <string name="close">Chiudi</string>
+    <string name="select_tuning">Seleziona accordatura</string>
+
+    <string name="tap_tempo">TAP TEMPO</string>
+    <string name="tap_to_rhythm">Batti a tempo</string>
+    <string name="time_signature">TEMPO MUSICALE</string>
+    <string name="vibration_mode">MODALITÀ VIBRAZIONE</string>
+    <string name="vibration_on_sub">Impulsi tattili invece del suono</string>
+    <string name="vibration_off_sub">Click sonori attivi</string>
+    <string name="sound_selection">SUONO METRONOMO</string>
+    <string name="metronome_volume">VOLUME METRONOMO</string>
+
+    <string name="tuning_standard">Standard E</string>
+    <string name="tuning_drop_d">Drop D</string>
+    <string name="tuning_half_step">Mezzo tono sotto</string>
+    <string name="play">Riproduci</string>
+    <string name="pause">Pausa</string>
+    <string name="stop">Stop</string>
+    <string name="strings_count">%1$d corde</string>
 </resources>

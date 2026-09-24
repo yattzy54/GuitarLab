@@ -1,14 +1,55 @@
 <resources>
     <string name="app_name">GuitarLab</string>
+
     <string name="tab_tabs">Tablatures</string>
     <string name="tab_tuner">Accordeur</string>
     <string name="tab_metronome">Métronome</string>
     <string name="tab_drums">Batterie</string>
     <string name="tab_fretboard">Manche &amp; Accords</string>
-    <string name="tab_chords">Chercheur d\'accords</string>
+    <string name="tab_chords">Détecteur d\'accords</string>
     <string name="tab_trainer">Entraîneur</string>
     <string name="tab_slowdowner">Ralentisseur</string>
-    <string name="tab_recorder">Enregistreur de riff</string>
-    <string name="tab_tracker">Suivi de pratique</string>
+    <string name="tab_recorder">Enregistreur</string>
+    <string name="tab_tracker">Suivi</string>
     <string name="tab_language">Langue</string>
+    <string name="tab_tab_editor">Éditeur de Tablatures</string>
+
+    <string name="nav_core_instruments">OUTILS PRINCIPAUX</string>
+    <string name="nav_studio_subtitle">Kit Pro pour Guitariste</string>
+
+    <string name="language_title">Langue de l\'interface</string>
+    <string name="language_subtitle">Sélectionnez parmi 20 langues disponibles</string>
+    <string name="lang_search_placeholder">Rechercher une langue…</string>
+    <string name="apply_language">Appliquer la langue</string>
+    <string name="current_active">Actif</string>
+    <string name="language_applied">Langue mise à jour avec succès</string>
+
+    <string name="guitar_tuning">ACCORDAGE DE GUITARE</string>
+    <string name="chord_finder_title">Détecteur d\'accords</string>
+    <string name="chord_finder_hint">Maintenez 2+ notes sur le manche (max 1 par corde)</string>
+    <string name="chord_finder_selected_count">Notes sélectionnées : %1$d. Recherche d\'accord…</string>
+    <string name="chord_finder_detected">Détecté : %1$s</string>
+    <string name="interactive_fretboard">MANCHE INTERACTIF</string>
+    <string name="tuning_select_title">SÉLECTIONNER L\'ACCORDAGE DE GUITARE</string>
+    <string name="tuning_select_subtitle">Choisissez l\'accordage pour le manche</string>
+    <string name="clear">Effacer</string>
+    <string name="close">Fermer</string>
+    <string name="select_tuning">Sélectionner l\'accordage</string>
+
+    <string name="tap_tempo">TAP TEMPO</string>
+    <string name="tap_to_rhythm">Tapez en rythme</string>
+    <string name="time_signature">SIGNATURE TEMPORELLE</string>
+    <string name="vibration_mode">MODE VIBRATION</string>
+    <string name="vibration_on_sub">Pulsions haptiques au lieu du son</string>
+    <string name="vibration_off_sub">Clics sonores activés</string>
+    <string name="sound_selection">SON DU MÉTRONOME</string>
+    <string name="metronome_volume">VOLUME DU MÉTRONOME</string>
+
+    <string name="tuning_standard">Accordage Standard E</string>
+    <string name="tuning_drop_d">Drop D</string>
+    <string name="tuning_half_step">Demi-ton plus bas</string>
+    <string name="play">Lire</string>
+    <string name="pause">Pause</string>
+    <string name="stop">Arrêter</string>
+    <string name="strings_count">%1$d cordes</string>
 </resources>

@@ -1,10 +1,18 @@
 package com.mmt.guitarlab.domain.model
 
-enum class DrumKit(val id: String, val displayName: String, val description: String) {
-    ROCK("rock", "Rock", "Acoustic punchy kick & crisp maple snare"),
-    METAL("metal", "Metal", "Clicky trigger kick & aggressive heavy crack"),
-    POP("pop", "Pop", "Modern radio punch & layered clap-snare"),
-    ELECTRONIC("electronic", "Electronic", "Deep sub 808 boom & analog 909 percussion"),
+enum class DrumKit(
+    val id: String,
+    val displayName: String,
+    val description: String,
+    val iconEmoji: String,
+    val styleCategory: String,
+) {
+    ROCK("rock", "Acoustic Rock", "Acoustic punchy kick & crisp maple snare", "🥁", "Rock / Blues"),
+    METAL("metal", "Heavy Metal", "Clicky trigger kick & aggressive steel crack", "⚡", "Metal / Punk"),
+    POP("pop", "Modern Pop", "Modern radio punch & layered clap-snare", "✨", "Pop / Funk"),
+    ELECTRONIC("electronic", "Electronic 808/909", "Deep sub 808 boom & analog 909 percussion", "🎹", "EDM / Synth"),
+    JAZZ("jazz", "Vintage Jazz", "Soft acoustic kick, warm brush snare & ride cymbal", "🎷", "Jazz / Swing"),
+    PERCUSSION("percussion", "Acoustic Cajon", "Wood cajon, congas, shaker & organic rimshot", "🪘", "Latin / Acoustic"),
 }
 
 enum class DrumSound(val displayName: String, val shortName: String) {
@@ -65,7 +73,7 @@ data class DrumPattern(
         val DEFAULT_PATTERNS = listOf(
             DrumPattern(
                 id = "rock_classic",
-                name = "Rock Classic",
+                name = "Rock Classic 4/4",
                 style = "Rock",
                 defaultBpm = 110,
                 grid = createGrid(
@@ -76,8 +84,20 @@ data class DrumPattern(
                 )
             ),
             DrumPattern(
+                id = "hard_rock",
+                name = "Hard Rock Drive",
+                style = "Rock",
+                defaultBpm = 124,
+                grid = createGrid(
+                    DrumSound.KICK to listOf(0, 3, 8, 10, 14),
+                    DrumSound.SNARE to listOf(4, 12),
+                    DrumSound.HIHAT_OPEN to listOf(0, 2, 4, 6, 8, 10, 12, 14),
+                    DrumSound.CRASH to listOf(0, 8),
+                )
+            ),
+            DrumPattern(
                 id = "metal_blast",
-                name = "Metal Blast",
+                name = "Metal Double Bass",
                 style = "Metal",
                 defaultBpm = 160,
                 grid = createGrid(
@@ -113,7 +133,7 @@ data class DrumPattern(
             ),
             DrumPattern(
                 id = "jazz_swing",
-                name = "Jazz Swing",
+                name = "Jazz Ride Swing",
                 style = "Jazz",
                 defaultBpm = 130,
                 grid = createGrid(
@@ -136,8 +156,30 @@ data class DrumPattern(
                 )
             ),
             DrumPattern(
+                id = "country_train",
+                name = "Country Train Beat",
+                style = "Country",
+                defaultBpm = 115,
+                grid = createGrid(
+                    DrumSound.KICK to listOf(0, 8),
+                    DrumSound.SNARE to listOf(2, 4, 6, 10, 12, 14),
+                    DrumSound.HIHAT_CLOSED to listOf(0, 4, 8, 12),
+                )
+            ),
+            DrumPattern(
+                id = "bossa_latin",
+                name = "Bossa Nova Latin",
+                style = "Latin",
+                defaultBpm = 105,
+                grid = createGrid(
+                    DrumSound.KICK to listOf(0, 6, 8, 14),
+                    DrumSound.SNARE to listOf(3, 6, 10, 12),
+                    DrumSound.HIHAT_CLOSED to listOf(0, 2, 4, 6, 8, 10, 12, 14),
+                )
+            ),
+            DrumPattern(
                 id = "punk_rush",
-                name = "Punk 8ths",
+                name = "Punk Rock 8ths",
                 style = "Punk",
                 defaultBpm = 175,
                 grid = createGrid(
@@ -157,6 +199,18 @@ data class DrumPattern(
                     DrumSound.SNARE to listOf(4, 12),
                     DrumSound.HIHAT_CLOSED to listOf(0, 2, 4, 6, 8, 10, 12, 14),
                     DrumSound.HIHAT_OPEN to listOf(2, 6, 10, 14),
+                )
+            ),
+            DrumPattern(
+                id = "hiphop_boombap",
+                name = "Boom Bap Hip Hop",
+                style = "Hip Hop",
+                defaultBpm = 90,
+                grid = createGrid(
+                    DrumSound.KICK to listOf(0, 10, 11),
+                    DrumSound.SNARE to listOf(4, 12),
+                    DrumSound.HIHAT_CLOSED to listOf(0, 2, 4, 6, 8, 10, 12, 14),
+                    DrumSound.HIHAT_OPEN to listOf(7, 15),
                 )
             )
         )

@@ -59,6 +59,28 @@ class FretboardViewModel @Inject constructor(
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    init {
+        viewModelScope.launch {
+            selectedTuning.collect { newTuning ->
+                if (newTuning != null && _pressedFrets.value.isNotEmpty()) {
+                    val updatedFrets = _pressedFrets.value.mapNotNull { pos ->
+                        if (pos.stringIndex < newTuning.stringCount) {
+                            val baseMidi = newTuning.notes.getOrNull(pos.stringIndex)?.midiNote
+                            if (baseMidi != null) {
+                                FretPosition(
+                                    stringIndex = pos.stringIndex,
+                                    fret = pos.fret,
+                                    midiNote = baseMidi + pos.fret,
+                                )
+                            } else null
+                        } else null
+                    }.toSet()
+                    _pressedFrets.value = updatedFrets
+                }
+            }
+        }
+    }
+
     fun selectTuning(id: String) {
         viewModelScope.launch {
             tuningRepository.selectTuning(id)

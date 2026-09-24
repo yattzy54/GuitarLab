@@ -20,10 +20,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -44,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mmt.guitarlab.domain.model.MetronomeConfig
+import com.mmt.guitarlab.domain.model.MetronomeSound
 import com.mmt.guitarlab.domain.model.TrainerIntervalKind
 import com.mmt.guitarlab.ui.components.Studio3DAccent
 import com.mmt.guitarlab.ui.components.Studio3DIconBadge
@@ -66,6 +66,8 @@ fun AutoSpeedTrainerScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
     val running by viewModel.running.collectAsStateWithLifecycle()
     val trainer = config.trainer
 
+    val liveBpm = beat?.bpm ?: config.bpm
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -74,7 +76,7 @@ fun AutoSpeedTrainerScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
             .padding(horizontal = 18.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Status & Progress Card
+        // Status & Live Speed Progress Card
         StudioCard(
             modifier = Modifier.fillMaxWidth(),
             accentBorder = if (running) ElectricTeal else null,
@@ -87,7 +89,7 @@ fun AutoSpeedTrainerScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Studio3DIconBadge(
-                            icon = Icons.Default.TrendingUp,
+                            icon = Icons.AutoMirrored.Filled.TrendingUp,
                             contentDescription = null,
                             size = 40.dp,
                             accent = if (trainer.enabled) Studio3DAccent.TEAL else Studio3DAccent.SLATE,
@@ -95,24 +97,25 @@ fun AutoSpeedTrainerScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
                         Spacer(Modifier.width(12.dp))
                         Column {
                             Text(
-                                "Auto-Speed Trainer",
+                                text = "Auto-Speed Trainer",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = StudioTextPrimary,
                             )
                             Text(
-                                text = if (running) "Running · ${config.bpm} BPM" else "Ready · ${config.bpm} BPM",
-                                style = MaterialTheme.typography.bodyMedium,
+                                text = if (running) "RAMPING SPEED" else "READY TO TRAIN",
+                                style = MaterialTheme.typography.labelSmall,
                                 color = if (running) ElectricTeal else StudioTextSecondary,
-                                fontWeight = FontWeight.SemiBold,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.8.sp,
                             )
                         }
                     }
 
-                    // Play / Pause Button in place of switch
+                    // Play / Pause Button
                     Box(
                         modifier = Modifier
-                            .size(54.dp)
+                            .size(56.dp)
                             .shadow(
                                 elevation = 8.dp,
                                 shape = CircleShape,
@@ -140,46 +143,153 @@ fun AutoSpeedTrainerScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
                             imageVector = if (running) Icons.Default.Pause else Icons.Default.PlayArrow,
                             contentDescription = if (running) "Stop" else "Start",
                             tint = if (running) Color.White else Color(0xFF002227),
-                            modifier = Modifier.size(30.dp),
+                            modifier = Modifier.size(32.dp),
                         )
                     }
                 }
 
-                Spacer(Modifier.height(16.dp))
-                if (true) {
+                Spacer(Modifier.height(18.dp))
 
-                    // Progress to Next Increment
-                    LinearProgressIndicator(
-                        progress = { beat?.progressToNextJump ?: 0f },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        color = ElectricTeal,
-                        trackColor = Color(0xFF1E2638),
-                    )
-
-                    Spacer(Modifier.height(8.dp))
-
-                    val eta = when {
-                        beat?.beatsUntilJump != null -> "${beat!!.beatsUntilJump} beats until next +${trainer.incrementBpm} BPM step"
-                        beat?.millisUntilJump != null -> "${(beat!!.millisUntilJump!! / 1000)}s until next +${trainer.incrementBpm} BPM step"
-                        else -> "Press Play to begin speed ramp training"
-                    }
-
+                // PROMINENT LIVE METRONOME SPEED DISPLAY
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
                     Text(
-                        text = eta,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = ElectricAmber,
-                        fontWeight = FontWeight.Medium,
+                        text = "LIVE METRONOME SPEED",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = if (running) ElectricTeal else StudioTextMuted,
+                        letterSpacing = 1.2.sp,
                     )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = "$liveBpm BPM",
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 44.sp,
+                        color = if (running) ElectricTeal else StudioTextPrimary,
+                    )
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // Overall Speed Ramp Progress Bar (start -> current -> target)
+                val startBpm = trainer.startBpm
+                val targetBpm = trainer.targetBpm
+                val totalRamp = (targetBpm - startBpm).let { if (it == 0) 1 else kotlin.math.abs(it) }
+                val currentRamp = (liveBpm - startBpm).let { kotlin.math.abs(it) }
+                val overallRampProgress = (currentRamp.toFloat() / totalRamp).coerceIn(0f, 1f)
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "Ramp Progress",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = StudioTextSecondary,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = "$startBpm → $targetBpm BPM",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = ElectricAmber,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+
+                Spacer(Modifier.height(6.dp))
+
+                LinearProgressIndicator(
+                    progress = { overallRampProgress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp)),
+                    color = ElectricAmber,
+                    trackColor = Color(0xFF1E2638),
+                )
+
+                Spacer(Modifier.height(14.dp))
+
+                // Next Interval Increment Progress Bar
+                LinearProgressIndicator(
+                    progress = { beat?.progressToNextJump ?: 0f },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp)),
+                    color = ElectricTeal,
+                    trackColor = Color(0xFF1E2638),
+                )
+
+                Spacer(Modifier.height(6.dp))
+
+                val eta = when {
+                    beat?.beatsUntilJump != null -> {
+                        val beatsPerBar = config.timeSignature.beatsPerBar
+                        val remainingBeats = beat!!.beatsUntilJump!!
+                        val remainingBars = ((remainingBeats + beatsPerBar - 1) / beatsPerBar).coerceAtLeast(1)
+                        val barText = if (remainingBars == 1) "1 bar" else "$remainingBars bars"
+                        "$barText until next +${trainer.incrementBpm} BPM step"
+                    }
+                    beat?.millisUntilJump != null -> "${(beat!!.millisUntilJump!! / 1000)}s until next +${trainer.incrementBpm} BPM step"
+                    else -> "Press Play to begin auto-speed training"
+                }
+
+                Text(
+                    text = eta,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = ElectricTeal,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 12.sp,
+                )
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        // Metronome Sound Selection Card
+        StudioCard(
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+            ) {
+                Text(
+                    text = "METRONOME SOUND",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = StudioTextMuted,
+                    letterSpacing = 1.sp,
+                )
+
+                Spacer(Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    MetronomeSound.entries.forEach { sound ->
+                        val isSelected = config.sound == sound
+                        StudioPill(
+                            text = sound.label,
+                            selected = isSelected,
+                            onClick = { viewModel.setSound(sound) },
+                            accentColor = ElectricAmber,
+                        )
+                    }
                 }
             }
         }
 
-
-
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(16.dp))
 
         // Trainer Settings Card
         StudioCard(
@@ -229,13 +339,14 @@ fun AutoSpeedTrainerScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
 
                 Spacer(Modifier.height(16.dp))
 
+                // Interval Unit Selector: Bars vs Seconds
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        "Interval Unit",
+                        text = "Interval Unit",
                         style = MaterialTheme.typography.labelMedium,
                         color = StudioTextSecondary,
                         fontWeight = FontWeight.Bold,
@@ -244,6 +355,7 @@ fun AutoSpeedTrainerScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
                         modifier = Modifier.horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
+                        val isSeconds = (trainer.intervalKind == TrainerIntervalKind.SECONDS) || (trainer.intervalKind == TrainerIntervalKind.MINUTES)
                         StudioPill(
                             text = "Bars",
                             selected = trainer.intervalKind == TrainerIntervalKind.BARS,
@@ -251,9 +363,9 @@ fun AutoSpeedTrainerScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
                             accentColor = ElectricTeal,
                         )
                         StudioPill(
-                            text = "Minutes",
-                            selected = trainer.intervalKind == TrainerIntervalKind.MINUTES,
-                            onClick = { viewModel.setTrainerIntervalKind(TrainerIntervalKind.MINUTES) },
+                            text = "Seconds",
+                            selected = isSeconds,
+                            onClick = { viewModel.setTrainerIntervalKind(TrainerIntervalKind.SECONDS) },
                             accentColor = ElectricTeal,
                         )
                     }
@@ -261,11 +373,15 @@ fun AutoSpeedTrainerScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
 
                 Spacer(Modifier.height(14.dp))
 
+                val isBarsMode = trainer.intervalKind == TrainerIntervalKind.BARS
+                val maxInterval = if (isBarsMode) 16f else 60f
+                val intervalLabel = if (isBarsMode) "${trainer.intervalValue} bars" else "${trainer.intervalValue} s"
+
                 LabeledSliderRow(
-                    title = if (trainer.intervalKind == TrainerIntervalKind.BARS) "Interval Duration (Bars)" else "Interval Duration (Minutes)",
-                    valueLabel = "${trainer.intervalValue}",
-                    value = trainer.intervalValue.toFloat(),
-                    range = 1f..16f,
+                    title = if (isBarsMode) "Interval Duration (Bars)" else "Interval Duration (Seconds)",
+                    valueLabel = intervalLabel,
+                    value = trainer.intervalValue.toFloat().coerceIn(1f, maxInterval),
+                    range = 1f..maxInterval,
                     onChange = { viewModel.setTrainerIntervalValue(it.toInt()) },
                     accentColor = ElectricTeal,
                 )

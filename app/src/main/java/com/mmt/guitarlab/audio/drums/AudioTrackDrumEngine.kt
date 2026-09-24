@@ -102,7 +102,7 @@ class AudioTrackDrumEngine @Inject constructor(
     }
 
     override fun setSwing(swing: Float) {
-        _swing.value = swing.coerceIn(-0.35f, 0.35f)
+        _swing.value = swing.coerceIn(-0.4f, 0.6f)
     }
 
     override fun setPattern(pattern: DrumPattern) {
@@ -122,6 +122,48 @@ class AudioTrackDrumEngine @Inject constructor(
         arr[step] = !arr[step]
         newGrid[sound] = arr
         _pattern.value = current.copy(grid = newGrid)
+    }
+
+    override fun clearPattern() {
+        val current = _pattern.value
+        val emptyGrid = DrumSound.entries.associateWith { BooleanArray(16) { false } }
+        _pattern.value = current.copy(name = "Custom Pattern", grid = emptyGrid)
+    }
+
+    override fun randomizePattern() {
+        val current = _pattern.value
+        val newGrid = mutableMapOf<DrumSound, BooleanArray>()
+        DrumSound.entries.forEach { sound ->
+            val arr = BooleanArray(16) { false }
+            val prob = when (sound) {
+                DrumSound.KICK -> 0.35
+                DrumSound.SNARE -> 0.25
+                DrumSound.HIHAT_CLOSED -> 0.55
+                DrumSound.HIHAT_OPEN -> 0.15
+                DrumSound.TOM_LOW, DrumSound.TOM_HIGH -> 0.12
+                DrumSound.CRASH -> 0.08
+                DrumSound.RIDE -> 0.30
+            }
+            for (i in 0 until 16) {
+                if (sound == DrumSound.KICK && i == 0) {
+                    arr[i] = true
+                } else if (sound == DrumSound.SNARE && (i == 4 || i == 12)) {
+                    arr[i] = true
+                } else {
+                    arr[i] = Math.random() < prob
+                }
+            }
+            newGrid[sound] = arr
+        }
+        _pattern.value = current.copy(name = "Random Groove", grid = newGrid)
+    }
+
+    override fun resetPattern() {
+        val currentId = _pattern.value.id
+        val original = DrumPattern.DEFAULT_PATTERNS.find { it.id == currentId }
+            ?: DrumPattern.DEFAULT_PATTERNS.first()
+        _pattern.value = original
+        _bpm.value = original.defaultBpm
     }
 
     override fun previewSound(sound: DrumSound) {
@@ -156,7 +198,6 @@ class AudioTrackDrumEngine @Inject constructor(
             AudioFormat.CHANNEL_OUT_MONO,
             AudioFormat.ENCODING_PCM_16BIT
         )
-        // Set buffer size to ~200-250ms for smooth non-blocking playback with low buffer lag
         val bufferSizeBytes = minBuf.coerceAtLeast(sampleRate / 2)
 
         val track = AudioTrack(
@@ -176,7 +217,6 @@ class AudioTrackDrumEngine @Inject constructor(
         audioTrack = track
         track.play()
 
-        // Background coroutine that continuously synchronizes _currentStep with track playback head
         val clockJob = scope.launch {
             while (running.get() && isActive) {
                 try {
@@ -186,7 +226,7 @@ class AudioTrackDrumEngine @Inject constructor(
                     while (it.hasNext()) {
                         val sw = it.next()
                         if (head >= sw.endFrame) {
-                            it.remove() // step has already passed through speaker
+                            it.remove()
                         } else if (head in sw.startFrame until sw.endFrame) {
                             matchedStep = sw.stepIndex
                             break
@@ -196,7 +236,7 @@ class AudioTrackDrumEngine @Inject constructor(
                         _currentStep.value = matchedStep
                     }
                 } catch (_: Throwable) {}
-                delay(8) // Check at 120 FPS so no step is ever skipped
+                delay(8)
             }
         }
 
@@ -213,8 +253,15 @@ class AudioTrackDrumEngine @Inject constructor(
 
                 // 16th note base duration in seconds
                 val sixteenthSec = (60.0 / currentBpm) / 4.0
-                val swingOffset = if (step % 2 == 1) sixteenthSec * swingVal else -sixteenthSec * swingVal
-                val durationSec = (sixteenthSec + swingOffset).coerceAtLeast(0.02)
+
+                // Correct Swing Math: Even 16ths (steps 0, 2, 4...) are elongated, odd 16ths (steps 1, 3, 5...) are shortened.
+                // Pair duration stays exactly 2 * sixteenthSec so timing remains 100% steady!
+                val durationSec = if (step % 2 == 0) {
+                    sixteenthSec * (1.0 + swingVal.toDouble())
+                } else {
+                    sixteenthSec * (1.0 - swingVal.toDouble())
+                }.coerceAtLeast(0.015)
+
                 val stepSampleCount = (sampleRate * durationSec).roundToInt()
 
                 val stepStartFrame = totalFramesWritten
@@ -222,7 +269,6 @@ class AudioTrackDrumEngine @Inject constructor(
                 scheduledSteps.add(StepWindow(step, stepStartFrame, stepEndFrame))
                 totalFramesWritten += stepSampleCount
 
-                // If writer has written more than 350ms ahead of the speaker, throttle slightly
                 while (running.get() && scope.isActive) {
                     val head = track.playbackHeadPosition.toLong() and 0xFFFFFFFFL
                     val queuedFrames = totalFramesWritten - head
@@ -232,7 +278,6 @@ class AudioTrackDrumEngine @Inject constructor(
                     delay(10)
                 }
 
-                // Gather active sounds for this step
                 val activeSounds = DrumSound.entries.filter { sound ->
                     currentPat.grid[sound]?.getOrNull(step) == true
                 }
@@ -240,11 +285,14 @@ class AudioTrackDrumEngine @Inject constructor(
                 val buffer = ShortArray(stepSampleCount)
                 if (activeSounds.isNotEmpty()) {
                     val mix = DoubleArray(stepSampleCount)
+                    // Accent downbeats slightly (steps 0, 4, 8, 12) for punchy human groove
+                    val accentMultiplier = if (step % 4 == 0) 1.12 else 1.0
+
                     activeSounds.forEach { sound ->
                         val sample = DrumSoundSynthesizer.getSample(sound, currentKit)
                         val len = minOf(sample.size, stepSampleCount)
                         for (i in 0 until len) {
-                            mix[i] += sample[i].toDouble()
+                            mix[i] += sample[i].toDouble() * accentMultiplier
                         }
                     }
                     for (i in 0 until stepSampleCount) {

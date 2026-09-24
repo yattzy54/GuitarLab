@@ -1,14 +1,55 @@
 <resources>
     <string name="app_name">GuitarLab</string>
+
     <string name="tab_tabs">吉他谱</string>
     <string name="tab_tuner">调音器</string>
     <string name="tab_metronome">节拍器</string>
     <string name="tab_drums">鼓机</string>
-    <string name="tab_fretboard">指板与和弦</string>
-    <string name="tab_chords">和弦反查</string>
+    <string name="tab_fretboard">指板与音阶</string>
+    <string name="tab_chords">和弦查找器</string>
     <string name="tab_trainer">速度训练器</string>
-    <string name="tab_slowdowner">音频慢放</string>
-    <string name="tab_recorder">即兴录音</string>
-    <string name="tab_tracker">练习追踪</string>
-    <string name="tab_language">语言</string>
+    <string name="tab_slowdowner">音频变速器</string>
+    <string name="tab_recorder">灵感录音</string>
+    <string name="tab_tracker">练琴打卡</string>
+    <string name="tab_language">语言设置</string>
+    <string name="tab_tab_editor">六线谱编辑器</string>
+
+    <string name="nav_core_instruments">核心工具箱</string>
+    <string name="nav_studio_subtitle">专业吉他手工具包</string>
+
+    <string name="language_title">界面显示语言</string>
+    <string name="language_subtitle">请从20种常用语言中选择</string>
+    <string name="lang_search_placeholder">搜索语言…</string>
+    <string name="apply_language">应用语言</string>
+    <string name="current_active">使用中</string>
+    <string name="language_applied">语言设置更新成功</string>
+
+    <string name="guitar_tuning">吉他定弦</string>
+    <string name="chord_finder_title">和弦识别器</string>
+    <string name="chord_finder_hint">在指板上按住2个或以上音符（每根弦最多1个）</string>
+    <string name="chord_finder_selected_count">已选音符: %1$d。正在分析和弦…</string>
+    <string name="chord_finder_detected">识别结果: %1$s</string>
+    <string name="interactive_fretboard">交互式指板</string>
+    <string name="tuning_select_title">选择吉他定弦</string>
+    <string name="tuning_select_subtitle">为指板选择对应的调弦法</string>
+    <string name="clear">清除</string>
+    <string name="close">关闭</string>
+    <string name="select_tuning">选择定弦</string>
+
+    <string name="tap_tempo">TAP TEMPO</string>
+    <string name="tap_to_rhythm">跟随节奏打拍子</string>
+    <string name="time_signature">拍号设置</string>
+    <string name="vibration_mode">震动模式</string>
+    <string name="vibration_on_sub">使用触觉震动替代咔嗒提示音</string>
+    <string name="vibration_off_sub">声音提示音已开启</string>
+    <string name="sound_selection">节拍器音色</string>
+    <string name="metronome_volume">节拍器音量</string>
+
+    <string name="tuning_standard">标准定弦 E</string>
+    <string name="tuning_drop_d">Drop D 降D定弦</string>
+    <string name="tuning_half_step">降半音定弦</string>
+    <string name="play">播放</string>
+    <string name="pause">暂停</string>
+    <string name="stop">停止</string>
+    <string name="strings_count">%1$d 根弦</string>
 </resources>

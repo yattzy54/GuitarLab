@@ -3,6 +3,7 @@ package com.mmt.guitarlab.ui.drums
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mmt.guitarlab.domain.audio.DrumEngine
+import com.mmt.guitarlab.domain.model.DrumKit
 import com.mmt.guitarlab.domain.model.DrumPattern
 import com.mmt.guitarlab.domain.model.DrumSound
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,8 +35,8 @@ class DrumsViewModel @Inject constructor(
     val pattern: StateFlow<DrumPattern> = engine.pattern
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DrumPattern.DEFAULT_PATTERNS.first())
 
-    val drumKit: StateFlow<com.mmt.guitarlab.domain.model.DrumKit> = engine.drumKit
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.mmt.guitarlab.domain.model.DrumKit.ROCK)
+    val drumKit: StateFlow<DrumKit> = engine.drumKit
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DrumKit.ROCK)
 
     val availablePatterns: List<DrumPattern> = DrumPattern.DEFAULT_PATTERNS
 
@@ -69,7 +70,7 @@ class DrumsViewModel @Inject constructor(
         engine.setPattern(pattern)
     }
 
-    fun setDrumKit(kit: com.mmt.guitarlab.domain.model.DrumKit) {
+    fun setDrumKit(kit: DrumKit) {
         engine.setDrumKit(kit)
     }
 
@@ -79,6 +80,18 @@ class DrumsViewModel @Inject constructor(
 
     fun previewSound(sound: DrumSound) {
         engine.previewSound(sound)
+    }
+
+    fun clearPattern() {
+        engine.clearPattern()
+    }
+
+    fun randomizePattern() {
+        engine.randomizePattern()
+    }
+
+    fun resetPattern() {
+        engine.resetPattern()
     }
 
     fun onTapTempo() {

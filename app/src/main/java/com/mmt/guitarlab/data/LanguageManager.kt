@@ -1,6 +1,10 @@
 package com.mmt.guitarlab.data
 
 import android.content.Context
+import android.content.ContextWrapper
+import android.content.res.AssetManager
+import android.content.res.Configuration
+import android.content.res.Resources
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -59,5 +63,37 @@ object LanguageManager {
         context.languageDataStore.edit { prefs ->
             prefs[KEY_LANGUAGE] = code
         }
+        applyLocale(context, code)
+    }
+
+    fun applyLocale(context: Context, code: String) {
+        val locale = Locale(code)
+        Locale.setDefault(locale)
+
+        val resources = context.resources
+        val config = Configuration(resources.configuration)
+        config.setLocale(locale)
+        config.setLayoutDirection(locale)
+        @Suppress("DEPRECATION")
+        resources.updateConfiguration(config, resources.displayMetrics)
+    }
+
+    fun createLocalizedContext(context: Context, code: String): Context {
+        val locale = Locale(code)
+        Locale.setDefault(locale)
+
+        val config = Configuration(context.resources.configuration)
+        config.setLocale(locale)
+        config.setLayoutDirection(locale)
+        val localizedContext = context.createConfigurationContext(config)
+        return LocalizedContextWrapper(context, localizedContext)
+    }
+
+    private class LocalizedContextWrapper(
+        base: Context,
+        private val localizedContext: Context,
+    ) : ContextWrapper(base) {
+        override fun getResources(): Resources = localizedContext.resources
+        override fun getAssets(): AssetManager = localizedContext.assets
     }
 }

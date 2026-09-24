@@ -1,4 +1,3 @@
-
 package com.mmt.guitarlab.domain.model
 
 enum class MetronomeSound(val label: String) {
@@ -28,6 +27,7 @@ enum class TimeSignature(
 
 enum class TrainerIntervalKind {
     BARS,
+    SECONDS,
     MINUTES,
 }
 

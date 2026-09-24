@@ -1,14 +1,55 @@
 <resources>
     <string name="app_name">GuitarLab</string>
+
     <string name="tab_tabs">Tablar</string>
-    <string name="tab_tuner">Akort Cihazı</string>
+    <string name="tab_tuner">Akort Aleti</string>
     <string name="tab_metronome">Metronom</string>
     <string name="tab_drums">Bateri</string>
     <string name="tab_fretboard">Klavye &amp; Akorlar</string>
     <string name="tab_chords">Akor Bulucu</string>
-    <string name="tab_trainer">Hız Eğitmeni</string>
+    <string name="tab_trainer">Hız Eğitici</string>
     <string name="tab_slowdowner">Yavaşlatıcı</string>
-    <string name="tab_recorder">Kayıt Cihazı</string>
-    <string name="tab_tracker">Çalışma Takibi</string>
+    <string name="tab_recorder">Kaydedici</string>
+    <string name="tab_tracker">Çalışma Günlüğü</string>
     <string name="tab_language">Dil</string>
+    <string name="tab_tab_editor">Tab Düzenleyici</string>
+
+    <string name="nav_core_instruments">TEMEL ARAÇLAR</string>
+    <string name="nav_studio_subtitle">Gitarist Pro Araç Seti</string>
+
+    <string name="language_title">Arayüz Dili</string>
+    <string name="language_subtitle">20 dil arasından seçim yapın</string>
+    <string name="lang_search_placeholder">Dil ara…</string>
+    <string name="apply_language">Dili Uygula</string>
+    <string name="current_active">Aktif</string>
+    <string name="language_applied">Dil başarıyla güncellendi</string>
+
+    <string name="guitar_tuning">GİTAR AKORDU</string>
+    <string name="chord_finder_title">Akor Bulucu</string>
+    <string name="chord_finder_hint">Klavyede 2+ notaya basın (tel başına maks 1)</string>
+    <string name="chord_finder_selected_count">Seçilen notalar: %1$d. Akor aranıyor…</string>
+    <string name="chord_finder_detected">Tespit edilen: %1$s</string>
+    <string name="interactive_fretboard">ETKİLEŞİMLİ KLAVYE</string>
+    <string name="tuning_select_title">GİTAR AKORDU SEÇİN</string>
+    <string name="tuning_select_subtitle">Sap için akort düzenini seçin</string>
+    <string name="clear">Temizle</string>
+    <string name="close">Kapat</string>
+    <string name="select_tuning">Akort Seç</string>
+
+    <string name="tap_tempo">TAP TEMPO</string>
+    <string name="tap_to_rhythm">Ritme göre dokunun</string>
+    <string name="time_signature">ÖLÇÜ İŞARETİ</string>
+    <string name="vibration_mode">TİTREŞİM MODU</string>
+    <string name="vibration_on_sub">Ses yerine dokunsal titreşimler</string>
+    <string name="vibration_off_sub">Sesli tıklar etkin</string>
+    <string name="sound_selection">METRONOM SESİ</string>
+    <string name="metronome_volume">METRONOM SES DÜZEYİ</string>
+
+    <string name="tuning_standard">Standart E</string>
+    <string name="tuning_drop_d">Drop D</string>
+    <string name="tuning_half_step">Yarım ses pes</string>
+    <string name="play">Çal</string>
+    <string name="pause">Duraklat</string>
+    <string name="stop">Durdur</string>
+    <string name="strings_count">%1$d tel</string>
 </resources>

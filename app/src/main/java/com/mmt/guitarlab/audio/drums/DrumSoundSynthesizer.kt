@@ -44,6 +44,8 @@ object DrumSoundSynthesizer {
             DrumKit.ROCK -> 280
             DrumKit.POP -> 300
             DrumKit.ELECTRONIC -> 480 // 808 long sub decay
+            DrumKit.JAZZ -> 220
+            DrumKit.PERCUSSION -> 260 // Wood cajon bass
         }
         val n = (SAMPLE_RATE * durationMs / 1000)
         val out = ShortArray(n)
@@ -84,6 +86,22 @@ object DrumSoundSynthesizer {
                     val click = if (t < 0.004) 0.5 else 0.0
                     (drive + click) * env
                 }
+                DrumKit.JAZZ -> {
+                    // Vintage 18" jazz bass drum: soft felt beater, warm organic fundamental 52Hz
+                    val env = exp(-t * 16.0)
+                    val pitch = 52.0 + 65.0 * exp(-t * 35.0)
+                    val body = sin(2.0 * PI * pitch * t) * 0.85 + sin(2.0 * PI * pitch * 1.5 * t) * 0.15
+                    val thud = if (t < 0.010) (Math.random() - 0.5) * 0.2 else 0.0
+                    (body + thud) * env * 0.9
+                }
+                DrumKit.PERCUSSION -> {
+                    // Wooden Cajon Bass Slap: hollow wood resonance + palm thud
+                    val env = exp(-t * 18.0)
+                    val pitch = 62.0 + 110.0 * exp(-t * 50.0)
+                    val woodBody = sin(2.0 * PI * pitch * t) * 0.7 + sin(2.0 * PI * (pitch * 2.1) * t) * 0.2
+                    val palmTap = if (t < 0.012) (Math.random() - 0.5) * 0.5 * exp(-t * 200.0) else 0.0
+                    (woodBody + palmTap) * env
+                }
             }
 
             out[i] = (sampleVal.coerceIn(-1.0, 1.0) * 0.92 * Short.MAX_VALUE).toInt().toShort()
@@ -98,6 +116,8 @@ object DrumSoundSynthesizer {
             DrumKit.ROCK -> 240
             DrumKit.POP -> 280
             DrumKit.ELECTRONIC -> 220
+            DrumKit.JAZZ -> 260 // Brush / wire snare
+            DrumKit.PERCUSSION -> 180 // Wood rimshot / cajon corner
         }
         val n = (SAMPLE_RATE * durationMs / 1000)
         val out = ShortArray(n)
@@ -141,6 +161,22 @@ object DrumSoundSynthesizer {
                     val click = if (t < 0.004) 0.6 else 0.0
                     (tone + noise + click)
                 }
+                DrumKit.JAZZ -> {
+                    // Brush snare: soft wire swirl + high pitch 240Hz shell resonance
+                    val toneEnv = exp(-t * 20.0)
+                    val brushEnv = exp(-t * 12.0)
+                    val tone = sin(2.0 * PI * 240.0 * t) * 0.35 * toneEnv
+                    val brush = (Math.random() - 0.5) * 0.65 * brushEnv
+                    (tone + brush)
+                }
+                DrumKit.PERCUSSION -> {
+                    // Cajon Corner Rimshot: crisp wooden click + hollow slap
+                    val woodEnv = exp(-t * 30.0)
+                    val snapEnv = exp(-t * 45.0)
+                    val woodRing = sin(2.0 * PI * 850.0 * t) * 0.5 * woodEnv
+                    val snap = (Math.random() - 0.5) * 0.75 * snapEnv
+                    (woodRing + snap)
+                }
             }
 
             out[i] = (sampleVal.coerceIn(-1.0, 1.0) * 0.90 * Short.MAX_VALUE).toInt().toShort()
@@ -155,6 +191,8 @@ object DrumSoundSynthesizer {
             DrumKit.ELECTRONIC -> 45
             DrumKit.ROCK -> 40
             DrumKit.POP -> 50
+            DrumKit.JAZZ -> 55
+            DrumKit.PERCUSSION -> 35 // Shaker / cabasa tap
         }
         val n = (SAMPLE_RATE * durationMs / 1000)
         val out = ShortArray(n)
@@ -193,6 +231,19 @@ object DrumSoundSynthesizer {
                     val noise = (Math.random() - 0.5) * 0.3
                     (cluster + noise) * env
                 }
+                DrumKit.JAZZ -> {
+                    val env = exp(-t * 60.0)
+                    val noise = (Math.random() - 0.5) * 0.6
+                    val metallic = (sin(2.0 * PI * 5800.0 * t) * 0.25 + sin(2.0 * PI * 8100.0 * t) * 0.2)
+                    (noise + metallic) * env
+                }
+                DrumKit.PERCUSSION -> {
+                    // Shaker accent
+                    val env = exp(-t * 90.0)
+                    val noise = (Math.random() - 0.5) * 0.85
+                    val highPass = sin(2.0 * PI * 9800.0 * t) * 0.2
+                    (noise + highPass) * env
+                }
             }
 
             out[i] = (sampleVal.coerceIn(-1.0, 1.0) * 0.85 * Short.MAX_VALUE).toInt().toShort()
@@ -207,6 +258,8 @@ object DrumSoundSynthesizer {
             DrumKit.ROCK -> 260
             DrumKit.POP -> 280
             DrumKit.ELECTRONIC -> 320
+            DrumKit.JAZZ -> 300
+            DrumKit.PERCUSSION -> 220
         }
         val n = (SAMPLE_RATE * durationMs / 1000)
         val out = ShortArray(n)
@@ -235,6 +288,7 @@ object DrumSoundSynthesizer {
             val freq = endFreq + (startFreq - endFreq) * exp(-t * 22.0)
             val tone = when (kit) {
                 DrumKit.ELECTRONIC -> sin(2.0 * PI * freq * t) // Synth tom
+                DrumKit.PERCUSSION -> sin(2.0 * PI * (freq * 1.8) * t) * 0.7 + sin(2.0 * PI * freq * t) * 0.3 // Conga pitch
                 else -> sin(2.0 * PI * freq * t) * 0.8 + sin(2.0 * PI * freq * 1.6 * t) * 0.2
             }
             val stick = if (t < 0.008) (Math.random() - 0.5) * 0.3 else 0.0
@@ -249,6 +303,7 @@ object DrumSoundSynthesizer {
         val durationMs = when (kit) {
             DrumKit.METAL -> 700
             DrumKit.ELECTRONIC -> 500
+            DrumKit.JAZZ -> 600
             else -> 650
         }
         val n = (SAMPLE_RATE * durationMs / 1000)
@@ -266,13 +321,17 @@ object DrumSoundSynthesizer {
 
     // --- RIDE ---
     private fun generateRide(kit: DrumKit): ShortArray {
-        val durationMs = 380
+        val durationMs = if (kit == DrumKit.JAZZ) 520 else 380
         val n = (SAMPLE_RATE * durationMs / 1000)
         val out = ShortArray(n)
         for (i in 0 until n) {
             val t = i.toDouble() / SAMPLE_RATE
-            val env = exp(-t * 9.5)
-            val pingFreq = if (kit == DrumKit.METAL) 2800.0 else 2400.0
+            val env = exp(-t * 7.5)
+            val pingFreq = when (kit) {
+                DrumKit.METAL -> 2800.0
+                DrumKit.JAZZ -> 2150.0
+                else -> 2400.0
+            }
             val ping = (sin(2.0 * PI * pingFreq * t) * 0.45 + sin(2.0 * PI * (pingFreq * 1.6) * t) * 0.25)
             val shimmer = (Math.random() - 0.5) * 0.3
             val sample = ((ping + shimmer) * env * 0.82).coerceIn(-1.0, 1.0)

@@ -23,4 +23,7 @@ interface DrumEngine {
     fun setDrumKit(kit: DrumKit)
     fun toggleStep(sound: DrumSound, step: Int)
     fun previewSound(sound: DrumSound)
+    fun clearPattern()
+    fun randomizePattern()
+    fun resetPattern()
 }

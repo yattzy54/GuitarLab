@@ -78,8 +78,12 @@ class MetronomeViewModel @Inject constructor(
         }
     }
 
-    fun setTrainerStart(bpm: Int) = engine.updateConfig {
-        it.copy(trainer = it.trainer.copy(startBpm = bpm))
+    fun setTrainerStart(bpm: Int) = engine.updateConfig { cfg ->
+        val trainer = cfg.trainer.copy(startBpm = bpm)
+        cfg.copy(
+            trainer = trainer,
+            bpm = if (!engine.isRunning.value && trainer.enabled) bpm else cfg.bpm,
+        )
     }
 
     fun setTrainerTarget(bpm: Int) = engine.updateConfig {
@@ -95,7 +99,7 @@ class MetronomeViewModel @Inject constructor(
     }
 
     fun setTrainerIntervalValue(value: Int) = engine.updateConfig {
-        it.copy(trainer = it.trainer.copy(intervalValue = value.coerceIn(1, 60)))
+        it.copy(trainer = it.trainer.copy(intervalValue = value.coerceIn(1, 180)))
     }
 
     fun setSound(sound: MetronomeSound) = engine.updateConfig { it.copy(sound = sound) }
