@@ -397,6 +397,75 @@ class TabViewModel @Inject constructor(
         autoSaveToDb()
     }
 
+    fun moveCaretUp() {
+        val s = _score.value ?: return
+        val track = s.tracks.getOrNull(_selectedTrackIndex.value) ?: return
+        val maxString = (track.stringCount - 1).coerceAtLeast(0)
+        _selectedStringIndex.value = (_selectedStringIndex.value - 1).coerceIn(0, maxString)
+    }
+
+    fun moveCaretDown() {
+        val s = _score.value ?: return
+        val track = s.tracks.getOrNull(_selectedTrackIndex.value) ?: return
+        val maxString = (track.stringCount - 1).coerceAtLeast(0)
+        _selectedStringIndex.value = (_selectedStringIndex.value + 1).coerceIn(0, maxString)
+    }
+
+    fun moveCaretLeft() {
+        val s = _score.value ?: return
+        val track = s.tracks.getOrNull(_selectedTrackIndex.value) ?: return
+        val mIdx = _selectedMeasureIndex.value
+        val bIdx = _selectedBeatIndex.value
+        if (bIdx > 0) {
+            _selectedBeatIndex.value = bIdx - 1
+        } else if (mIdx > 0) {
+            val prevM = track.measures.getOrNull(mIdx - 1)
+            _selectedMeasureIndex.value = mIdx - 1
+            _selectedBeatIndex.value = (prevM?.beats?.lastIndex ?: 0).coerceAtLeast(0)
+        }
+    }
+
+    fun moveCaretRight() {
+        val s = _score.value ?: return
+        val track = s.tracks.getOrNull(_selectedTrackIndex.value) ?: return
+        val mIdx = _selectedMeasureIndex.value
+        val bIdx = _selectedBeatIndex.value
+        val currentMeasure = track.measures.getOrNull(mIdx)
+        if (currentMeasure != null && bIdx < currentMeasure.beats.lastIndex) {
+            _selectedBeatIndex.value = bIdx + 1
+        } else if (mIdx < track.measures.lastIndex) {
+            _selectedMeasureIndex.value = mIdx + 1
+            _selectedBeatIndex.value = 0
+        }
+    }
+
+    fun cycleDuration(step: Int) {
+        val all = NoteDuration.entries
+        val current = _activeDuration.value
+        val currentIdx = all.indexOf(current)
+        val nextIdx = (currentIdx + step).coerceIn(0, all.lastIndex)
+        _activeDuration.value = all[nextIdx]
+    }
+
+    fun deleteTrack(index: Int) {
+        val s = _score.value ?: return
+        if (s.tracks.size <= 1) return
+        val tracks = s.tracks.toMutableList()
+        tracks.removeAt(index.coerceIn(0, tracks.lastIndex))
+        _score.value = s.copy(tracks = tracks)
+        _selectedTrackIndex.value = _selectedTrackIndex.value.coerceIn(0, tracks.lastIndex)
+    }
+
+    fun updateSongInfo(title: String, artist: String, tempo: Int) {
+        val s = _score.value ?: return
+        _score.value = s.copy(
+            title = title.ifBlank { s.title },
+            artist = artist.ifBlank { s.artist },
+            tempo = tempo.coerceIn(30, 320)
+        )
+        autoSaveToDb()
+    }
+
     fun saveProjectToDb() {
         val currentScore = _score.value ?: return
         viewModelScope.launch {
