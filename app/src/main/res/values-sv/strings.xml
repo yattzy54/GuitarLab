@@ -12,7 +12,7 @@
     <string name="tab_recorder">Inspelare</string>
     <string name="tab_tracker">Övningslogg</string>
     <string name="tab_language">Språk</string>
-    <string name="tab_tab_editor">Tab-redigerare</string>
+    <string name="tab_tab_editor">TuxGuitar Studio</string>
 
     <string name="nav_core_instruments">HUVUDVERKTYG</string>
     <string name="nav_studio_subtitle">Pro Gitarrverktyg</string>

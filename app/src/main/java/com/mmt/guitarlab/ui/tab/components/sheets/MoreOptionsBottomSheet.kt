@@ -50,6 +50,7 @@ fun MoreOptionsBottomSheet(
     metronomeClickEnabled: Boolean,
     onToggleMetronomeClick: () -> Unit,
     onCopyTab: () -> Unit,
+    onOpenEditor: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     ModalBottomSheet(
@@ -71,6 +72,14 @@ fun MoreOptionsBottomSheet(
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
+            )
+
+            // 0. TuxGuitar Studio action button
+            OptionItemRow(
+                icon = Icons.Default.MusicNote,
+                title = "TuxGuitar Studio",
+                subtitle = "Редактор табулатур Guitar Pro (GP3/GP4/GP5), дорожки и гриф",
+                onClick = onOpenEditor
             )
 
             // 1. Tuner action button

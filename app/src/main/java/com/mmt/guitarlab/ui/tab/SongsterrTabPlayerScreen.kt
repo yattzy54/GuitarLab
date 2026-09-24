@@ -81,6 +81,7 @@ fun SongsterrTabPlayerScreen(
     viewModel: TabViewModel,
     modifier: Modifier = Modifier,
     onOpenDrawer: () -> Unit = {},
+    onNavigateToEditor: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -319,21 +320,46 @@ fun SongsterrTabPlayerScreen(
                         .background(Color(0xFF1C222D))
                         .border(1.dp, Color(0xFF2E384D), RoundedCornerShape(12.dp))
                         .clickable { isTabSourceOpen = true }
-                        .padding(horizontal = 10.dp, vertical = 7.dp),
+                        .padding(horizontal = 9.dp, vertical = 7.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.LibraryMusic,
                         contentDescription = "Выбрать песню или загрузить",
                         tint = Color(0xFFFBBF24),
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(15.dp)
                     )
                     Text(
                         text = "Каталог",
                         color = Color(0xFFF3F4F6),
-                        fontSize = 12.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
+                    )
+                }
+
+                // TuxGuitar Studio Button
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFF261D0C))
+                        .border(1.dp, Color(0xFFF59E0B).copy(alpha = 0.6f), RoundedCornerShape(12.dp))
+                        .clickable { onNavigateToEditor() }
+                        .padding(horizontal = 9.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Tune,
+                        contentDescription = "TuxGuitar Studio",
+                        tint = Color(0xFFF59E0B),
+                        modifier = Modifier.size(15.dp)
+                    )
+                    Text(
+                        text = "TuxGuitar",
+                        color = Color(0xFFFBBF24),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Black
                     )
                 }
             }
@@ -670,6 +696,10 @@ fun SongsterrTabPlayerScreen(
             metronomeClickEnabled = metronomeClickEnabled,
             onToggleMetronomeClick = {
                 metronomeClickEnabled = !metronomeClickEnabled
+            },
+            onOpenEditor = {
+                isMoreOpen = false
+                onNavigateToEditor()
             },
             onCopyTab = {
                 isMoreOpen = false

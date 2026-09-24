@@ -12,7 +12,7 @@
     <string name="tab_recorder">Grabadora</string>
     <string name="tab_tracker">Seguimiento</string>
     <string name="tab_language">Idioma</string>
-    <string name="tab_tab_editor">Editor de Tablaturas</string>
+    <string name="tab_tab_editor">TuxGuitar Studio</string>
 
     <string name="nav_core_instruments">HERRAMIENTAS PRINCIPALES</string>
     <string name="nav_studio_subtitle">Kit Profesional de Guitarra</string>

@@ -12,7 +12,7 @@
     <string name="tab_recorder">المسجل</string>
     <string name="tab_tracker">المتتبع</string>
     <string name="tab_language">اللغة</string>
-    <string name="tab_tab_editor">محرر التابات</string>
+    <string name="tab_tab_editor">TuxGuitar Studio</string>
 
     <string name="nav_core_instruments">الأدوات الأساسية</string>
     <string name="nav_studio_subtitle">حزمة العازف المحترف</string>

@@ -12,7 +12,7 @@
     <string name="tab_recorder">Rejestrator</string>
     <string name="tab_tracker">Dziennik</string>
     <string name="tab_language">Język</string>
-    <string name="tab_tab_editor">Edytor Tabulatur</string>
+    <string name="tab_tab_editor">TuxGuitar Studio</string>
 
     <string name="nav_core_instruments">GŁÓWNE NARZĘDZIA</string>
     <string name="nav_studio_subtitle">Zestaw Pro dla Gitarzysty</string>

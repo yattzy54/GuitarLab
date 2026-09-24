@@ -12,7 +12,7 @@
     <string name="tab_recorder">録音</string>
     <string name="tab_tracker">練習記録</string>
     <string name="tab_language">言語</string>
-    <string name="tab_tab_editor">タブ譜エディタ</string>
+    <string name="tab_tab_editor">TuxGuitar Studio</string>
 
     <string name="nav_core_instruments">メインツール</string>
     <string name="nav_studio_subtitle">プロギタリストツールキット</string>

@@ -2,7 +2,7 @@ import React from 'react';
 
 interface TuxGuitarIconProps {
   className?: string;
-  size?: number;
+  size?: number | string;
 }
 
 export const TuxGuitarIcon: React.FC<TuxGuitarIconProps> = ({ className = 'w-6 h-6', size = 24 }) => {

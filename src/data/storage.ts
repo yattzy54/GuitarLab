@@ -6,6 +6,8 @@ const STORAGE_KEYS = {
   TUNING_ID: 'guitarlab_tuning_id',
   A4_PITCH: 'guitarlab_a4',
   METRONOME: 'guitarlab_metronome',
+  LAST_SONG_ID: 'guitarlab_last_song_id',
+  HAS_CHOSEN_FIRST_TAB: 'guitarlab_has_chosen_tab',
 };
 
 // Initial practice sessions for realistic demo
@@ -118,4 +120,29 @@ export function loadA4Pitch(): number {
 
 export function saveA4Pitch(a4: number): void {
   localStorage.setItem(STORAGE_KEYS.A4_PITCH, a4.toString());
+}
+
+export function loadLastOpenedSongId(): string | null {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.LAST_SONG_ID);
+  } catch {
+    return null;
+  }
+}
+
+export function saveLastOpenedSongId(songId: string): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.LAST_SONG_ID, songId);
+    localStorage.setItem(STORAGE_KEYS.HAS_CHOSEN_FIRST_TAB, 'true');
+  } catch {
+    // ignore
+  }
+}
+
+export function hasUserChosenFirstTab(): boolean {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.HAS_CHOSEN_FIRST_TAB) === 'true';
+  } catch {
+    return false;
+  }
 }

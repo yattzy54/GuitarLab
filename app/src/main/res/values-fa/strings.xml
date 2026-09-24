@@ -12,7 +12,7 @@
     <string name="tab_recorder">ضبط صدا</string>
     <string name="tab_tracker">گزارش</string>
     <string name="tab_language">زبان</string>
-    <string name="tab_tab_editor">ویرایشگر تبلچر</string>
+    <string name="tab_tab_editor">TuxGuitar Studio</string>
 
     <string name="nav_core_instruments">ابزارهای اصلی</string>
     <string name="nav_studio_subtitle">مجموعه ابزار حرفه‌ای گیتاریست</string>

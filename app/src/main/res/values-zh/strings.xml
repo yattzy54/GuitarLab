@@ -12,7 +12,7 @@
     <string name="tab_recorder">灵感录音</string>
     <string name="tab_tracker">练琴打卡</string>
     <string name="tab_language">语言设置</string>
-    <string name="tab_tab_editor">六线谱编辑器</string>
+    <string name="tab_tab_editor">TuxGuitar Studio</string>
 
     <string name="nav_core_instruments">核心工具箱</string>
     <string name="nav_studio_subtitle">专业吉他手工具包</string>

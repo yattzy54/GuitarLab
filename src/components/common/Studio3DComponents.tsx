@@ -4,7 +4,7 @@ import { LucideIcon } from 'lucide-react';
 export type StudioAccent = 'amber' | 'teal' | 'green' | 'ruby' | 'purple' | 'slate';
 
 interface Studio3DBadgeProps {
-  icon: LucideIcon;
+  icon: LucideIcon | React.ComponentType<{ className?: string; size?: number | string }>;
   accent?: StudioAccent;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;

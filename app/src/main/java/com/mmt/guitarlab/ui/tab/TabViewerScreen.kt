@@ -10,11 +10,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 fun TabViewerScreen(
     viewModel: TabViewModel = hiltViewModel(),
     onOpenDrawer: () -> Unit = {},
+    onNavigateToEditor: () -> Unit = {},
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         SongsterrTabPlayerScreen(
             viewModel = viewModel,
             onOpenDrawer = onOpenDrawer,
+            onNavigateToEditor = onNavigateToEditor,
         )
     }
 }

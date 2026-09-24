@@ -13,7 +13,9 @@
     <string name="tab_recorder">Диктофон риффов</string>
     <string name="tab_tracker">Трекер практики</string>
     <string name="tab_language">Язык</string>
-    <string name="tab_tab_editor">Редактор табов</string>
+    <string name="tab_tab_editor">TuxGuitar Studio</string>
+    <string name="tab_tuxguitar">TuxGuitar Studio</string>
+    <string name="tab_tuxguitar_sub">Редактор табулатур Guitar Pro</string>
 
     <string name="nav_core_instruments">ОСНОВНЫЕ ИНСТРУМЕНТЫ</string>
     <string name="nav_studio_subtitle">Профи-набор гитариста</string>

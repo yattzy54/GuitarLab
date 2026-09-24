@@ -11,6 +11,7 @@ import {
   Wrench,
   CheckCircle2,
 } from 'lucide-react';
+import { TuxGuitarIcon } from '../../tuxguitar/TuxGuitarIcon';
 
 interface MoreOptionsSheetProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ interface MoreOptionsSheetProps {
   onCopyTab: () => void;
   isCopied: boolean;
   onOpenStudioTools: () => void;
+  onOpenTuxGuitar?: () => void;
 }
 
 export const MoreOptionsSheet: React.FC<MoreOptionsSheetProps> = ({
@@ -40,6 +42,7 @@ export const MoreOptionsSheet: React.FC<MoreOptionsSheetProps> = ({
   onCopyTab,
   isCopied,
   onOpenStudioTools,
+  onOpenTuxGuitar,
 }) => {
   return (
     <ModalBottomSheet
@@ -49,6 +52,39 @@ export const MoreOptionsSheet: React.FC<MoreOptionsSheetProps> = ({
       subtitle="Настройки плеера, тюнинг, метроном и студийные опции"
     >
       <div className="space-y-3">
+        {/* TuxGuitar Studio Quick Access */}
+        {onOpenTuxGuitar && (
+          <button
+            onClick={() => {
+              onClose();
+              onOpenTuxGuitar();
+            }}
+            className="w-full p-3 rounded-2xl bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-amber-500/20 hover:from-amber-500/30 hover:to-orange-500/30 border border-amber-500/50 text-left flex items-center justify-between transition-all group shadow-md"
+          >
+            <div className="flex items-center space-x-3">
+              <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/40 group-hover:scale-105 transition-transform shadow-sm">
+                <TuxGuitarIcon className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors">
+                    TuxGuitar Studio
+                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/30 text-amber-300 border border-amber-500/40">
+                    GP5 / GP4 / GP3
+                  </span>
+                </div>
+                <div className="text-[11px] text-zinc-400 mt-0.5">
+                  Мультитрековый редактор табулатур, матрица нот, гриф и пианино
+                </div>
+              </div>
+            </div>
+            <span className="text-xs font-bold text-amber-300 bg-amber-500/20 hover:bg-amber-500/30 px-3 py-1.5 rounded-xl border border-amber-500/40 shrink-0 ml-2">
+              Открыть
+            </span>
+          </button>
+        )}
+
         {/* Row 1: Tuner & Transpose */}
         <div className="grid grid-cols-2 gap-2.5">
           <button

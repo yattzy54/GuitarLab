@@ -108,10 +108,11 @@ enum class AppDest(
     val titleRes: Int,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector,
+    val badge: String? = null,
 ) {
     Tabs("tabs", R.string.tab_tabs, Icons.Filled.LibraryMusic, Icons.Outlined.LibraryMusic),
+    TabEditor("tab_editor", R.string.tab_tab_editor, Icons.Filled.Tune, Icons.Outlined.Tune, "GP5"),
     Drums("drums", R.string.tab_drums, Icons.Filled.Album, Icons.Outlined.Album),
-    TabEditor("tab_editor", R.string.tab_tab_editor, Icons.Filled.Tune, Icons.Outlined.Tune),
     Tuner("tuner", R.string.tab_tuner, Icons.Filled.GraphicEq, Icons.Outlined.GraphicEq),
     Metronome("metronome", R.string.tab_metronome, Icons.Filled.Timer, Icons.Outlined.Timer),
     Fretboard("fretboard", R.string.tab_fretboard, Icons.Filled.GridOn, Icons.Outlined.GridOn),
@@ -193,11 +194,33 @@ fun GuitarLabApp() {
                         val destTitle = stringResource(dest.titleRes)
                         NavigationDrawerItem(
                             label = {
-                                Text(
-                                    text = destTitle,
-                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (selected) ElectricAmber else StudioTextPrimary,
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = destTitle,
+                                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (selected) ElectricAmber else StudioTextPrimary,
+                                    )
+                                    if (dest.badge != null) {
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .background(ElectricAmber.copy(alpha = 0.2f))
+                                                .border(1.dp, ElectricAmber.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(
+                                                text = dest.badge,
+                                                color = ElectricAmber,
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Black
+                                            )
+                                        }
+                                    }
+                                }
                             },
                             selected = selected,
                             onClick = {
@@ -266,7 +289,18 @@ fun GuitarLabApp() {
                 modifier = Modifier.padding(if (isTabsScreen) androidx.compose.foundation.layout.PaddingValues(0.dp) else padding),
             ) {
                 composable(AppDest.Tabs.route) { 
-                    TabViewerScreen(onOpenDrawer = { scope.launch { drawerState.open() } })
+                    TabViewerScreen(
+                        onOpenDrawer = { scope.launch { drawerState.open() } },
+                        onNavigateToEditor = {
+                            navController.navigate(AppDest.TabEditor.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
                 }
                 composable(AppDest.Drums.route) { DrumsScreen() }
                 composable(AppDest.Tuner.route) { TunerScreen() }

@@ -12,7 +12,7 @@
     <string name="tab_recorder">Kaydedici</string>
     <string name="tab_tracker">Çalışma Günlüğü</string>
     <string name="tab_language">Dil</string>
-    <string name="tab_tab_editor">Tab Düzenleyici</string>
+    <string name="tab_tab_editor">TuxGuitar Studio</string>
 
     <string name="nav_core_instruments">TEMEL ARAÇLAR</string>
     <string name="nav_studio_subtitle">Gitarist Pro Araç Seti</string>

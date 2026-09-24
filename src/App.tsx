@@ -30,6 +30,7 @@ import {
   Grid,
   Menu,
 } from 'lucide-react';
+import { TuxGuitarIcon } from './components/tuxguitar/TuxGuitarIcon';
 import { Studio3DBadge } from './components/common/Studio3DComponents';
 
 function AppContent() {
@@ -93,16 +94,10 @@ function AppContent() {
       <main className="flex-1">
         {currentRoute === 'player' && (
           <div className="relative">
-            {/* Quick hamburger button to open drawer from Player */}
-            <button
-              onClick={() => setIsDrawerOpen(true)}
-              className="fixed top-3 right-3 z-40 p-2.5 rounded-2xl bg-[#141A26]/85 hover:bg-[#1D2536] text-zinc-300 hover:text-white border border-[#27344D] backdrop-blur-md shadow-xl transition-all cursor-pointer"
-              title={t('all_tools')}
-              aria-label="Open Studio Menu"
-            >
-              <Menu className="w-5 h-5 text-amber-400" />
-            </button>
-            <SongsterrPlayer onOpenStudioTools={() => setIsDrawerOpen(true)} />
+            <SongsterrPlayer
+              onOpenStudioTools={() => setIsDrawerOpen(true)}
+              onOpenTuxGuitar={() => setCurrentRoute('tuxguitar')}
+            />
           </div>
         )}
 
@@ -199,6 +194,24 @@ function AppContent() {
             <Studio3DBadge icon={PlayCircle} accent="green" size="sm" />
             <span className="text-[10px] font-bold mt-1 text-zinc-300">
               {t('nav_player')}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setCurrentRoute('tuxguitar')}
+            className="flex flex-col items-center py-1 px-2 rounded-xl transition-all cursor-pointer"
+          >
+            <Studio3DBadge
+              icon={TuxGuitarIcon}
+              accent={currentRoute === 'tuxguitar' ? 'amber' : 'slate'}
+              size="sm"
+            />
+            <span
+              className={`text-[10px] font-bold mt-1 ${
+                currentRoute === 'tuxguitar' ? 'text-amber-400' : 'text-zinc-400'
+              }`}
+            >
+              TuxGuitar
             </span>
           </button>
 
