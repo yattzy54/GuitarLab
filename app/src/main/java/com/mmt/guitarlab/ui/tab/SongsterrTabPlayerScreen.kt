@@ -339,7 +339,7 @@ fun SongsterrTabPlayerScreen(
                     )
                 }
 
-                // TuxGuitar Studio Button
+                // TabLab Studio Button
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
@@ -352,12 +352,12 @@ fun SongsterrTabPlayerScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Tune,
-                        contentDescription = "TuxGuitar Studio",
+                        contentDescription = "TabLab (TuxGuitar Studio)",
                         tint = Color(0xFFF59E0B),
                         modifier = Modifier.size(15.dp)
                     )
                     Text(
-                        text = "TuxGuitar",
+                        text = "TabLab",
                         color = Color(0xFFFBBF24),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Black

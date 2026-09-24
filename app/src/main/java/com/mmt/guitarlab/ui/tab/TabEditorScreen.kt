@@ -168,7 +168,7 @@ fun TabEditorScreen(viewModel: TabViewModel = hiltViewModel()) {
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Text(
-                                text = "TUX",
+                                text = "TABLAB",
                                 color = Color(0xFFFBBF24),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Black
@@ -176,13 +176,13 @@ fun TabEditorScreen(viewModel: TabViewModel = hiltViewModel()) {
                         }
                         Column {
                             Text(
-                                text = "TuxGuitar Studio",
+                                text = "TabLab Studio",
                                 color = Color.White,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "GP3 • GP4 • GP5 • ASCII • MIDI",
+                                text = "TuxGuitar Engine • GP3 • GP4 • GP5 • ASCII • MIDI",
                                 color = Color(0xFF9CA3AF),
                                 fontSize = 10.sp
                             )

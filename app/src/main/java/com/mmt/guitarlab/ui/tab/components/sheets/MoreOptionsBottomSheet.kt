@@ -74,11 +74,11 @@ fun MoreOptionsBottomSheet(
                 color = Color.White
             )
 
-            // 0. TuxGuitar Studio action button
+            // 0. TabLab Studio action button
             OptionItemRow(
                 icon = Icons.Default.MusicNote,
-                title = "TuxGuitar Studio",
-                subtitle = "Редактор табулатур Guitar Pro (GP3/GP4/GP5), дорожки и гриф",
+                title = "TabLab (TuxGuitar Studio)",
+                subtitle = "Редактор табулатур Guitar Pro (GP3/GP4/GP5), дорожки и синтез",
                 onClick = onOpenEditor
             )
 

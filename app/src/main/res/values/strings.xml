@@ -13,9 +13,10 @@
     <string name="tab_recorder">Recorder</string>
     <string name="tab_tracker">Tracker</string>
     <string name="tab_language">Language</string>
-    <string name="tab_tab_editor">TuxGuitar Studio</string>
-    <string name="tab_tuxguitar">TuxGuitar Studio</string>
-    <string name="tab_tuxguitar_sub">Multi-track GP tab editor</string>
+    <string name="tab_tab_editor">TabLab</string>
+    <string name="tab_tablab">TabLab</string>
+    <string name="tab_tuxguitar">TabLab (TuxGuitar)</string>
+    <string name="tab_tuxguitar_sub">Multi-track GP tab studio &amp; player</string>
 
     <string name="nav_core_instruments">CORE INSTRUMENTS</string>
     <string name="nav_studio_subtitle">Pro Guitarist Toolkit</string>

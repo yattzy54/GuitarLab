@@ -12,7 +12,7 @@
     <string name="tab_recorder">Aufnahme</string>
     <string name="tab_tracker">Protokoll</string>
     <string name="tab_language">Sprache</string>
-    <string name="tab_tab_editor">TuxGuitar Studio</string>
+    <string name="tab_tab_editor">TabLab</string>
 
     <string name="nav_core_instruments">HAUPTWERKZEUGE</string>
     <string name="nav_studio_subtitle">Profi-Gitarren-Kit</string>

@@ -12,7 +12,7 @@
     <string name="tab_recorder">Recorder</string>
     <string name="tab_tracker">Oefenlog</string>
     <string name="tab_language">Taal</string>
-    <string name="tab_tab_editor">TuxGuitar Studio</string>
+    <string name="tab_tab_editor">TabLab</string>
 
     <string name="nav_core_instruments">BELANGRIJKSTE TOOLS</string>
     <string name="nav_studio_subtitle">Pro Gitaristen Toolkit</string>

@@ -12,7 +12,7 @@
     <string name="tab_recorder">Диктофон рифів</string>
     <string name="tab_tracker">Трекер занять</string>
     <string name="tab_language">Мова</string>
-    <string name="tab_tab_editor">TuxGuitar Studio</string>
+    <string name="tab_tab_editor">TabLab</string>
 
     <string name="nav_core_instruments">ОСНОВНІ ІНСТРУМЕНТИ</string>
     <string name="nav_studio_subtitle">Набір гітариста</string>

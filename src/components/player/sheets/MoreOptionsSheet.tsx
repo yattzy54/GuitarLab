@@ -68,7 +68,7 @@ export const MoreOptionsSheet: React.FC<MoreOptionsSheetProps> = ({
               <div>
                 <div className="flex items-center space-x-2">
                   <span className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors">
-                    TuxGuitar Studio
+                    TabLab Studio
                   </span>
                   <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/30 text-amber-300 border border-amber-500/40">
                     GP5 / GP4 / GP3

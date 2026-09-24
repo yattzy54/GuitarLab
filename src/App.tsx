@@ -211,7 +211,7 @@ function AppContent() {
                 currentRoute === 'tuxguitar' ? 'text-amber-400' : 'text-zinc-400'
               }`}
             >
-              TuxGuitar
+              TabLab
             </span>
           </button>
 

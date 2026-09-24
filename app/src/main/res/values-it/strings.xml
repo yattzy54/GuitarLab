@@ -12,7 +12,7 @@
     <string name="tab_recorder">Registratore</string>
     <string name="tab_tracker">Diario</string>
     <string name="tab_language">Lingua</string>
-    <string name="tab_tab_editor">TuxGuitar Studio</string>
+    <string name="tab_tab_editor">TabLab</string>
 
     <string name="nav_core_instruments">STRUMENTI PRINCIPALI</string>
     <string name="nav_studio_subtitle">Toolkit Pro per Chitarrista</string>

@@ -82,10 +82,10 @@ export const TuxGuitarToolbar: React.FC<TuxGuitarToolbarProps> = ({
           <div>
             <div className="flex items-center space-x-2">
               <span className="text-xs font-black text-amber-400 tracking-wider uppercase font-mono">
-                TuxGuitar Studio
+                TabLab Studio
               </span>
               <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold">
-                Open Source Tab Engine
+                TuxGuitar Engine • GP5 / GP4 / GP3
               </span>
             </div>
             <div className="flex items-center space-x-1.5 cursor-pointer group" onClick={onOpenSongInfo}>

@@ -368,17 +368,16 @@ export const SongsterrPlayer: React.FC<SongsterrPlayerProps> = ({
           </button>
         </div>
 
-        {/* Right: TuxGuitar Studio Button + Pitch Transpose & Quick Options */}
+        {/* Right: TabLab Studio Button + Pitch Transpose & Quick Options */}
         <div className="flex items-center space-x-1.5">
           {onOpenTuxGuitar && (
             <button
               onClick={onOpenTuxGuitar}
               className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 via-orange-500/25 to-amber-500/30 hover:from-amber-500/30 hover:to-orange-500/35 border border-amber-500/50 text-amber-300 font-bold text-xs shadow-md active:scale-95 transition-all cursor-pointer ring-1 ring-amber-500/20"
-              title="TuxGuitar Studio — Редактор табулатур (Guitar Pro)"
+              title="TabLab (TuxGuitar Studio) — Редактор табулатур Guitar Pro"
             >
               <TuxGuitarIcon className="w-4 h-4 text-amber-400" />
-              <span className="hidden sm:inline font-bold">TuxGuitar Studio</span>
-              <span className="sm:hidden font-extrabold text-[11px]">TuxGuitar</span>
+              <span className="font-bold">TabLab</span>
             </button>
           )}
 
