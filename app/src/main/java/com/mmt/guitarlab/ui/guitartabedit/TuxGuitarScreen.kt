@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import com.mmt.guitarlab.R
 import app.tuxguitar.android.activity.TGActivity
 import app.tuxguitar.android.activity.TGReaderActivity
@@ -37,6 +38,12 @@ fun TuxGuitarReaderScreen() {
         activityClass = TGReaderActivity::class.java,
         autoLaunch = false,
     )
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF0F141C)
+@Composable
+private fun TuxGuitarReaderScreenPreview() {
+    TuxGuitarReaderScreen()
 }
 
 @Composable
