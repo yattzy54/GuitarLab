@@ -124,7 +124,6 @@ enum class AppDest(
     Tabs("tabs", R.string.tab_tabs, Icons.Filled.LibraryMusic, Icons.Outlined.LibraryMusic, isTabFeature = true),
     GuitarTabEdit("guitartabedit", R.string.tab_guitartabedit, Icons.Filled.Edit, Icons.Outlined.Edit, "NEW", isTabFeature = true),
     TuxGuitar("tuxguitar", R.string.tab_tuxguitar, Icons.Filled.MusicNote, Icons.Outlined.MusicNote, "TG", isTabFeature = true),
-    Songsterr("songsterr", R.string.tab_songsterr, Icons.Filled.Language, Icons.Outlined.Language, "ONLINE", isTabFeature = true),
     TabEditor("tab_editor", R.string.tab_tab_editor, Icons.Filled.Tune, Icons.Outlined.Tune, "GP5", isTabFeature = true),
     Tuner("tuner", R.string.tab_tuner, Icons.Filled.GraphicEq, Icons.Outlined.GraphicEq),
     Metronome("metronome", R.string.tab_metronome, Icons.Filled.Timer, Icons.Outlined.Timer),
@@ -324,8 +323,7 @@ fun GuitarLabApp() {
         val isTabsScreen = isTabsFlavor && (
             currentRoute == AppDest.Tabs.route ||
                 currentRoute == AppDest.GuitarTabEdit.route ||
-                currentRoute == AppDest.TuxGuitar.route ||
-                currentRoute == AppDest.Songsterr.route
+                currentRoute == AppDest.TuxGuitar.route
             )
         Scaffold(
             topBar = {
@@ -376,7 +374,6 @@ fun GuitarLabApp() {
                 }
                 composable(AppDest.GuitarTabEdit.route) { GuitarTabEditScreen() }
                 composable(AppDest.TuxGuitar.route) { TuxGuitarScreen() }
-                composable(AppDest.Songsterr.route) { TabViewerScreen() }
                 composable(AppDest.Drums.route) { DrumsScreen() }
                 composable(AppDest.Tuner.route) { TunerScreen() }
                 composable(AppDest.Metronome.route) { MetronomeScreen() }
