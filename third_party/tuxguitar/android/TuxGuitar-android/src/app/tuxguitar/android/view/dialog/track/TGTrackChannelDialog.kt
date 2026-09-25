@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.track
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -138,7 +140,7 @@ fun TGTrackChannelDialogContent(
 @Preview(showBackground = true)
 @Composable
 private fun TGTrackChannelDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGTrackChannelDialogContent(
             channelLabels = listOf("-- Select --", "Nylon Guitar", "Steel Guitar", "Piano"),
             selectedIndex = 1,

@@ -74,8 +74,8 @@ import com.mmt.guitarlab.ui.tab.components.sheets.SongCatalogBottomSheet
 import com.mmt.guitarlab.ui.tab.components.sheets.TabSourceBottomSheet
 import com.mmt.guitarlab.ui.tab.components.sheets.TempoBottomSheet
 import com.mmt.guitarlab.ui.tab.components.sheets.TranspositionBottomSheet
-import com.mmt.guitarlab.ui.theme.GuitarLabTheme
-import com.mmt.guitarlab.ui.theme.StudioDarkBg
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+import com.mmt.guitarlab.core.ui.theme.StudioDarkBg
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

@@ -2,9 +2,6 @@ package app.tuxguitar.android.navigation
 
 import android.os.Handler
 import android.os.Looper
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import app.tuxguitar.android.action.impl.gui.TGOpenFragmentAction
 import app.tuxguitar.android.activity.TGActivity
 import app.tuxguitar.android.fragment.TGFragmentController
@@ -17,19 +14,25 @@ import app.tuxguitar.util.TGContext
 /**
  * Drives which [TGScreen] is currently shown inside [TGActivity]'s content
  * area. Previously this replaced a Fragment inside `content_frame` via a
- * `FragmentManager` transaction; now it just swaps a Compose state holder
- * that [TGActivity]'s own content composable reads to decide which screen's
- * [TGScreen.Content] to render.
+ * `FragmentManager` transaction. It now notifies the repository, which exposes
+ * immutable presentation state through EditorViewModel. The UI adapter renders
+ * the selected legacy [TGScreen.Content].
  */
 class TGNavigationManager(private val activity: TGActivity) {
     private val navigationFragments = mutableListOf<TGNavigationFragment>()
 
-    var currentScreen: TGScreen? by mutableStateOf(null)
+    var currentScreen: TGScreen? = null
         private set
 
     fun initialize() {
         navigationFragments.clear()
         currentScreen = null
+    }
+
+    fun dispose() {
+        currentScreen?.onHideView()
+        currentScreen = null
+        navigationFragments.clear()
     }
 
     fun processLoadFragment(controller: TGFragmentController<*>, tagId: String?) {
@@ -52,6 +55,7 @@ class TGNavigationManager(private val activity: TGActivity) {
     }
 
     private fun doProcessLoadFragment(fragment: TGNavigationFragment) {
+        if (activity.isFragmentDestroyed()) return
         val previousScreen = currentScreen
         val newScreen = fragment.controller!!.getFragment()
         previousScreen?.onHideView()
@@ -70,6 +74,7 @@ class TGNavigationManager(private val activity: TGActivity) {
         }
         navigationFragments.add(fragment)
         fireNavigationEvent(fragment, backFrom)
+        activity.notifyUiStateChanged()
     }
 
     fun getCurrentFragment(): TGNavigationFragment? = navigationFragments.lastOrNull()

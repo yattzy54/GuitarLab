@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.harmonic
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -248,7 +250,7 @@ private fun HarmonicRadioOption(
 @Preview(showBackground = true)
 @Composable
 private fun TGHarmonicDialogNaturalPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGHarmonicDialogContent(
             initial = TGHarmonicFields(
                 type = TGEffectHarmonic.TYPE_NATURAL,
@@ -265,7 +267,7 @@ private fun TGHarmonicDialogNaturalPreview() {
 @Preview(showBackground = true)
 @Composable
 private fun TGHarmonicDialogArtificialPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGHarmonicDialogContent(
             initial = TGHarmonicFields(
                 type = TGEffectHarmonic.TYPE_ARTIFICIAL,

@@ -1,0 +1,17 @@
+<resources>
+    <color name="guitarlab_background">#0C0F15</color>
+    <color name="guitarlab_surface">#141822</color>
+    <color name="guitarlab_surface_elevated">#1B212F</color>
+    <color name="guitarlab_outline">#252D3E</color>
+    <color name="guitarlab_primary">#FFB703</color>
+    <color name="guitarlab_on_primary">#120E00</color>
+    <color name="guitarlab_primary_variant">#382600</color>
+    <color name="guitarlab_secondary">#00E5FF</color>
+    <color name="guitarlab_on_secondary">#003138</color>
+    <color name="guitarlab_secondary_variant">#004D58</color>
+    <color name="guitarlab_text_primary">#F1F3F9</color>
+    <color name="guitarlab_text_secondary">#94A0B8</color>
+    <color name="guitarlab_text_muted">#64748B</color>
+    <color name="guitarlab_error">#FF3366</color>
+    <color name="guitarlab_on_error">#3B0012</color>
+</resources>

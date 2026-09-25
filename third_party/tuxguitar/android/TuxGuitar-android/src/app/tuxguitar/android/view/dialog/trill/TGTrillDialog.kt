@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.trill
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -240,7 +242,7 @@ private fun TGTrillFretDropdownField(
 @Preview(showBackground = true)
 @Composable
 private fun TGTrillDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGTrillDialogContent(
             initial = TGTrillDialogUiState(
                 fret = 7,

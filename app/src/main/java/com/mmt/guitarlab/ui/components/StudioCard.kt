@@ -10,9 +10,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.mmt.guitarlab.ui.theme.StudioCardBg
-import com.mmt.guitarlab.ui.theme.StudioCardBorder
-import com.mmt.guitarlab.ui.theme.StudioCardElevated
+import com.mmt.guitarlab.core.ui.theme.StudioCardBg
+import com.mmt.guitarlab.core.ui.theme.StudioCardBorder
+import com.mmt.guitarlab.core.ui.theme.StudioCardElevated
 
 /**
  * 3D Studio Card with raised border and deep dark surface

@@ -18,12 +18,12 @@ import androidx.compose.ui.unit.sp
 import com.mmt.guitarlab.domain.model.DetectedPitch
 import com.mmt.guitarlab.domain.model.TuningNote
 import com.mmt.guitarlab.ui.components.StudioCard
-import com.mmt.guitarlab.ui.theme.ElectricAmber
-import com.mmt.guitarlab.ui.theme.ElectricGreen
-import com.mmt.guitarlab.ui.theme.ElectricTeal
-import com.mmt.guitarlab.ui.theme.StudioTextMuted
-import com.mmt.guitarlab.ui.theme.StudioTextPrimary
-import com.mmt.guitarlab.ui.theme.StudioTextSecondary
+import com.mmt.guitarlab.core.ui.theme.ElectricAmber
+import com.mmt.guitarlab.core.ui.theme.ElectricGreen
+import com.mmt.guitarlab.core.ui.theme.ElectricTeal
+import com.mmt.guitarlab.core.ui.theme.StudioTextMuted
+import com.mmt.guitarlab.core.ui.theme.StudioTextPrimary
+import com.mmt.guitarlab.core.ui.theme.StudioTextSecondary
 import java.util.Locale
 import kotlin.math.abs
 

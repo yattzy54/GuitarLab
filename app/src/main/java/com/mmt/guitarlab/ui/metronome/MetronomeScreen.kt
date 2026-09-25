@@ -7,7 +7,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mmt.guitarlab.domain.model.MetronomeConfig
 import com.mmt.guitarlab.domain.model.TimeSignature
-import com.mmt.guitarlab.ui.theme.GuitarLabTheme
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 @Composable
 fun MetronomeScreen(viewModel: MetronomeViewModel = hiltViewModel()) {

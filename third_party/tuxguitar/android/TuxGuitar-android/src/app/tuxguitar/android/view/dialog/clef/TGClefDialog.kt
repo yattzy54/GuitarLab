@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.clef
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -191,7 +193,7 @@ private fun TGClefDropdownField(
 @Preview(showBackground = true)
 @Composable
 private fun TGClefDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGClefDialogContent(
             initial = TGClefDialogUiState(
                 clef = TGMeasure.CLEF_TREBLE,

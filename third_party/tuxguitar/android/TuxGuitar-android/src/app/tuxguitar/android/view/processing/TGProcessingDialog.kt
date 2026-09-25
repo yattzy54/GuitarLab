@@ -1,7 +1,9 @@
 package app.tuxguitar.android.view.processing
 
-import android.app.Dialog
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import android.os.Bundle
+import androidx.activity.ComponentDialog
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
@@ -24,14 +26,14 @@ import app.tuxguitar.android.activity.TGActivity
  * the surrounding polling/threading logic in [TGActionProcessingController]
  * did not need to change.
  */
-class TGProcessingDialog(activity: TGActivity) : Dialog(activity.requireContext()) {
+class TGProcessingDialog(activity: TGActivity) : ComponentDialog(activity.requireContext()) {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setCancelable(false)
         setContentView(
             ComposeView(context).apply {
                 setContent {
-                    MaterialTheme {
+                    GuitarLabTheme {
                         TGProcessingDialogContent()
                     }
                 }
@@ -59,7 +61,7 @@ fun TGProcessingDialogContent() {
 @Preview(showBackground = true)
 @Composable
 private fun TGProcessingDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGProcessingDialogContent()
     }
 }

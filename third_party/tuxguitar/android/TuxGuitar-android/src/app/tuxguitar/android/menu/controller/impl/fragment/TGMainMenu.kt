@@ -44,7 +44,7 @@ class TGMainMenu private constructor(private val context: TGContext) : TGMenuCon
 
     fun initializeItems(menu: Menu) {
         val activity = getActivity()
-        val readerMode = activity.javaClass.name == "app.tuxguitar.android.activity.TGReaderActivity"
+        val readerMode = activity.isReadOnly
         if (readerMode) {
             intArrayOf(
                 R.id.action_tab_keyboard_toggle,

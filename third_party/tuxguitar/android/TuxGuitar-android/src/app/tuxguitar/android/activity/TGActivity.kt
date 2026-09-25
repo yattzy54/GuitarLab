@@ -15,14 +15,8 @@ import android.view.WindowManager
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionContext
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.FragmentActivity
 import app.tuxguitar.android.R
@@ -62,21 +56,13 @@ import app.tuxguitar.util.plugin.TGPluginManager
 import java.util.Locale
 
 /**
- * Hosts the legacy TuxGuitar editor engine inside the app's single Activity
- * ([app.tuxguitar.android.MainActivity]).
- *
- * This used to be an `AppCompatActivity` subclass, then a `Fragment`; it is
- * now a plain class with no Android component base at all, created and
- * destroyed directly by the Compose destination that hosts it (see
- * `TuxGuitarScreen.kt`). Its root [View] (inflated once from
- * `activity_tg.xml`) is embedded via a single `AndroidView`, and its actual
- * screens/dialogs are rendered natively inside that same Compose tree by
- * reading [getNavigationManager]'s current screen and [currentDialog].
- * Android APIs that only exist on a real `Activity` (window flags, menu
- * inflation, `startActivityForResult`, key events, `onNewIntent`, ...) are
- * reached through [hostActivity], captured once at creation time.
+ * Legacy Android engine adapter, owned by LegacyEditorRepository.
+ * EditorViewModel owns the observable presentation state; LegacyEditorHost
+ * supplies the composition that renders existing View/Canvas and dialog code.
+ * This class is not an Android Activity and must not escape the adapter boundary.
  */
 open class TGActivity {
+    open val isReadOnly: Boolean = false
     private var destroyed = false
     private var context: TGContext? = null
     private val navigationManager = TGNavigationManager(this)
@@ -86,13 +72,22 @@ open class TGActivity {
     private val permissionResultManager = TGActivityPermissionResultManager()
     private var maintainDisplayON = false
     private var pendingIntent: Intent? = null
+    private var modulesInitialized = false
+    private var editorReleased = false
 
     private lateinit var hostActivity: FragmentActivity
     private lateinit var themedContext: Context
     private var rootView: View? = null
+    private var composeContent: (@Composable () -> Unit)? = null
+    private var parentComposition: CompositionContext? = null
 
-    var currentDialog: TGComposeDialog? by mutableStateOf(null)
+    var currentDialog: TGComposeDialog? = null
         private set
+    var onUiStateChanged: (() -> Unit)? = null
+
+    fun notifyUiStateChanged() {
+        onUiStateChanged?.invoke()
+    }
 
     val intent: Intent?
         get() = pendingIntent
@@ -105,11 +100,18 @@ open class TGActivity {
      * Creates (on first call) or returns the cached root [View] for this
      * instance. [host] is captured for the lifetime of this [TGActivity].
      */
-    fun getOrCreateRootView(host: FragmentActivity): View {
+    fun getOrCreateRootView(
+        host: FragmentActivity,
+        compositionContext: CompositionContext,
+        content: @Composable () -> Unit,
+    ): View {
         rootView?.let { return it }
         hostActivity = host
         themedContext = ContextThemeWrapper(host, R.style.TGTheme)
         destroyed = false
+        editorReleased = false
+        composeContent = content
+        parentComposition = compositionContext
         currentInstance = this
         clearContext()
         attachInstance()
@@ -183,38 +185,42 @@ open class TGActivity {
      * plus any active [TGComposeDialog] on top of it. Replaces the previous
      * `FragmentManager` transaction into that same container.
      */
-    @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
     private fun installContentComposeView(view: View) {
         val contentFrame = view.findViewById<FrameLayout>(R.id.content_frame)
         contentFrame.addView(
             ComposeView(themedContext).apply {
+                setParentCompositionContext(parentComposition)
                 setContent {
-                    MaterialTheme {
-                        navigationManager.currentScreen?.Content()
-                        currentDialog?.let { dialog ->
-                            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-                            ModalBottomSheet(
-                                onDismissRequest = { dismissComposeDialog(dialog) },
-                                sheetState = sheetState,
-                                modifier = Modifier.systemBarsPadding(),
-                            ) {
-                                dialog.SheetContent(onDismiss = { dismissComposeDialog(dialog) })
-                            }
-                        }
-                    }
+                    composeContent?.invoke()
                 }
             }
         )
     }
 
 
-    /** Called from [TuxGuitarScreen] when this instance is disposed. */
+    /** Called by the repository when its AndroidView is released or replaced. */
     fun destroyRootView() {
-        (hostActivity as AppCompatActivity).setSupportActionBar(null)
-        detachInstance()
-        destroyModules()
-        clearContext()
+        if (destroyed) return
         destroyed = true
+        onFinishRequested = null
+        onUiStateChanged = null
+        currentDialog?.onHide()
+        currentDialog = null
+        navigationManager.dispose()
+        setDisplayOn(false)
+        val contentFrame = findViewById<FrameLayout>(R.id.content_frame)
+        (contentFrame?.getChildAt(0) as? ComposeView)?.disposeComposition()
+        composeContent = null
+        parentComposition = null
+        (rootView as? ViewGroup)?.removeAllViews()
+        (hostActivity as AppCompatActivity).setSupportActionBar(null)
+        if (modulesInitialized) {
+            releaseEditor()
+            detachInstance()
+            destroyModules()
+            modulesInitialized = false
+        }
+        context?.clear()
         if (currentInstance === this) {
             currentInstance = null
         }
@@ -286,6 +292,7 @@ open class TGActivity {
     fun createModules() {
         val context = findContext()
         TGThreadManager.getInstance(context).setThreadHandler(TGMultiThreadHandler())
+        modulesInitialized = true
         TGSynchronizer.getInstance(context).setController(TGSynchronizerControllerImpl(context))
         TGErrorManager.getInstance(context).addErrorHandler(TGErrorHandlerImpl(this))
         TGResourceManager.getInstance(context).setResourceLoader(TGResourceLoaderImpl(this))
@@ -300,7 +307,16 @@ open class TGActivity {
     fun connectPlugins() { TGPluginManager.getInstance(findContext()).connectEnabled() }
     fun disconnectPlugins() { TGPluginManager.getInstance(findContext()).disconnectAll() }
     fun destroyEditor() { TGEditorManager.getInstance(findContext()).destroy(null) }
-    fun destroy() { disconnectPlugins(); destroyEditor(); callFinishAction() }
+    @Synchronized
+    private fun releaseEditor() {
+        if (!editorReleased) {
+            editorReleased = true
+            disconnectPlugins()
+            destroyEditor()
+        }
+    }
+
+    fun destroy() { releaseEditor(); callFinishAction() }
 
     fun updateCache(updateItems: Boolean) = updateCache(updateItems, null)
     fun updateCache(updateItems: Boolean, sourceContext: TGAbstractContext?) {
@@ -353,7 +369,7 @@ open class TGActivity {
 
     /**
      * Requests that the host navigate away from the editor destination. Set
-     * by whichever Composable hosts this instance (see `TuxGuitarScreen`).
+     * by the repository and delivered to the UI through EditorState.
      */
     var onFinishRequested: (() -> Unit)? = null
     fun finish() {
@@ -372,14 +388,23 @@ open class TGActivity {
 
     /** Shows [dialog] as a Compose `ModalBottomSheet` over this activity's content. */
     fun showComposeDialog(dialog: TGComposeDialog) {
-        currentDialog = dialog
-        dialog.onShow()
+        hostActivity.runOnUiThread {
+            if (!destroyed) {
+                currentDialog?.onHide()
+                currentDialog = dialog
+                dialog.onShow()
+                notifyUiStateChanged()
+            }
+        }
     }
 
     fun dismissComposeDialog(dialog: TGComposeDialog) {
-        if (currentDialog === dialog) {
-            currentDialog = null
-            dialog.onHide()
+        hostActivity.runOnUiThread {
+            if (!destroyed && currentDialog === dialog) {
+                currentDialog = null
+                dialog.onHide()
+                notifyUiStateChanged()
+            }
         }
     }
 
@@ -388,11 +413,9 @@ open class TGActivity {
 
         /**
          * The currently attached [TGActivity] instance, if any. Bridges
-         * Android APIs that are only dispatched to the real host Activity
-         * (key events, `onNewIntent`, activity/permission results) and lets
-         * legacy code that used to reach the TGActivity through its own
-         * Context find it again now that it is not a Context itself. There
-         * is at most one such instance alive at a time.
+         * legacy context lookups within the adapter. The application uses the
+         * injected EditorHost instead. There is at most one engine attached,
+         * owned and released by LegacyEditorRepository.
          */
         @JvmStatic
         @Volatile

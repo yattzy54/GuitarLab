@@ -1,5 +1,7 @@
 package app.tuxguitar.android.drawer.main
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,7 +20,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -237,7 +238,7 @@ fun TGMainDrawerTrackListItemContent(
 @Preview(showBackground = true)
 @Composable
 private fun TGMainDrawerFileTabPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         Box(modifier = Modifier.background(colorResource(R.color.darkestColor))) {
             LazyColumn {
                 items(
@@ -264,7 +265,7 @@ private fun TGMainDrawerFileTabPreview() {
 @Preview(showBackground = true)
 @Composable
 private fun TGMainDrawerTrackListItemSelectedPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGMainDrawerTrackListItemContent(
             label = "Lead Guitar",
             selected = true,
@@ -279,7 +280,7 @@ private fun TGMainDrawerTrackListItemSelectedPreview() {
 @Preview(showBackground = true)
 @Composable
 private fun TGMainDrawerTrackListItemUnselectedPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGMainDrawerTrackListItemContent(
             label = "Bass",
             selected = false,

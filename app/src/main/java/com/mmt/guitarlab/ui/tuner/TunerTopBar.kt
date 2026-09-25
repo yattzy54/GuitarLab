@@ -37,14 +37,14 @@ import androidx.compose.ui.unit.dp
 import com.mmt.guitarlab.domain.model.TuningNote
 import com.mmt.guitarlab.ui.components.Studio3DAccent
 import com.mmt.guitarlab.ui.components.Studio3DIconBadge
-import com.mmt.guitarlab.ui.theme.ElectricAmber
-import com.mmt.guitarlab.ui.theme.GuitarLabTheme
-import com.mmt.guitarlab.ui.theme.StudioCardBg
-import com.mmt.guitarlab.ui.theme.StudioCardBorder
-import com.mmt.guitarlab.ui.theme.StudioCardElevated
-import com.mmt.guitarlab.ui.theme.StudioDarkBg
-import com.mmt.guitarlab.ui.theme.StudioTextPrimary
-import com.mmt.guitarlab.ui.theme.StudioTextSecondary
+import com.mmt.guitarlab.core.ui.theme.ElectricAmber
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+import com.mmt.guitarlab.core.ui.theme.StudioCardBg
+import com.mmt.guitarlab.core.ui.theme.StudioCardBorder
+import com.mmt.guitarlab.core.ui.theme.StudioCardElevated
+import com.mmt.guitarlab.core.ui.theme.StudioDarkBg
+import com.mmt.guitarlab.core.ui.theme.StudioTextPrimary
+import com.mmt.guitarlab.core.ui.theme.StudioTextSecondary
 import kotlin.math.abs
 
 @Composable

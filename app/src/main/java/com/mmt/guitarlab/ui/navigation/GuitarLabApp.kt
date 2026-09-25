@@ -83,6 +83,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import app.tuxguitar.android.ui.editor.EditorHost
 import com.mmt.guitarlab.config.AppFlavorConfig
 import com.mmt.guitarlab.config.FlavorType
 import com.mmt.guitarlab.ui.components.Studio3DAccent
@@ -101,13 +102,13 @@ import com.mmt.guitarlab.ui.guitartabedit.TuxGuitarScreen
 import com.mmt.guitarlab.ui.settings.LanguageScreen
 import com.mmt.guitarlab.ui.tab.TabEditorScreen
 import com.mmt.guitarlab.ui.tab.TabViewerScreen
-import com.mmt.guitarlab.ui.theme.ElectricAmber
-import com.mmt.guitarlab.ui.theme.ElectricTeal
-import com.mmt.guitarlab.ui.theme.StudioCardBorder
-import com.mmt.guitarlab.ui.theme.StudioDarkBg
-import com.mmt.guitarlab.ui.theme.StudioTextMuted
-import com.mmt.guitarlab.ui.theme.StudioTextPrimary
-import com.mmt.guitarlab.ui.theme.StudioTextSecondary
+import com.mmt.guitarlab.core.ui.theme.ElectricAmber
+import com.mmt.guitarlab.core.ui.theme.ElectricTeal
+import com.mmt.guitarlab.core.ui.theme.StudioCardBorder
+import com.mmt.guitarlab.core.ui.theme.StudioDarkBg
+import com.mmt.guitarlab.core.ui.theme.StudioTextMuted
+import com.mmt.guitarlab.core.ui.theme.StudioTextPrimary
+import com.mmt.guitarlab.core.ui.theme.StudioTextSecondary
 import com.mmt.guitarlab.ui.tuner.TunerScreen
 import kotlinx.coroutines.launch
 
@@ -154,7 +155,7 @@ enum class AppDest(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GuitarLabApp() {
+fun GuitarLabApp(editorHost: EditorHost) {
     var isTabsFlavor by remember { mutableStateOf(AppFlavorConfig.isTabsFlavor) }
     val availableDests = remember(isTabsFlavor) { AppDest.availableDestinations(isTabsFlavor) }
     val defaultStartDest = remember(isTabsFlavor) {
@@ -376,8 +377,8 @@ fun GuitarLabApp() {
                     )
                 }
                 composable(AppDest.GuitarTabEdit.route) { GuitarTabEditScreen() }
-                composable(AppDest.TuxGuitar.route) { TuxGuitarScreen(onFinish = { navController.popBackStack() }) }
-                composable(AppDest.TuxGuitarReader.route) { TuxGuitarReaderScreen(onFinish = { navController.popBackStack() }) }
+                composable(AppDest.TuxGuitar.route) { TuxGuitarScreen(editorHost, onFinish = { navController.popBackStack() }) }
+                composable(AppDest.TuxGuitarReader.route) { TuxGuitarReaderScreen(editorHost, onFinish = { navController.popBackStack() }) }
                 composable(AppDest.Drums.route) { DrumsScreen() }
                 composable(AppDest.Tuner.route) { TunerScreen() }
                 composable(AppDest.Metronome.route) { MetronomeScreen() }

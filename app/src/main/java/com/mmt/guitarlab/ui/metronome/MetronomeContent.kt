@@ -19,7 +19,7 @@ import com.mmt.guitarlab.domain.model.MetronomeBeat
 import com.mmt.guitarlab.domain.model.MetronomeConfig
 import com.mmt.guitarlab.domain.model.MetronomeSound
 import com.mmt.guitarlab.domain.model.TimeSignature
-import com.mmt.guitarlab.ui.theme.StudioDarkBg
+import com.mmt.guitarlab.core.ui.theme.StudioDarkBg
 
 @Composable
 fun MetronomeContent(

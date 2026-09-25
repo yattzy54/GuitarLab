@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.pickstroke
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -169,7 +171,7 @@ private fun TGPickStrokeDropdownField(
 @Preview(showBackground = true)
 @Composable
 private fun TGPickStrokeDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGPickStrokeDialogContent(
             initialDirection = TGPickStroke.PICK_STROKE_UP,
             options = listOf(

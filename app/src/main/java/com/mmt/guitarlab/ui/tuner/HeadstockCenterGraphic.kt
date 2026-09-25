@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mmt.guitarlab.ui.tab.DrawerItemButton
-import com.mmt.guitarlab.ui.theme.GuitarLabTheme
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 @Composable
 private fun HeadstockCenterGraphic(modifier: Modifier = Modifier) {

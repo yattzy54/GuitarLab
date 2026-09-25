@@ -98,8 +98,8 @@ import com.mmt.guitarlab.domain.model.TabTrack
 import com.mmt.guitarlab.domain.model.TuxGuitarSoundBank
 import com.mmt.guitarlab.ui.components.StudioCard
 import com.mmt.guitarlab.ui.tab.components.AddTrackDialog
-import com.mmt.guitarlab.ui.theme.GuitarLabTheme
-import com.mmt.guitarlab.ui.theme.StudioDarkBg
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+import com.mmt.guitarlab.core.ui.theme.StudioDarkBg
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -6,7 +6,7 @@ import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.mmt.guitarlab.ui.theme.GuitarLabTheme
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 @Preview(showBackground = true)
 @Composable

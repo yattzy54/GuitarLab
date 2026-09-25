@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.transport
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -396,7 +398,7 @@ private fun TransportRadioOption(
 @Preview(showBackground = true)
 @Composable
 private fun TGTransportModeDialogSimplePreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGTransportModeDialogContent(
             initial = TGTransportModeFields(
                 customMode = false,
@@ -422,7 +424,7 @@ private fun TGTransportModeDialogSimplePreview() {
 @Preview(showBackground = true)
 @Composable
 private fun TGTransportModeDialogCustomPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGTransportModeDialogContent(
             initial = TGTransportModeFields(
                 customMode = true,

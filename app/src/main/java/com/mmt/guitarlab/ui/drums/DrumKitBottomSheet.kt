@@ -25,11 +25,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mmt.guitarlab.domain.model.DrumKit
 import com.mmt.guitarlab.domain.model.DrumSound
-import com.mmt.guitarlab.ui.theme.GuitarLabTheme
-import com.mmt.guitarlab.ui.theme.StudioCardBorder
-import com.mmt.guitarlab.ui.theme.StudioDarkBg
-import com.mmt.guitarlab.ui.theme.StudioTextMuted
-import com.mmt.guitarlab.ui.theme.StudioTextPrimary
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+import com.mmt.guitarlab.core.ui.theme.StudioCardBorder
+import com.mmt.guitarlab.core.ui.theme.StudioDarkBg
+import com.mmt.guitarlab.core.ui.theme.StudioTextMuted
+import com.mmt.guitarlab.core.ui.theme.StudioTextPrimary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

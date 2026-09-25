@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="darkestColor">#000000</color>
-    <color name="darkColor">#3a3a3a</color>
-    <color name="mediumColor">#6a6a6a</color>
-    <color name="lightColor">#aaaaaa</color>
-    <color name="lightestColor">#ffffff</color>
+    <color name="darkestColor">@color/guitarlab_background</color>
+    <color name="darkColor">@color/guitarlab_surface</color>
+    <color name="mediumColor">@color/guitarlab_surface_elevated</color>
+    <color name="lightColor">@color/guitarlab_text_secondary</color>
+    <color name="lightestColor">@color/guitarlab_text_primary</color>
 </resources>

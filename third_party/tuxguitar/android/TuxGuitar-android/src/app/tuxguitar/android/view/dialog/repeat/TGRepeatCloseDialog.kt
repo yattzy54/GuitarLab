@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.repeat
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -143,7 +145,7 @@ private fun IntDropdownField(
 @Preview(showBackground = true)
 @Composable
 private fun TGRepeatCloseDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGRepeatCloseDialogContent(
             values = (0..8).toList(),
             initialCount = 3,

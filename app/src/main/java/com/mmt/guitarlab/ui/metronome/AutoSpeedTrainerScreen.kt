@@ -23,8 +23,8 @@ import com.mmt.guitarlab.domain.model.TrainerIntervalKind
 import com.mmt.guitarlab.ui.metronome.components.LiveSpeedProgressCard
 import com.mmt.guitarlab.ui.metronome.components.SoundSelectionCard
 import com.mmt.guitarlab.ui.metronome.components.TrainerSettingsCard
-import com.mmt.guitarlab.ui.theme.GuitarLabTheme
-import com.mmt.guitarlab.ui.theme.StudioDarkBg
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+import com.mmt.guitarlab.core.ui.theme.StudioDarkBg
 
 @Composable
 fun AutoSpeedTrainerScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
