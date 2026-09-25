@@ -1,8 +1,8 @@
 package app.tuxguitar.android.view.dialog.confirm
 
-import app.tuxguitar.android.view.dialog.fragment.TGDialogFragmentController
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogController
 
-class TGConfirmDialogController : TGDialogFragmentController<TGConfirmDialog>() {
+class TGConfirmDialogController : TGComposeBottomSheetDialogController<TGConfirmDialog>() {
     override fun createNewInstance(): TGConfirmDialog = TGConfirmDialog()
 
     companion object {

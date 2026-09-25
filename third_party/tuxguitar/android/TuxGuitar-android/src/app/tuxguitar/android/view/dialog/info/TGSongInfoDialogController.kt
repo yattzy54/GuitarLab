@@ -1,7 +1,7 @@
 package app.tuxguitar.android.view.dialog.info
 
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragmentController
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogController
 
-class TGSongInfoDialogController : TGModalFragmentController<TGSongInfoDialog>() {
+class TGSongInfoDialogController : TGComposeBottomSheetDialogController<TGSongInfoDialog>() {
     override fun createNewInstance(): TGSongInfoDialog = TGSongInfoDialog()
 }
