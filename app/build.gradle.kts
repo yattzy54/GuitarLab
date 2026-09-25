@@ -8,12 +8,12 @@ plugins {
 
 android {
     namespace = "com.mmt.guitarlab"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.mmt.guitarlab"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -57,8 +57,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) // Match your target bytecode version (e.g., JVM_17 or JVM_21)
+        }
     }
 
     buildFeatures {
@@ -97,10 +99,10 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(project(":tuxguitar-android"))
     implementation("androidx.multidex:multidex:2.0.1")
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("androidx.preference:preference:1.1.1")
-    implementation("com.google.android.material:material:1.12.0")
-    implementation("org.apache.commons:commons-compress:1.26.0")
+    implementation("androidx.appcompat:appcompat:1.8.0")
+    implementation("androidx.preference:preference:1.2.1")
+    implementation("com.google.android.material:material:1.14.0")
+    implementation("org.apache.commons:commons-compress:1.28.0")
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)

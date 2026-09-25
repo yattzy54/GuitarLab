@@ -4,7 +4,7 @@ android {
 
 	namespace = 'app.tuxguitar.android.gervill'
 
-	compileSdkVersion 36
+	compileSdkVersion 37
 
 	compileOptions {
 		sourceCompatibility JavaVersion.VERSION_1_9
@@ -13,7 +13,7 @@ android {
 
 	defaultConfig {
 		minSdkVersion 24
-		targetSdkVersion 36
+		targetSdkVersion 37
 		versionCode 1
 		versionName "1.0"
 	}
