@@ -1,120 +1,166 @@
 package app.tuxguitar.android.view.dialog.measure
 
-import android.annotation.SuppressLint
-import android.os.Bundle
-import android.R as AndroidR
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.View
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
-import android.widget.Spinner
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import app.tuxguitar.android.R
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragment
-import app.tuxguitar.android.view.util.TGSelectableItem
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
 import app.tuxguitar.document.TGDocumentContextAttributes
 import app.tuxguitar.editor.action.TGActionProcessor
 import app.tuxguitar.editor.action.measure.TGCleanMeasureListAction
 import app.tuxguitar.song.models.TGMeasure
 import app.tuxguitar.song.models.TGTrack
 
-class TGMeasureCleanDialog : TGModalFragment(R.layout.view_measure_clean_dialog) {
-    override fun onPostCreate(savedInstanceState: Bundle?) {
-        createActionBar(true, false, R.string.measure_clean_dlg_title)
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu, menuInflater: MenuInflater) {
-        menuInflater.inflate(R.menu.menu_modal_fragment_ok, menu)
-        menu.findItem(R.id.action_ok).setOnMenuItemClickListener {
-            processAction()
-            close()
-            true
-        }
-    }
-
-    @SuppressLint("InflateParams")
-    override fun onPostInflateView() {
-        fillRanges()
-    }
-
-    fun createRangeValues(minimum: Int, maximum: Int): Array<TGSelectableItem> =
-        (minimum..maximum).map { TGSelectableItem(it, it.toString()) }.toTypedArray()
-
-    fun fillSpinner(spinner: Spinner, minimum: Int, maximum: Int) {
-        val adapter = ArrayAdapter(
-            requireActivity(),
-            AndroidR.layout.simple_spinner_item,
-            createRangeValues(minimum, maximum)
-        )
-        adapter.setDropDownViewResource(AndroidR.layout.simple_spinner_dropdown_item)
-        spinner.adapter = adapter
-    }
-
-    fun fillRanges() {
-        val minimum = 1
-        val maximum = requireNotNull(getTrack()).countMeasures()
+class TGMeasureCleanDialog : TGComposeBottomSheetDialogFragment() {
+    @Composable
+    override fun SheetContent(onDismiss: () -> Unit) {
+        val track = requireNotNull(getTrack())
         val selection = requireNotNull(getMeasure()).number
-        val spinner1 = requireView().findViewById<Spinner>(R.id.measure_clean_dlg_from_value)
-        val spinner2 = requireView().findViewById<Spinner>(R.id.measure_clean_dlg_to_value)
-        fillSpinner(spinner1, minimum, maximum)
-        fillSpinner(spinner2, minimum, maximum)
-        updateSpinnerSelection(spinner1, selection)
-        updateSpinnerSelection(spinner2, selection)
-        spinner1.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                validateSpinner1Selection(spinner1, spinner2, minimum)
-            }
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-                validateSpinner1Selection(spinner1, spinner2, minimum)
-            }
-        }
-        spinner2.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                validateSpinner2Selection(spinner1, spinner2, maximum)
-            }
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-                validateSpinner2Selection(spinner1, spinner2, maximum)
-            }
-        }
+
+        TGMeasureCleanDialogContent(
+            values = createRangeValues(1, track.countMeasures()),
+            initialFrom = selection,
+            initialTo = selection,
+            onSave = { fromMeasure, toMeasure ->
+                processAction(fromMeasure, toMeasure)
+                onDismiss()
+            },
+            onCancel = onDismiss,
+        )
     }
 
-    fun validateSpinner1Selection(spinner1: Spinner, spinner2: Spinner, minimum: Int) {
-        val first = findSelectedValue(spinner1)
-        val second = findSelectedValue(spinner2)
-        if (first < minimum) updateSpinnerSelection(spinner1, minimum)
-        else if (first > second) updateSpinnerSelection(spinner1, second)
-    }
+    fun createRangeValues(minimum: Int, maximum: Int): List<Int> = (minimum..maximum).toList()
 
-    fun validateSpinner2Selection(spinner1: Spinner, spinner2: Spinner, maximum: Int) {
-        val first = findSelectedValue(spinner1)
-        val second = findSelectedValue(spinner2)
-        if (second < first) updateSpinnerSelection(spinner2, first)
-        else if (second > maximum) updateSpinnerSelection(spinner2, first)
-    }
-
-    fun findSelectedMeasure1(): Int =
-        findSelectedValue(requireView().findViewById(R.id.measure_clean_dlg_from_value))
-
-    fun findSelectedMeasure2(): Int =
-        findSelectedValue(requireView().findViewById(R.id.measure_clean_dlg_to_value))
-
-    fun findSelectedValue(spinner: Spinner): Int =
-        (spinner.selectedItem as TGSelectableItem).item as Int
-
-    fun updateSpinnerSelection(spinner: Spinner, selection: Int) {
-        @Suppress("UNCHECKED_CAST")
-        val adapter = spinner.adapter as ArrayAdapter<TGSelectableItem>
-        spinner.setSelection(adapter.getPosition(TGSelectableItem(selection, null)), false)
-    }
-
-    fun processAction() {
+    fun processAction(measureNumber1: Int, measureNumber2: Int) {
         val processor = TGActionProcessor(findContext(), TGCleanMeasureListAction.NAME)
         processor.setAttribute(TGDocumentContextAttributes.ATTRIBUTE_TRACK, getTrack())
-        processor.setAttribute(TGCleanMeasureListAction.ATTRIBUTE_MEASURE_NUMBER_1, findSelectedMeasure1())
-        processor.setAttribute(TGCleanMeasureListAction.ATTRIBUTE_MEASURE_NUMBER_2, findSelectedMeasure2())
+        processor.setAttribute(TGCleanMeasureListAction.ATTRIBUTE_MEASURE_NUMBER_1, measureNumber1)
+        processor.setAttribute(TGCleanMeasureListAction.ATTRIBUTE_MEASURE_NUMBER_2, measureNumber2)
         processor.process()
     }
 
     fun getTrack(): TGTrack? = getAttribute(TGDocumentContextAttributes.ATTRIBUTE_TRACK)
     fun getMeasure(): TGMeasure? = getAttribute(TGDocumentContextAttributes.ATTRIBUTE_MEASURE)
+}
+
+@Composable
+fun TGMeasureCleanDialogContent(
+    values: List<Int>,
+    initialFrom: Int,
+    initialTo: Int,
+    onSave: (Int, Int) -> Unit,
+    onCancel: () -> Unit,
+) {
+    var fromMeasure by remember { mutableStateOf(initialFrom) }
+    var toMeasure by remember { mutableStateOf(initialTo) }
+
+    Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
+        Text(
+            text = stringResource(R.string.measure_clean_dlg_title),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(bottom = 16.dp),
+        )
+
+        IntDropdownField(
+            label = stringResource(R.string.measure_clean_dlg_from_label),
+            options = values,
+            selected = fromMeasure,
+            onSelect = { selected -> fromMeasure = selected.coerceAtMost(toMeasure) },
+        )
+        IntDropdownField(
+            label = stringResource(R.string.measure_clean_dlg_to_label),
+            options = values,
+            selected = toMeasure,
+            onSelect = { selected -> toMeasure = selected.coerceAtLeast(fromMeasure) },
+            modifier = Modifier.padding(top = 12.dp),
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            horizontalArrangement = Arrangement.End,
+        ) {
+            TextButton(onClick = onCancel) {
+                Text(stringResource(R.string.global_button_cancel))
+            }
+            TextButton(onClick = { onSave(fromMeasure, toMeasure) }) {
+                Text(stringResource(R.string.global_button_ok))
+            }
+        }
+    }
+}
+
+@Composable
+private fun IntDropdownField(
+    label: String,
+    options: List<Int>,
+    selected: Int,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(modifier = modifier) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(bottom = 8.dp),
+        )
+        Box(modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(
+                onClick = { expanded = true },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(selected.toString())
+            }
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.fillMaxWidth(0.75f),
+            ) {
+                options.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option.toString()) },
+                        onClick = {
+                            onSelect(option)
+                            expanded = false
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TGMeasureCleanDialogContentPreview() {
+    MaterialTheme {
+        TGMeasureCleanDialogContent(
+            values = (1..8).toList(),
+            initialFrom = 3,
+            initialTo = 5,
+            onSave = { _, _ -> },
+            onCancel = {},
+        )
+    }
 }

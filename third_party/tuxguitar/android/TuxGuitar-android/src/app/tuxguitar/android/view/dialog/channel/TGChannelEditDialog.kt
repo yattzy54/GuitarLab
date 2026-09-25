@@ -1,22 +1,44 @@
 package app.tuxguitar.android.view.dialog.channel
 
-import android.annotation.SuppressLint
-import android.os.Bundle
-import android.view.View
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
-import android.widget.CheckBox
-import android.widget.CompoundButton
-import android.widget.EditText
-import android.widget.SeekBar
-import android.widget.Spinner
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import app.tuxguitar.android.R
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragment
-import app.tuxguitar.android.view.util.TGSelectableItem
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
+import app.tuxguitar.android.view.dialog.compose.TGDialogDropdownField
+import app.tuxguitar.android.view.dialog.compose.TGDialogSliderField
+import app.tuxguitar.android.view.dialog.compose.TGDropdownOption
 import app.tuxguitar.document.TGDocumentContextAttributes
 import app.tuxguitar.editor.TGEditorManager
 import app.tuxguitar.editor.action.TGActionProcessor
 import app.tuxguitar.editor.action.channel.TGUpdateChannelAction
+import app.tuxguitar.editor.event.TGUpdateEvent
+import app.tuxguitar.event.TGEvent
 import app.tuxguitar.event.TGEventListener
 import app.tuxguitar.player.base.MidiInstrument
 import app.tuxguitar.player.base.MidiPlayer
@@ -24,353 +46,409 @@ import app.tuxguitar.song.managers.TGSongManager
 import app.tuxguitar.song.models.TGChannel
 import app.tuxguitar.song.models.TGSong
 
-class TGChannelEditDialog : TGModalFragment(R.layout.view_channel_edit_dialog) {
-    private var eventListener: TGEventListener? = null
-    private lateinit var instrumentPrograms: ArrayAdapter<TGSelectableItem>
-    private lateinit var percussionPrograms: ArrayAdapter<TGSelectableItem>
+data class TGChannelEditFields(
+    val name: String,
+    val program: Short,
+    val bank: Short,
+    val percussion: Boolean,
+    val percussionEnabled: Boolean,
+    val bankEnabled: Boolean,
+    val volume: Int,
+    val balance: Int,
+    val reverb: Int,
+    val chorus: Int,
+    val phaser: Int,
+    val tremolo: Int,
+)
 
-    fun getChannel(): TGChannel =
-        requireNotNull(getAttribute(TGDocumentContextAttributes.ATTRIBUTE_CHANNEL))
+class TGChannelEditDialog : TGComposeBottomSheetDialogFragment() {
+    @Composable
+    override fun SheetContent(onDismiss: () -> Unit) {
+        val instrumentPrograms = remember { createInstrumentProgramOptions() }
+        val percussionPrograms = remember { createPercussionProgramOptions() }
+        val bankOptions = remember { createBankOptions() }
+        var fields by remember { mutableStateOf(createFields()) }
 
-    override fun onPostCreate(savedInstanceState: Bundle?) {
-        createActionBar(false, false, R.string.channel_edit_dlg_title)
-    }
+        fun refresh() {
+            fields = createFields()
+        }
 
-    @SuppressLint("InflateParams")
-    override fun onPostInflateView() {
-        eventListener = TGChannelEditEventListener(this)
-        fillProgramAdapters()
-        fillBanks()
-        updateItems()
-    }
+        fun processNameIfNeeded(name: String) {
+            if (name != getChannel().getName()) {
+                createUpdateChannelAction(name).process()
+                refresh()
+            }
+        }
 
-    override fun onShowView() {
-        appendListeners()
-    }
+        DisposableEffect(Unit) {
+            val listener = object : TGEventListener {
+                override fun processEvent(event: TGEvent) {
+                    if (TGUpdateEvent.EVENT_TYPE == event.eventType) {
+                        val type = event.getAttribute<Int>(TGUpdateEvent.PROPERTY_UPDATE_MODE)
+                        if (type == TGUpdateEvent.SELECTION) {
+                            findActivity().runOnUiThread { refresh() }
+                        }
+                    }
+                }
+            }
+            TGEditorManager.getInstance(findContext()).addUpdateListener(listener)
+            onDispose {
+                TGEditorManager.getInstance(findContext()).removeUpdateListener(listener)
+                processNameIfNeeded(fields.name)
+            }
+        }
 
-    override fun onHideView() {
-        removeListeners()
-    }
-
-    fun updateItems() {
-        updateStates()
-        fillPrograms()
-        fillNameValue()
-        fillBankValue()
-        fillProgramValue()
-        fillPercussionValue()
-        fillVolumeValue()
-        fillBalanceValue()
-        fillReverbValue()
-        fillChorusValue()
-        fillPhaserValue()
-        fillTremoloValue()
-    }
-
-    fun updateStates() {
-        val songManager = requireNotNull(
-            getAttribute<TGSongManager>(TGDocumentContextAttributes.ATTRIBUTE_SONG_MANAGER)
+        val programOptions = if (fields.percussion) percussionPrograms else instrumentPrograms
+        TGChannelEditDialogContent(
+            state = fields,
+            programOptions = programOptions,
+            bankOptions = bankOptions,
+            onNameChange = { fields = fields.copy(name = it) },
+            onNameCommit = { name -> processNameIfNeeded(name) },
+            onProgramChange = { program ->
+                fields = fields.copy(program = program)
+                createUpdateAttributeAction(fields.name, TGUpdateChannelAction.ATTRIBUTE_PROGRAM, program).process()
+                refresh()
+            },
+            onBankChange = { bank ->
+                fields = fields.copy(bank = bank)
+                if (!fields.percussion) {
+                    createUpdateAttributeAction(fields.name, TGUpdateChannelAction.ATTRIBUTE_BANK, bank).process()
+                    refresh()
+                }
+            },
+            onPercussionChange = { percussion ->
+                fields = fields.copy(percussion = percussion)
+                createUpdatePercussionAction(fields.name, percussion).process()
+                refresh()
+            },
+            onVolumeChange = { value ->
+                if (value != fields.volume) {
+                    fields = fields.copy(volume = value)
+                    createUpdateAttributeAction(fields.name, TGUpdateChannelAction.ATTRIBUTE_VOLUME, value.toShort()).process()
+                    refresh()
+                }
+            },
+            onBalanceChange = { value ->
+                if (value != fields.balance) {
+                    fields = fields.copy(balance = value)
+                    createUpdateAttributeAction(fields.name, TGUpdateChannelAction.ATTRIBUTE_BALANCE, value.toShort()).process()
+                    refresh()
+                }
+            },
+            onReverbChange = { value ->
+                if (value != fields.reverb) {
+                    fields = fields.copy(reverb = value)
+                    createUpdateAttributeAction(fields.name, TGUpdateChannelAction.ATTRIBUTE_REVERB, value.toShort()).process()
+                    refresh()
+                }
+            },
+            onChorusChange = { value ->
+                if (value != fields.chorus) {
+                    fields = fields.copy(chorus = value)
+                    createUpdateAttributeAction(fields.name, TGUpdateChannelAction.ATTRIBUTE_CHORUS, value.toShort()).process()
+                    refresh()
+                }
+            },
+            onPhaserChange = { value ->
+                if (value != fields.phaser) {
+                    fields = fields.copy(phaser = value)
+                    createUpdateAttributeAction(fields.name, TGUpdateChannelAction.ATTRIBUTE_PHASER, value.toShort()).process()
+                    refresh()
+                }
+            },
+            onTremoloChange = { value ->
+                if (value != fields.tremolo) {
+                    fields = fields.copy(tremolo = value)
+                    createUpdateAttributeAction(fields.name, TGUpdateChannelAction.ATTRIBUTE_TREMOLO, value.toShort()).process()
+                    refresh()
+                }
+            },
+            onDismiss = {
+                processNameIfNeeded(fields.name)
+                onDismiss()
+            },
         )
+    }
+
+    private fun createFields(): TGChannelEditFields {
+        val songManager = requireNotNull(getAttribute<TGSongManager>(TGDocumentContextAttributes.ATTRIBUTE_SONG_MANAGER))
         val song = requireNotNull(getAttribute<TGSong>(TGDocumentContextAttributes.ATTRIBUTE_SONG))
         val channel = getChannel()
         val percussionChannel = channel.isPercussionChannel()
         val anyPercussionChannel = songManager.isAnyPercussionChannel(song)
-        val anyTrackConnectedToChannel =
-            songManager.isAnyTrackConnectedToChannel(song, channel.getChannelId())
-        setViewEnabled(
-            R.id.channel_edit_dlg_percussion_value,
-            !anyTrackConnectedToChannel && (!anyPercussionChannel || percussionChannel)
+        val anyTrackConnectedToChannel = songManager.isAnyTrackConnectedToChannel(song, channel.getChannelId())
+        return TGChannelEditFields(
+            name = channel.getName(),
+            program = channel.getProgram(),
+            bank = channel.getBank(),
+            percussion = percussionChannel,
+            percussionEnabled = !anyTrackConnectedToChannel && (!anyPercussionChannel || percussionChannel),
+            bankEnabled = !percussionChannel,
+            volume = channel.getVolume().toInt(),
+            balance = channel.getBalance().toInt(),
+            reverb = channel.getReverb().toInt(),
+            chorus = channel.getChorus().toInt(),
+            phaser = channel.getPhaser().toInt(),
+            tremolo = channel.getTremolo().toInt(),
         )
-        setViewEnabled(R.id.channel_edit_dlg_bank_value, !percussionChannel)
     }
 
-    fun appendListeners() {
-        requireView().findViewById<View>(R.id.channel_edit_dlg_name_value)
-            .onFocusChangeListener = createNameFocusChangeListener()
-        requireView().findViewById<Spinner>(R.id.channel_edit_dlg_bank_value)
-            .onItemSelectedListener = createBankSelectedListener()
-        requireView().findViewById<Spinner>(R.id.channel_edit_dlg_program_value)
-            .onItemSelectedListener = createProgramSelectedListener()
-        requireView().findViewById<CheckBox>(R.id.channel_edit_dlg_percussion_value)
-            .setOnCheckedChangeListener(createPercussionChangeListener())
-        requireView().findViewById<SeekBar>(R.id.channel_edit_dlg_volume_value)
-            .setOnSeekBarChangeListener(createVolumeChangeListener())
-        requireView().findViewById<SeekBar>(R.id.channel_edit_dlg_balance_value)
-            .setOnSeekBarChangeListener(createBalanceChangeListener())
-        requireView().findViewById<SeekBar>(R.id.channel_edit_dlg_reverb_value)
-            .setOnSeekBarChangeListener(createReverbChangeListener())
-        requireView().findViewById<SeekBar>(R.id.channel_edit_dlg_chorus_value)
-            .setOnSeekBarChangeListener(createChorusChangeListener())
-        requireView().findViewById<SeekBar>(R.id.channel_edit_dlg_phaser_value)
-            .setOnSeekBarChangeListener(createPhaserChangeListener())
-        requireView().findViewById<SeekBar>(R.id.channel_edit_dlg_tremolo_value)
-            .setOnSeekBarChangeListener(createTremoloChangeListener())
-        TGEditorManager.getInstance(findContext())
-            .addUpdateListener(requireNotNull(eventListener))
-    }
-
-    fun removeListeners() {
-        eventListener?.let { TGEditorManager.getInstance(findContext()).removeUpdateListener(it) }
-    }
-
-    fun createUnamedPrograms(): List<TGSelectableItem> =
+    private fun createUnnamedPrograms(): List<TGDropdownOption<Short>> =
         (0 until 128).map { value ->
             val shortValue = value.toShort()
-            TGSelectableItem(
-                shortValue,
-                getString(R.string.channel_edit_dlg_program_value, shortValue)
-            )
+            TGDropdownOption(shortValue, findActivity().getString(R.string.channel_edit_dlg_program_value, shortValue))
         }
 
-    fun createInstrumentPrograms(): List<TGSelectableItem> {
+    private fun createInstrumentProgramOptions(): List<TGDropdownOption<Short>> {
         val instruments: Array<MidiInstrument>? = MidiPlayer.getInstance(findContext()).instruments
-        if (instruments == null) return createUnamedPrograms()
+        if (instruments == null) {
+            return createUnnamedPrograms()
+        }
         return instruments.take(128).mapIndexed { index, instrument ->
-            TGSelectableItem(index.toShort(), instrument.getName())
+            TGDropdownOption(index.toShort(), instrument.getName())
         }
     }
 
-    fun fillProgramAdapters() {
-        instrumentPrograms = ArrayAdapter(
-            requireActivity(),
-            android.R.layout.simple_spinner_item,
-            createInstrumentPrograms()
-        ).apply { setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
-        percussionPrograms = ArrayAdapter(
-            requireActivity(),
-            android.R.layout.simple_spinner_item,
-            createUnamedPrograms()
-        ).apply { setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
-    }
+    private fun createPercussionProgramOptions(): List<TGDropdownOption<Short>> = createUnnamedPrograms()
 
-    fun fillPrograms() {
-        updateSpinnerAdapter(
-            R.id.channel_edit_dlg_program_value,
-            if (getChannel().isPercussionChannel()) percussionPrograms else instrumentPrograms
-        )
-    }
-
-    fun fillProgramValue() {
-        updateSpinnerValue(R.id.channel_edit_dlg_program_value, getChannel().getProgram().toShort())
-    }
-
-    fun findSelectedProgram(): Short =
-        (getSpinnerValue(R.id.channel_edit_dlg_program_value)?.getItem() as Number).toShort()
-
-    fun createBankValues(): List<TGSelectableItem> =
+    private fun createBankOptions(): List<TGDropdownOption<Short>> =
         (0 until 128).map { value ->
             val shortValue = value.toShort()
-            TGSelectableItem(shortValue, getString(R.string.channel_edit_dlg_bank_value, shortValue))
+            TGDropdownOption(shortValue, findActivity().getString(R.string.channel_edit_dlg_bank_value, shortValue))
         }
 
-    fun fillBanks() {
-        val adapter = ArrayAdapter(
-            requireActivity(),
-            android.R.layout.simple_spinner_item,
-            createBankValues()
-        )
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        updateSpinnerAdapter(R.id.channel_edit_dlg_bank_value, adapter)
-    }
-
-    fun fillBankValue() {
-        updateSpinnerValue(R.id.channel_edit_dlg_bank_value, getChannel().getBank().toShort())
-    }
-
-    fun findSelectedBank(): Short =
-        (getSpinnerValue(R.id.channel_edit_dlg_bank_value)?.getItem() as Number).toShort()
-
-    fun fillNameValue() {
-        setTextFieldValue(R.id.channel_edit_dlg_name_value, getChannel().getName())
-    }
-
-    fun findNameValue(): String = getTextFieldValue(R.id.channel_edit_dlg_name_value)
-
-    fun fillPercussionValue() {
-        setCheckBoxValue(R.id.channel_edit_dlg_percussion_value, getChannel().isPercussionChannel())
-    }
-
-    fun findPercussionValue(): Boolean =
-        getCheckBoxValue(R.id.channel_edit_dlg_percussion_value)
-
-    fun fillVolumeValue() {
-        setSeekBarValue(R.id.channel_edit_dlg_volume_value, getChannel().getVolume().toInt())
-    }
-
-    fun fillBalanceValue() {
-        setSeekBarValue(R.id.channel_edit_dlg_balance_value, getChannel().getBalance().toInt())
-    }
-
-    fun fillReverbValue() {
-        setSeekBarValue(R.id.channel_edit_dlg_reverb_value, getChannel().getReverb().toInt())
-    }
-
-    fun fillChorusValue() {
-        setSeekBarValue(R.id.channel_edit_dlg_chorus_value, getChannel().getChorus().toInt())
-    }
-
-    fun fillPhaserValue() {
-        setSeekBarValue(R.id.channel_edit_dlg_phaser_value, getChannel().getPhaser().toInt())
-    }
-
-    fun fillTremoloValue() {
-        setSeekBarValue(R.id.channel_edit_dlg_tremolo_value, getChannel().getTremolo().toInt())
-    }
-
-    fun setViewEnabled(id: Int, enabled: Boolean) {
-        requireView().findViewById<View>(id).isEnabled = enabled
-    }
-
-    fun updateSpinnerValue(id: Int, value: Any?) {
-        setSpinnerValue(id, TGSelectableItem(value, null))
-    }
-
-    fun updateSpinnerAdapter(id: Int, adapter: ArrayAdapter<TGSelectableItem>) {
-        val spinner = requireView().findViewById<Spinner>(id)
-        if (!isSameValue(adapter, spinner.adapter)) spinner.adapter = adapter
-    }
-
-    fun setTextFieldValue(id: Int, value: String) {
-        if (!isSameValue(value, getTextFieldValue(id))) {
-            requireView().findViewById<EditText>(id).setText(value)
-        }
-    }
-
-    fun getTextFieldValue(id: Int): String =
-        requireView().findViewById<EditText>(id).text.toString()
-
-    fun setCheckBoxValue(id: Int, value: Boolean?) {
-        if (!isSameValue(value, getCheckBoxValue(id))) {
-            requireView().findViewById<CheckBox>(id).isChecked =
-                requireNotNull(value) { "Checkbox value cannot be null" }
-        }
-    }
-
-    fun getCheckBoxValue(id: Int): Boolean =
-        requireView().findViewById<CheckBox>(id).isChecked
-
-    fun getSpinnerValue(id: Int): TGSelectableItem? =
-        requireView().findViewById<Spinner>(id).selectedItem as? TGSelectableItem
-
-    fun setSpinnerValue(id: Int, selectedItem: TGSelectableItem?) {
-        if (!isSameValue(selectedItem, getSpinnerValue(id))) {
-            val spinner = requireView().findViewById<Spinner>(id)
-            @Suppress("UNCHECKED_CAST")
-            spinner.setSelection(
-                (spinner.adapter as ArrayAdapter<TGSelectableItem>).getPosition(selectedItem),
-                false
-            )
-        }
-    }
-
-    fun getSeekBarValue(id: Int): Int =
-        requireView().findViewById<SeekBar>(id).progress
-
-    fun setSeekBarValue(id: Int, value: Int?) {
-        if (!isSameValue(value, getSeekBarValue(id))) {
-            requireView().findViewById<SeekBar>(id).progress =
-                requireNotNull(value) { "Seek bar value cannot be null" }
-        }
-    }
-
-    fun isSameValue(v1: Any?, v2: Any?): Boolean = v1 === v2 || (v1 != null && v1 == v2)
-
-    fun isChannelNameUpdated(): Boolean = findNameValue() != getChannel().getName()
-
-    fun createUpdateChannelAction(): TGActionProcessor =
+    private fun createUpdateChannelAction(name: String): TGActionProcessor =
         TGActionProcessor(findContext(), TGUpdateChannelAction.NAME).apply {
             setAttribute(TGDocumentContextAttributes.ATTRIBUTE_CHANNEL, getChannel())
-            setAttribute(TGUpdateChannelAction.ATTRIBUTE_NAME, findNameValue())
+            setAttribute(TGUpdateChannelAction.ATTRIBUTE_NAME, name)
         }
 
-    fun createUpdateAttributteAction(attributeName: String, attributeValue: Any?): TGActionProcessor =
-        createUpdateChannelAction().apply { setAttribute(attributeName, attributeValue) }
+    private fun createUpdateAttributeAction(name: String, attributeName: String, attributeValue: Any?): TGActionProcessor =
+        createUpdateChannelAction(name).apply { setAttribute(attributeName, attributeValue) }
 
-    fun createUpdateBankAction(): TGActionProcessor =
-        createUpdateAttributteAction(TGUpdateChannelAction.ATTRIBUTE_BANK, findSelectedBank())
-
-    fun createUpdateProgramAction(): TGActionProcessor =
-        createUpdateAttributteAction(TGUpdateChannelAction.ATTRIBUTE_PROGRAM, findSelectedProgram())
-
-    fun createUpdatePercussionAction(): TGActionProcessor {
-        val percussion = findPercussionValue()
+    private fun createUpdatePercussionAction(name: String, percussion: Boolean): TGActionProcessor {
         val bank = if (percussion) TGChannel.DEFAULT_PERCUSSION_BANK else TGChannel.DEFAULT_BANK
-        val program =
-            if (percussion) TGChannel.DEFAULT_PERCUSSION_PROGRAM else TGChannel.DEFAULT_PROGRAM
-        return createUpdateChannelAction().apply {
+        val program = if (percussion) TGChannel.DEFAULT_PERCUSSION_PROGRAM else TGChannel.DEFAULT_PROGRAM
+        return createUpdateChannelAction(name).apply {
             setAttribute(TGUpdateChannelAction.ATTRIBUTE_BANK, bank)
             setAttribute(TGUpdateChannelAction.ATTRIBUTE_PROGRAM, program)
         }
     }
 
-    fun createNameFocusChangeListener(): View.OnFocusChangeListener =
-        View.OnFocusChangeListener { _, hasFocus ->
-            if (!hasFocus && isChannelNameUpdated()) createUpdateChannelAction().process()
+    fun getChannel(): TGChannel =
+        requireNotNull(getAttribute(TGDocumentContextAttributes.ATTRIBUTE_CHANNEL))
+}
+
+@Composable
+fun TGChannelEditDialogContent(
+    state: TGChannelEditFields,
+    programOptions: List<TGDropdownOption<Short>>,
+    bankOptions: List<TGDropdownOption<Short>>,
+    onNameChange: (String) -> Unit,
+    onNameCommit: (String) -> Unit,
+    onProgramChange: (Short) -> Unit,
+    onBankChange: (Short) -> Unit,
+    onPercussionChange: (Boolean) -> Unit,
+    onVolumeChange: (Int) -> Unit,
+    onBalanceChange: (Int) -> Unit,
+    onReverbChange: (Int) -> Unit,
+    onChorusChange: (Int) -> Unit,
+    onPhaserChange: (Int) -> Unit,
+    onTremoloChange: (Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .padding(horizontal = 24.dp, vertical = 16.dp)
+            .heightIn(max = 600.dp)
+            .verticalScroll(rememberScrollState()),
+    ) {
+        Text(
+            text = stringResource(R.string.channel_edit_dlg_title),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(bottom = 16.dp),
+        )
+
+        OutlinedTextField(
+            value = state.name,
+            onValueChange = onNameChange,
+            label = { Text(stringResource(R.string.channel_edit_dlg_name_label)) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.Sentences,
+                imeAction = ImeAction.Done,
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged {
+                    if (!it.isFocused) {
+                        onNameCommit(state.name)
+                    }
+                },
+        )
+        TGDialogDropdownField(
+            label = stringResource(R.string.channel_edit_dlg_program_label),
+            selectedOption = programOptions.firstOrNull { it.value == state.program } ?: programOptions.first(),
+            options = programOptions,
+            onSelected = { onProgramChange(it.value) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp),
+        )
+        TGDialogDropdownField(
+            label = stringResource(R.string.channel_edit_dlg_bank_label),
+            selectedOption = bankOptions.first { it.value == state.bank },
+            options = bankOptions,
+            onSelected = { onBankChange(it.value) },
+            enabled = state.bankEnabled,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp),
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Checkbox(
+                checked = state.percussion,
+                enabled = state.percussionEnabled,
+                onCheckedChange = onPercussionChange,
+            )
+            Text(text = stringResource(R.string.channel_edit_dlg_percussion_label))
         }
 
-    fun createProgramSelectedListener(): AdapterView.OnItemSelectedListener =
-        object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>?,
-                view: View?,
-                position: Int,
-                id: Long
-            ) {
-                createUpdateProgramAction().process()
-            }
+        TGDialogSliderField(
+            label = stringResource(R.string.channel_edit_dlg_volume_label),
+            value = state.volume,
+            onValueChange = onVolumeChange,
+            modifier = Modifier.padding(top = 16.dp),
+        )
+        TGDialogSliderField(
+            label = stringResource(R.string.channel_edit_dlg_balance_label),
+            value = state.balance,
+            onValueChange = onBalanceChange,
+            modifier = Modifier.padding(top = 12.dp),
+        )
+        TGDialogSliderField(
+            label = stringResource(R.string.channel_edit_dlg_reverb_label),
+            value = state.reverb,
+            onValueChange = onReverbChange,
+            modifier = Modifier.padding(top = 12.dp),
+        )
+        TGDialogSliderField(
+            label = stringResource(R.string.channel_edit_dlg_chorus_label),
+            value = state.chorus,
+            onValueChange = onChorusChange,
+            modifier = Modifier.padding(top = 12.dp),
+        )
+        TGDialogSliderField(
+            label = stringResource(R.string.channel_edit_dlg_phaser_label),
+            value = state.phaser,
+            onValueChange = onPhaserChange,
+            modifier = Modifier.padding(top = 12.dp),
+        )
+        TGDialogSliderField(
+            label = stringResource(R.string.channel_edit_dlg_tremolo_label),
+            value = state.tremolo,
+            onValueChange = onTremoloChange,
+            modifier = Modifier.padding(top = 12.dp),
+        )
 
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-                createUpdateProgramAction().process()
-            }
-        }
-
-    fun createBankSelectedListener(): AdapterView.OnItemSelectedListener =
-        object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>?,
-                view: View?,
-                position: Int,
-                id: Long
-            ) {
-                if (!getChannel().isPercussionChannel()) createUpdateBankAction().process()
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-                if (!getChannel().isPercussionChannel()) createUpdateBankAction().process()
-            }
-        }
-
-    fun createPercussionChangeListener(): CompoundButton.OnCheckedChangeListener =
-        CompoundButton.OnCheckedChangeListener { _, _ -> createUpdatePercussionAction().process() }
-
-    private fun createVolumeChangeListener(): SeekBar.OnSeekBarChangeListener =
-        createShortLevelChangeListener(TGUpdateChannelAction.ATTRIBUTE_VOLUME)
-
-    private fun createBalanceChangeListener(): SeekBar.OnSeekBarChangeListener =
-        createShortLevelChangeListener(TGUpdateChannelAction.ATTRIBUTE_BALANCE)
-
-    private fun createReverbChangeListener(): SeekBar.OnSeekBarChangeListener =
-        createShortLevelChangeListener(TGUpdateChannelAction.ATTRIBUTE_REVERB)
-
-    private fun createChorusChangeListener(): SeekBar.OnSeekBarChangeListener =
-        createShortLevelChangeListener(TGUpdateChannelAction.ATTRIBUTE_CHORUS)
-
-    private fun createPhaserChangeListener(): SeekBar.OnSeekBarChangeListener =
-        createShortLevelChangeListener(TGUpdateChannelAction.ATTRIBUTE_PHASER)
-
-    private fun createTremoloChangeListener(): SeekBar.OnSeekBarChangeListener =
-        createShortLevelChangeListener(TGUpdateChannelAction.ATTRIBUTE_TREMOLO)
-
-    private fun createShortLevelChangeListener(attribute: String): SeekBar.OnSeekBarChangeListener =
-        object : SeekBar.OnSeekBarChangeListener {
-            override fun onStartTrackingTouch(seekBar: SeekBar) = Unit
-
-            override fun onStopTrackingTouch(seekBar: SeekBar) = Unit
-
-            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                if (progress in 0..127) {
-                    createUpdateAttributteAction(attribute, progress.toShort()).process()
-                }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            horizontalArrangement = Arrangement.End,
+        ) {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.global_button_ok))
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TGChannelEditDialogPreview() {
+    MaterialTheme {
+        TGChannelEditDialogContent(
+            state = TGChannelEditFields(
+                name = "Clean Guitar",
+                program = 27,
+                bank = 0,
+                percussion = false,
+                percussionEnabled = true,
+                bankEnabled = true,
+                volume = 110,
+                balance = 64,
+                reverb = 20,
+                chorus = 12,
+                phaser = 0,
+                tremolo = 0,
+            ),
+            programOptions = listOf(
+                TGDropdownOption(27, "Electric Guitar (clean)"),
+                TGDropdownOption(28, "Electric Guitar (muted)"),
+            ),
+            bankOptions = listOf(
+                TGDropdownOption(0, "Bank #0"),
+                TGDropdownOption(1, "Bank #1"),
+            ),
+            onNameChange = {},
+            onNameCommit = {},
+            onProgramChange = {},
+            onBankChange = {},
+            onPercussionChange = {},
+            onVolumeChange = {},
+            onBalanceChange = {},
+            onReverbChange = {},
+            onChorusChange = {},
+            onPhaserChange = {},
+            onTremoloChange = {},
+            onDismiss = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TGChannelEditDialogPercussionPreview() {
+    MaterialTheme {
+        TGChannelEditDialogContent(
+            state = TGChannelEditFields(
+                name = "Percussion",
+                program = 0,
+                bank = TGChannel.DEFAULT_PERCUSSION_BANK,
+                percussion = true,
+                percussionEnabled = true,
+                bankEnabled = false,
+                volume = 127,
+                balance = 64,
+                reverb = 0,
+                chorus = 0,
+                phaser = 0,
+                tremolo = 0,
+            ),
+            programOptions = listOf(
+                TGDropdownOption(0, "Instrument #0"),
+                TGDropdownOption(1, "Instrument #1"),
+            ),
+            bankOptions = listOf(TGDropdownOption(TGChannel.DEFAULT_PERCUSSION_BANK, "Bank #128")),
+            onNameChange = {},
+            onNameCommit = {},
+            onProgramChange = {},
+            onBankChange = {},
+            onPercussionChange = {},
+            onVolumeChange = {},
+            onBalanceChange = {},
+            onReverbChange = {},
+            onChorusChange = {},
+            onPhaserChange = {},
+            onTremoloChange = {},
+            onDismiss = {},
+        )
+    }
 }

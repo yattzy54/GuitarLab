@@ -1,7 +1,7 @@
 package app.tuxguitar.android.view.dialog.clef
 
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragmentController
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogController
 
-class TGClefDialogController : TGModalFragmentController<TGClefDialog>() {
+class TGClefDialogController : TGComposeBottomSheetDialogController<TGClefDialog>() {
     override fun createNewInstance(): TGClefDialog = TGClefDialog()
 }

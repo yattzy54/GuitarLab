@@ -1,60 +1,52 @@
 package app.tuxguitar.android.view.dialog.text
 
-import android.annotation.SuppressLint
-import android.os.Bundle
-import android.view.Menu
-import android.view.MenuInflater
-import android.widget.EditText
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import app.tuxguitar.android.R
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragment
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
 import app.tuxguitar.document.TGDocumentContextAttributes
 import app.tuxguitar.editor.action.TGActionProcessor
 import app.tuxguitar.editor.action.note.TGInsertTextAction
 import app.tuxguitar.editor.action.note.TGRemoveTextAction
 import app.tuxguitar.song.models.TGBeat
 
-class TGTextDialog : TGModalFragment(R.layout.view_text_dialog) {
-    override fun onPostCreate(savedInstanceState: Bundle?) {
-        createActionBar(true, false, R.string.text_dlg_title)
+class TGTextDialog : TGComposeBottomSheetDialogFragment() {
+    @Composable
+    override fun SheetContent(onDismiss: () -> Unit) {
+        TGTextDialogContent(
+            initialText = getBeat()?.text?.value.orEmpty(),
+            onSave = { text ->
+                doInsertText(text)
+                onDismiss()
+            },
+            onClean = {
+                doRemoveText()
+                onDismiss()
+            },
+            onCancel = onDismiss,
+        )
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, menuInflater: MenuInflater) {
-        menuInflater.inflate(R.menu.menu_modal_fragment_ok_clean, menu)
-        menu.findItem(R.id.action_ok).setOnMenuItemClickListener {
-            doInsertText()
-            close()
-            true
-        }
-        menu.findItem(R.id.action_clean).setOnMenuItemClickListener {
-            doRemoveText()
-            close()
-            true
-        }
-    }
-
-    @SuppressLint("InflateParams")
-    override fun onPostInflateView() {
-        fillTextValue()
-    }
-
-    fun setTextFieldValue(textFieldId: Int, value: String?) {
-        requireView().findViewById<EditText>(textFieldId).text.append(value)
-    }
-
-    fun getTextFieldValue(textFieldId: Int): String =
-        requireView().findViewById<EditText>(textFieldId).text.toString()
-
-    fun fillTextValue() {
-        val text = getBeat()?.text?.value ?: ""
-        setTextFieldValue(R.id.text_dlg_value, text)
-    }
-
-    fun findTextValue(): String = getTextFieldValue(R.id.text_dlg_value)
-
-    fun doInsertText() {
+    fun doInsertText(text: String) {
         val processor = TGActionProcessor(findContext(), TGInsertTextAction.NAME)
         processor.setAttribute(TGDocumentContextAttributes.ATTRIBUTE_BEAT, getBeat())
-        processor.setAttribute(TGInsertTextAction.ATTRIBUTE_TEXT_VALUE, findTextValue())
+        processor.setAttribute(TGInsertTextAction.ATTRIBUTE_TEXT_VALUE, text)
         processor.process()
     }
 
@@ -65,4 +57,56 @@ class TGTextDialog : TGModalFragment(R.layout.view_text_dialog) {
     }
 
     fun getBeat(): TGBeat? = getAttribute(TGDocumentContextAttributes.ATTRIBUTE_BEAT)
+}
+
+@Composable
+private fun TGTextDialogContent(
+    initialText: String,
+    onSave: (String) -> Unit,
+    onClean: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    var text by remember(initialText) { mutableStateOf(initialText) }
+
+    Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
+        Text(
+            text = stringResource(R.string.text_dlg_title),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(bottom = 16.dp),
+        )
+        OutlinedTextField(
+            value = text,
+            onValueChange = { text = it },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            horizontalArrangement = Arrangement.End,
+        ) {
+            TextButton(onClick = onCancel) {
+                Text(stringResource(R.string.global_button_cancel))
+            }
+            TextButton(onClick = onClean) {
+                Text(stringResource(R.string.global_button_clean))
+            }
+            TextButton(onClick = { onSave(text) }) {
+                Text(stringResource(R.string.global_button_ok))
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TGTextDialogContentPreview() {
+    MaterialTheme {
+        TGTextDialogContent(
+            initialText = "let ring",
+            onSave = {},
+            onClean = {},
+            onCancel = {},
+        )
+    }
 }

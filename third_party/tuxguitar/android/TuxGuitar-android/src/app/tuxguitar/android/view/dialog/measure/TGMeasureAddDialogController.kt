@@ -1,7 +1,7 @@
 package app.tuxguitar.android.view.dialog.measure
 
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragmentController
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogController
 
-class TGMeasureAddDialogController : TGModalFragmentController<TGMeasureAddDialog>() {
+class TGMeasureAddDialogController : TGComposeBottomSheetDialogController<TGMeasureAddDialog>() {
     override fun createNewInstance(): TGMeasureAddDialog = TGMeasureAddDialog()
 }

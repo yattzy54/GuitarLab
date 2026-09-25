@@ -1,7 +1,7 @@
 package app.tuxguitar.android.view.dialog.keySignature
 
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragmentController
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogController
 
-class TGKeySignatureDialogController : TGModalFragmentController<TGKeySignatureDialog>() {
+class TGKeySignatureDialogController : TGComposeBottomSheetDialogController<TGKeySignatureDialog>() {
     override fun createNewInstance(): TGKeySignatureDialog = TGKeySignatureDialog()
 }

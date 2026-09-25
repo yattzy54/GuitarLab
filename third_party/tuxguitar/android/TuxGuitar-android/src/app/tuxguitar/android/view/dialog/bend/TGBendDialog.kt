@@ -1,16 +1,34 @@
 package app.tuxguitar.android.view.dialog.bend
 
-import android.annotation.SuppressLint
-import android.os.Bundle
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.View
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
-import android.widget.Spinner
+import android.content.Context
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import app.tuxguitar.android.R
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragment
-import app.tuxguitar.android.view.util.TGSelectableItem
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
+import app.tuxguitar.android.view.dialog.compose.TGDialogDropdownField
 import app.tuxguitar.document.TGDocumentContextAttributes
 import app.tuxguitar.editor.action.TGActionProcessor
 import app.tuxguitar.editor.action.effect.TGChangeBendNoteAction
@@ -22,156 +40,78 @@ import app.tuxguitar.song.models.TGNote
 import app.tuxguitar.song.models.TGString
 import app.tuxguitar.song.models.effects.TGEffectBend
 
-class TGBendDialog : TGModalFragment(R.layout.view_bend_dialog) {
-    override fun onPostCreate(savedInstanceState: Bundle?) {
-        createActionBar(true, false, R.string.bend_dlg_title)
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu, menuInflater: MenuInflater) {
-        menuInflater.inflate(R.menu.menu_modal_fragment_ok_clean, menu)
-        menu.findItem(R.id.action_ok).setOnMenuItemClickListener {
-            updateEffect()
-            close()
-            true
-        }
-        menu.findItem(R.id.action_clean).setOnMenuItemClickListener {
-            cleanEffect()
-            close()
-            true
-        }
-    }
-
-    @SuppressLint("InflateParams")
-    override fun onPostInflateView() {
+class TGBendDialog : TGComposeBottomSheetDialogFragment() {
+    @Composable
+    override fun SheetContent(onDismiss: () -> Unit) {
         val presets = createPresets()
         val defaultPreset = findDefaultPreset(presets)
-        val defaultBend = findDefaultBend(defaultPreset)
-        fillSelectablePresets(presets, defaultPreset)
-        defaultBend?.let { bend -> postWhenReady { loadBend(bend) } }
+        TGBendDialogContent(
+            presets = presets,
+            initialPreset = defaultPreset,
+            initialEffect = findDefaultBend(defaultPreset),
+            onConfirm = { editorView ->
+                updateEffect(editorView.createBend(getSongManager().factory))
+                onDismiss()
+            },
+            onClean = {
+                cleanEffect()
+                onDismiss()
+            },
+        )
     }
 
     fun findDefaultBend(defaultPreset: TGBendPreset?): TGEffectBend? {
         val note = getNote()
-        if (note != null && note.getEffect().isBend()) return note.getEffect().getBend()
+        if (note != null && note.effect.isBend) {
+            return note.effect.bend
+        }
         return defaultPreset?.bend
     }
 
     fun findDefaultPreset(presets: List<TGBendPreset>): TGBendPreset? {
         val note = getNote()
-        if (note != null && note.getEffect().isBend()) return null
+        if (note != null && note.effect.isBend) {
+            return null
+        }
         return presets.firstOrNull()
     }
 
     fun createPresets(): List<TGBendPreset> {
-        val factory = getSongManager().getFactory()
-        val presets = mutableListOf<TGBendPreset>()
+        val factory = getSongManager().factory
         val bendLength = TGEffectBend.SEMITONE_LENGTH * 4
-
-        presets.add(createPreset(factory, R.string.bend_dlg_preset_bend, listOf(0 to 0, 6 to bendLength, 12 to bendLength)))
-        presets.add(
+        return listOf(
+            createPreset(factory, R.string.bend_dlg_preset_bend, listOf(0 to 0, 6 to bendLength, 12 to bendLength)),
             createPreset(
                 factory,
                 R.string.bend_dlg_preset_bend_release,
-                listOf(0 to 0, 3 to bendLength, 6 to bendLength, 9 to 0, 12 to 0)
-            )
-        )
-        presets.add(
+                listOf(0 to 0, 3 to bendLength, 6 to bendLength, 9 to 0, 12 to 0),
+            ),
             createPreset(
                 factory,
                 R.string.bend_dlg_preset_bend_release_bend,
-                listOf(0 to 0, 2 to bendLength, 4 to bendLength, 6 to 0, 8 to 0, 10 to bendLength, 12 to bendLength)
-            )
-        )
-        presets.add(createPreset(factory, R.string.bend_dlg_preset_prebend, listOf(0 to bendLength, 12 to bendLength)))
-        presets.add(
+                listOf(0 to 0, 2 to bendLength, 4 to bendLength, 6 to 0, 8 to 0, 10 to bendLength, 12 to bendLength),
+            ),
+            createPreset(factory, R.string.bend_dlg_preset_prebend, listOf(0 to bendLength, 12 to bendLength)),
             createPreset(
                 factory,
                 R.string.bend_dlg_preset_prebend_release,
-                listOf(0 to bendLength, 4 to bendLength, 8 to 0, 12 to 0)
-            )
+                listOf(0 to bendLength, 4 to bendLength, 8 to 0, 12 to 0),
+            ),
         )
-        return presets
     }
 
     private fun createPreset(
         factory: TGFactory,
         nameResource: Int,
-        points: List<Pair<Int, Int>>
+        points: List<Pair<Int, Int>>,
     ): TGBendPreset {
         val bend = factory.newEffectBend()
         points.forEach { (position, value) -> bend.addPoint(position, value) }
         return TGBendPreset(getString(nameResource), bend)
     }
 
-    fun createSelectablePresets(presets: List<TGBendPreset>): Array<TGSelectableItem> =
-        (listOf(TGSelectableItem(null, getString(R.string.global_spinner_select_option))) +
-            presets.map { TGSelectableItem(it, it.name) }).toTypedArray()
-
-    fun fillSelectablePresets(presets: List<TGBendPreset>, selection: TGBendPreset?) {
-        val adapter = ArrayAdapter(
-            requireActivity(),
-            android.R.layout.simple_spinner_item,
-            createSelectablePresets(presets)
-        )
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        requireView().findViewById<Spinner>(R.id.bend_dlg_preset_value).adapter = adapter
-        updateSelectedPreset(selection)
-        appendListeners()
-    }
-
-    fun updateSelectedPreset(selection: TGBendPreset?) {
-        val spinner = requireView().findViewById<Spinner>(R.id.bend_dlg_preset_value)
-        @Suppress("UNCHECKED_CAST")
-        val adapter = spinner.adapter as ArrayAdapter<TGSelectableItem>
-        spinner.setSelection(adapter.getPosition(TGSelectableItem(selection, null)), false)
-    }
-
-    fun findSelectedPreset(): TGBendPreset? =
-        (requireView().findViewById<Spinner>(R.id.bend_dlg_preset_value)
-            .selectedItem as? TGSelectableItem)?.getItem() as? TGBendPreset
-
-    fun loadSelectedPreset() {
-        findSelectedPreset()?.let { loadBend(it.bend) }
-    }
-
-    fun loadBend(bend: TGEffectBend) {
-        requireView().findViewById<TGBendEditor>(R.id.bend_dlg_bend_editor).loadBend(bend)
-    }
-
-    fun createBend(): TGEffectBend? =
-        requireView().findViewById<TGBendEditor>(R.id.bend_dlg_bend_editor)
-            .createBend(getSongManager().getFactory())
-
-    fun appendListeners() {
-        requireView().findViewById<Spinner>(R.id.bend_dlg_preset_value)
-            .onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(
-                    parent: AdapterView<*>?,
-                    view: View?,
-                    position: Int,
-                    id: Long
-                ) {
-                    loadSelectedPreset()
-                }
-
-                override fun onNothingSelected(parent: AdapterView<*>?) {
-                    loadSelectedPreset()
-                }
-            }
-        requireView().findViewById<TGBendEditor>(R.id.bend_dlg_bend_editor)
-            .setListener(object : TGBendEditorListener {
-                override fun onChange() {
-                    updateSelectedPreset(null)
-                }
-            })
-    }
-
     fun cleanEffect() {
         updateEffect(null)
-    }
-
-    fun updateEffect() {
-        updateEffect(createBend())
     }
 
     fun updateEffect(effect: TGEffectBend?) {
@@ -195,3 +135,109 @@ class TGBendDialog : TGModalFragment(R.layout.view_bend_dialog) {
 
     fun getString(): TGString? = getAttribute(TGDocumentContextAttributes.ATTRIBUTE_STRING)
 }
+
+@Composable
+private fun TGBendDialogContent(
+    presets: List<TGBendPreset>,
+    initialPreset: TGBendPreset?,
+    initialEffect: TGEffectBend?,
+    onConfirm: (TGBendEditor) -> Unit,
+    onClean: () -> Unit,
+    createEditorView: (Context) -> TGBendEditor = { context -> TGBendEditor(context, null) },
+) {
+    val context = LocalContext.current
+    val selectOptionLabel = stringResource(R.string.global_spinner_select_option)
+    var selectedPreset by remember(initialPreset, presets) { mutableStateOf(initialPreset) }
+    var effectToLoad by remember(initialEffect) { mutableStateOf(initialEffect) }
+    var loadRequest by remember(initialEffect) { mutableIntStateOf(if (initialEffect != null) 1 else 0) }
+    val editorView = remember(context) { createEditorView(context) }
+
+    DisposableEffect(editorView) {
+        val listener = object : TGBendEditorListener {
+            override fun onChange() {
+                selectedPreset = null
+            }
+        }
+        editorView.setListener(listener)
+        onDispose { editorView.setListener(null) }
+    }
+
+    LaunchedEffect(editorView, loadRequest) {
+        if (loadRequest > 0) {
+            effectToLoad?.let(editorView::loadBend)
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .padding(horizontal = 24.dp, vertical = 16.dp)
+            .heightIn(max = 560.dp)
+            .verticalScroll(rememberScrollState()),
+    ) {
+        Text(
+            text = stringResource(R.string.bend_dlg_title),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(bottom = 16.dp),
+        )
+
+        TGDialogDropdownField(
+            label = stringResource(R.string.bend_dlg_preset_label),
+            selectedText = selectedPreset?.name ?: selectOptionLabel,
+            options = buildList {
+                add(selectOptionLabel)
+                addAll(presets.map { it.name })
+            },
+            onOptionSelected = { index ->
+                val preset = presets.getOrNull(index - 1)
+                selectedPreset = preset
+                if (preset != null) {
+                    effectToLoad = preset.bend
+                    loadRequest += 1
+                }
+            },
+        )
+
+        AndroidView(
+            factory = { editorView },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            horizontalArrangement = Arrangement.End,
+        ) {
+            TextButton(onClick = onClean) {
+                Text(stringResource(R.string.global_button_clean))
+            }
+            TextButton(onClick = { onConfirm(editorView) }) {
+                Text(stringResource(R.string.global_button_ok))
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TGBendDialogContentPreview() {
+    MaterialTheme {
+        TGBendDialogContent(
+            presets = listOf(
+                TGBendPreset("Bend", previewBendEffect(listOf(0 to 0, 6 to 4, 12 to 4))),
+                TGBendPreset("Bend/Release", previewBendEffect(listOf(0 to 0, 6 to 4, 12 to 0))),
+            ),
+            initialPreset = null,
+            initialEffect = previewBendEffect(listOf(0 to 0, 4 to 3, 8 to 6, 12 to 4)),
+            onConfirm = {},
+            onClean = {},
+        )
+    }
+}
+
+private fun previewBendEffect(points: List<Pair<Int, Int>>): TGEffectBend =
+    TGFactory().newEffectBend().also { bend ->
+        points.forEach { (position, value) -> bend.addPoint(position, value) }
+    }

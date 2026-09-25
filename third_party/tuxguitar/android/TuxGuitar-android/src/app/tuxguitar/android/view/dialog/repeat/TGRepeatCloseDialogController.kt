@@ -1,7 +1,7 @@
 package app.tuxguitar.android.view.dialog.repeat
 
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragmentController
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogController
 
-class TGRepeatCloseDialogController : TGModalFragmentController<TGRepeatCloseDialog>() {
+class TGRepeatCloseDialogController : TGComposeBottomSheetDialogController<TGRepeatCloseDialog>() {
     override fun createNewInstance(): TGRepeatCloseDialog = TGRepeatCloseDialog()
 }

@@ -1,79 +1,56 @@
 package app.tuxguitar.android.view.dialog.track
 
-import android.os.Bundle
-import android.view.Menu
-import android.view.MenuInflater
-import android.widget.ArrayAdapter
-import android.widget.EditText
-import android.widget.Spinner
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import app.tuxguitar.android.R
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragment
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
+import app.tuxguitar.android.view.dialog.compose.TGDialogActionButtons
+import app.tuxguitar.android.view.dialog.compose.TGDialogDropdownField
 import app.tuxguitar.android.view.util.TGSelectableItem
 
-class TGTrackTuningModelDialog : TGModalFragment(R.layout.view_track_tuning_model_dialog) {
-    override fun onPostCreate(savedInstanceState: Bundle?) {
-        createActionBar(true, false, R.string.track_tuning_dlg_title)
-    }
+class TGTrackTuningModelDialog : TGComposeBottomSheetDialogFragment() {
+    @Composable
+    override fun SheetContent(onDismiss: () -> Unit) {
+        val tunings = createSelectableTunings()
+        val currentValue = getModel()?.value
+        val selectedIndex = tunings.indexOfFirst { (it.getItem() as? Int) == currentValue }
+            .takeIf { it >= 0 } ?: 0
 
-    override fun onCreateOptionsMenu(menu: Menu, menuInflater: MenuInflater) {
-        menuInflater.inflate(R.menu.menu_modal_fragment_ok, menu)
-        menu.findItem(R.id.action_ok).setOnMenuItemClickListener {
-            if (handleSelection()) close()
-            true
-        }
-    }
-
-    override fun onPostInflateView() {
-        fillTuning()
-    }
-
-    fun fillPreview() {
-        requireView().findViewById<EditText>(R.id.track_tuning_dlg_preview_control)
-            .setText(TGTrackTuningLabel.valueOf(findSelectedValue()))
-    }
-
-    fun fillTuning() {
-        val arrayAdapter = ArrayAdapter(
-            requireActivity(),
-            android.R.layout.simple_spinner_item,
-            createSelectableTunings()
+        TGTrackTuningModelDialogContent(
+            tuningValues = tunings.map { it.getItem() as Int },
+            tuningLabels = tunings.map { it.getLabel().orEmpty() },
+            selectedIndex = selectedIndex,
+            onSelect = { index ->
+                handleSelection(tunings[index].getItem() as Int)
+                onDismiss()
+            },
+            onCancel = onDismiss,
         )
-        arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        val spinner = requireView().findViewById<Spinner>(R.id.track_tuning_dlg_value_control)
-        spinner.adapter = arrayAdapter
-        spinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: android.widget.AdapterView<*>?,
-                view: android.view.View?,
-                position: Int,
-                id: Long
-            ) {
-                fillPreview()
-            }
-
-            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) = Unit
-        }
-
-        val model = getAttribute<TGTrackTuningModel>(TGTrackTuningModelDialogController.ATTRIBUTE_MODEL)
-        model?.value?.let { value ->
-            spinner.setSelection(arrayAdapter.getPosition(TGSelectableItem(value, null)), false)
-        }
     }
 
-    fun findSelectedValue(): Int {
-        val selectedItem = requireView()
-            .findViewById<Spinner>(R.id.track_tuning_dlg_value_control)
-            .selectedItem as TGSelectableItem
-        return selectedItem.getItem() as Int
-    }
+    fun getModel(): TGTrackTuningModel? =
+        getAttribute(TGTrackTuningModelDialogController.ATTRIBUTE_MODEL)
 
-    fun createSelectableTunings(): Array<TGSelectableItem> =
+    fun createSelectableTunings(): List<TGSelectableItem> =
         (0 until MAX_OCTAVES * TGTrackTuningLabel.KEY_NAMES.size).map { value ->
             TGSelectableItem(value, TGTrackTuningLabel.valueOf(value, true))
-        }.toTypedArray()
+        }
 
-    fun handleSelection(): Boolean {
-        val model = TGTrackTuningModel().apply { value = findSelectedValue() }
+    fun handleSelection(selectedValue: Int): Boolean {
+        val model = TGTrackTuningModel().apply { value = selectedValue }
         val handler = getAttribute<TGTrackTuningModelHandler>(
             TGTrackTuningModelDialogController.ATTRIBUTE_HANDLER
         )
@@ -83,5 +60,62 @@ class TGTrackTuningModelDialog : TGModalFragment(R.layout.view_track_tuning_mode
 
     private companion object {
         const val MAX_OCTAVES = 10
+    }
+}
+
+@Composable
+fun TGTrackTuningModelDialogContent(
+    tuningValues: List<Int>,
+    tuningLabels: List<String>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit,
+    onCancel: () -> Unit,
+) {
+    var currentIndex by remember(selectedIndex, tuningValues) {
+        mutableIntStateOf(selectedIndex.coerceIn(0, tuningValues.lastIndex))
+    }
+
+    Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
+        Text(
+            text = stringResource(R.string.track_tuning_dlg_title),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(bottom = 16.dp),
+        )
+        TGDialogDropdownField(
+            label = stringResource(R.string.track_tuning_dlg_value_label),
+            selectedText = tuningLabels[currentIndex],
+            options = tuningLabels,
+            onOptionSelected = { currentIndex = it },
+        )
+        OutlinedTextField(
+            value = TGTrackTuningLabel.valueOf(tuningValues[currentIndex]),
+            onValueChange = {},
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp),
+            label = { Text(stringResource(R.string.track_tuning_dlg_preview_label)) },
+            readOnly = true,
+            enabled = false,
+            singleLine = true,
+        )
+        TGDialogActionButtons(
+            onConfirm = { onSelect(currentIndex) },
+            onCancel = onCancel,
+            modifier = Modifier.padding(top = 16.dp),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TGTrackTuningModelDialogContentPreview() {
+    MaterialTheme {
+        TGTrackTuningModelDialogContent(
+            tuningValues = listOf(48, 49, 50, 51),
+            tuningLabels = listOf("C4", "C#4", "D4", "D#4"),
+            selectedIndex = 2,
+            onSelect = {},
+            onCancel = {},
+        )
     }
 }

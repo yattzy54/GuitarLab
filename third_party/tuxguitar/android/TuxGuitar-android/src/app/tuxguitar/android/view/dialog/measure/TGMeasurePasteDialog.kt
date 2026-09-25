@@ -1,84 +1,70 @@
 package app.tuxguitar.android.view.dialog.measure
 
-import android.annotation.SuppressLint
-import android.os.Bundle
-import android.R as AndroidR
-import android.view.Menu
-import android.view.MenuInflater
-import android.widget.ArrayAdapter
-import android.widget.RadioButton
-import android.widget.RadioGroup
-import android.widget.Spinner
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import app.tuxguitar.android.R
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragment
-import app.tuxguitar.android.view.util.TGSelectableItem
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
 import app.tuxguitar.document.TGDocumentContextAttributes
 import app.tuxguitar.editor.action.TGActionProcessor
 import app.tuxguitar.editor.action.measure.TGPasteMeasureAction
 import app.tuxguitar.song.models.TGMeasureHeader
 import app.tuxguitar.song.models.TGSong
 
-class TGMeasurePasteDialog : TGModalFragment(R.layout.view_measure_paste_dialog) {
-    override fun onPostCreate(savedInstanceState: Bundle?) {
-        createActionBar(true, false, R.string.measure_paste_dlg_title)
+data class TGMeasurePasteModeOption(
+    val mode: Int,
+    val labelRes: Int,
+)
+
+class TGMeasurePasteDialog : TGComposeBottomSheetDialogFragment() {
+    @Composable
+    override fun SheetContent(onDismiss: () -> Unit) {
+        val options = listOf(
+            TGMeasurePasteModeOption(TRANSFER_TYPE_REPLACE, R.string.measure_paste_dlg_options_mode_replace),
+            TGMeasurePasteModeOption(TRANSFER_TYPE_INSERT, R.string.measure_paste_dlg_options_mode_insert),
+        )
+
+        TGMeasurePasteDialogContent(
+            countOptions = createCountValues(),
+            initialCount = 1,
+            modeOptions = options,
+            initialMode = TRANSFER_TYPE_REPLACE,
+            onSave = { count, mode ->
+                processAction(count, mode)
+                onDismiss()
+            },
+            onCancel = onDismiss,
+        )
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, menuInflater: MenuInflater) {
-        menuInflater.inflate(R.menu.menu_modal_fragment_ok, menu)
-        menu.findItem(R.id.action_ok).setOnMenuItemClickListener {
-            processAction()
-            close()
-            true
-        }
-    }
+    fun createCountValues(): List<Int> = (1..100).toList()
 
-    @SuppressLint("InflateParams")
-    override fun onPostInflateView() {
-        fillCount()
-        fillOptions()
-    }
-
-    fun createCountValues(): Array<TGSelectableItem> =
-        Array(100) { index ->
-            val count = index + 1
-            TGSelectableItem(count, count.toString())
-        }
-
-    fun fillCount() {
-        val adapter = ArrayAdapter(requireActivity(), AndroidR.layout.simple_spinner_item, createCountValues())
-        adapter.setDropDownViewResource(AndroidR.layout.simple_spinner_dropdown_item)
-        val spinner = requireView().findViewById<Spinner>(R.id.measure_paste_dlg_count_value)
-        spinner.adapter = adapter
-        spinner.setSelection(adapter.getPosition(TGSelectableItem(1, null)))
-    }
-
-    fun findSelectedCount(): Int =
-        (requireView().findViewById<Spinner>(R.id.measure_paste_dlg_count_value)
-            .selectedItem as TGSelectableItem).item as Int
-
-    fun fillOptions() {
-        fillOption(R.id.measure_paste_dlg_options_mode_replace, TRANSFER_TYPE_REPLACE, true)
-        fillOption(R.id.measure_paste_dlg_options_mode_insert, TRANSFER_TYPE_INSERT, false)
-    }
-
-    fun fillOption(id: Int, value: Int, selected: Boolean) {
-        requireView().findViewById<RadioButton>(id).apply {
-            tag = value
-            isChecked = selected
-        }
-    }
-
-    fun findSelectedMode(): Int {
-        val group = requireView().findViewById<RadioGroup>(R.id.measure_paste_dlg_options_group)
-        val id = group.checkedRadioButtonId
-        return if (id != -1) group.findViewById<RadioButton>(id)?.tag as? Int ?: 1 else 1
-    }
-
-    fun processAction() {
+    fun processAction(count: Int, mode: Int) {
         val processor = TGActionProcessor(findContext(), TGPasteMeasureAction.NAME)
         processor.setAttribute(TGDocumentContextAttributes.ATTRIBUTE_SONG, getSong())
-        processor.setAttribute(ATTRIBUTE_PASTE_COUNT, findSelectedCount())
-        processor.setAttribute(ATTRIBUTE_PASTE_MODE, findSelectedMode())
+        processor.setAttribute(ATTRIBUTE_PASTE_COUNT, count)
+        processor.setAttribute(ATTRIBUTE_PASTE_MODE, mode)
         processor.process()
     }
 
@@ -90,5 +76,129 @@ class TGMeasurePasteDialog : TGModalFragment(R.layout.view_measure_paste_dialog)
         const val ATTRIBUTE_PASTE_COUNT = "pasteCount"
         const val TRANSFER_TYPE_REPLACE = 1
         const val TRANSFER_TYPE_INSERT = 2
+    }
+}
+
+@Composable
+fun TGMeasurePasteDialogContent(
+    countOptions: List<Int>,
+    initialCount: Int,
+    modeOptions: List<TGMeasurePasteModeOption>,
+    initialMode: Int,
+    onSave: (Int, Int) -> Unit,
+    onCancel: () -> Unit,
+) {
+    var count by remember { mutableStateOf(initialCount) }
+    var mode by remember { mutableStateOf(initialMode) }
+
+    Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
+        Text(
+            text = stringResource(R.string.measure_paste_dlg_title),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(bottom = 16.dp),
+        )
+
+        IntDropdownField(
+            label = stringResource(R.string.measure_paste_dlg_count_label),
+            options = countOptions,
+            selected = count,
+            onSelect = { count = it },
+        )
+
+        Column(modifier = Modifier.padding(top = 16.dp)) {
+            modeOptions.forEach { option ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .selectable(selected = mode == option.mode, onClick = { mode = option.mode })
+                        .padding(vertical = 4.dp),
+                ) {
+                    RadioButton(
+                        selected = mode == option.mode,
+                        onClick = { mode = option.mode },
+                    )
+                    Text(
+                        text = stringResource(option.labelRes),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier
+                            .padding(start = 8.dp)
+                            .clickable { mode = option.mode },
+                    )
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            horizontalArrangement = Arrangement.End,
+        ) {
+            TextButton(onClick = onCancel) {
+                Text(stringResource(R.string.global_button_cancel))
+            }
+            TextButton(onClick = { onSave(count, mode) }) {
+                Text(stringResource(R.string.global_button_ok))
+            }
+        }
+    }
+}
+
+@Composable
+private fun IntDropdownField(
+    label: String,
+    options: List<Int>,
+    selected: Int,
+    onSelect: (Int) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(bottom = 8.dp),
+        )
+        Box(modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(
+                onClick = { expanded = true },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(selected.toString())
+            }
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.fillMaxWidth(0.75f),
+            ) {
+                options.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option.toString()) },
+                        onClick = {
+                            onSelect(option)
+                            expanded = false
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TGMeasurePasteDialogContentPreview() {
+    MaterialTheme {
+        TGMeasurePasteDialogContent(
+            countOptions = (1..5).toList(),
+            initialCount = 1,
+            modeOptions = listOf(
+                TGMeasurePasteModeOption(TGMeasurePasteDialog.TRANSFER_TYPE_REPLACE, R.string.measure_paste_dlg_options_mode_replace),
+                TGMeasurePasteModeOption(TGMeasurePasteDialog.TRANSFER_TYPE_INSERT, R.string.measure_paste_dlg_options_mode_insert),
+            ),
+            initialMode = TGMeasurePasteDialog.TRANSFER_TYPE_REPLACE,
+            onSave = { _, _ -> },
+            onCancel = {},
+        )
     }
 }

@@ -1,7 +1,7 @@
 package app.tuxguitar.android.view.dialog.tremoloBar
 
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragmentController
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogController
 
-class TGTremoloBarDialogController : TGModalFragmentController<TGTremoloBarDialog>() {
+class TGTremoloBarDialogController : TGComposeBottomSheetDialogController<TGTremoloBarDialog>() {
     override fun createNewInstance(): TGTremoloBarDialog = TGTremoloBarDialog()
 }

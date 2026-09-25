@@ -1,16 +1,35 @@
 package app.tuxguitar.android.view.dialog.timeSignature
 
-import android.annotation.SuppressLint
-import android.os.Bundle
-import android.R as AndroidR
-import android.view.Menu
-import android.view.MenuInflater
-import android.widget.ArrayAdapter
-import android.widget.CheckBox
-import android.widget.Spinner
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import app.tuxguitar.android.R
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragment
-import app.tuxguitar.android.view.util.TGSelectableItem
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
 import app.tuxguitar.document.TGDocumentContextAttributes
 import app.tuxguitar.editor.action.TGActionProcessor
 import app.tuxguitar.editor.action.composition.TGChangeTimeSignatureAction
@@ -19,93 +38,216 @@ import app.tuxguitar.song.models.TGMeasureHeader
 import app.tuxguitar.song.models.TGSong
 import app.tuxguitar.song.models.TGTimeSignature
 
-class TGTimeSignatureDialog : TGModalFragment(R.layout.view_time_signature_dialog) {
-    override fun onPostCreate(savedInstanceState: Bundle?) {
-        createActionBar(true, false, R.string.time_signature_dlg_title)
-    }
+data class TGTimeSignatureDialogUiState(
+    val numerator: Int,
+    val denominator: Int,
+    val applyToEnd: Boolean,
+)
 
-    override fun onCreateOptionsMenu(menu: Menu, menuInflater: MenuInflater) {
-        menuInflater.inflate(R.menu.menu_modal_fragment_ok, menu)
-        menu.findItem(R.id.action_ok).setOnMenuItemClickListener {
-            changeTimeSignature()
-            close()
-            true
-        }
-    }
+private data class TGTimeSignatureOption(
+    val value: Int,
+    val label: String,
+)
 
-    @SuppressLint("InflateParams")
-    override fun onPostInflateView() {
+class TGTimeSignatureDialog : TGComposeBottomSheetDialogFragment() {
+    @Composable
+    override fun SheetContent(onDismiss: () -> Unit) {
         val header = requireNotNull(getHeader())
-        val numeratorAdapter = createAdapter(createNumeratorValues())
-        val numerator = requireView().findViewById<Spinner>(R.id.time_signature_dlg_ts_numerator_value)
-        numerator.adapter = numeratorAdapter
-        numerator.setSelection(
-            numeratorAdapter.getPosition(TGSelectableItem(header.timeSignature.numerator, null))
+        val timeSignature = header.timeSignature
+        TGTimeSignatureDialogContent(
+            initial = TGTimeSignatureDialogUiState(
+                numerator = timeSignature.numerator,
+                denominator = timeSignature.denominator.value,
+                applyToEnd = true,
+            ),
+            numeratorOptions = createNumeratorValues(),
+            denominatorOptions = createDenominatorValues(),
+            onSave = { state ->
+                changeTimeSignature(state)
+                onDismiss()
+            },
+            onCancel = onDismiss,
         )
-        val denominatorAdapter = createAdapter(createDenominatorValues())
-        val denominator = requireView().findViewById<Spinner>(R.id.time_signature_dlg_ts_denominator_value)
-        denominator.adapter = denominatorAdapter
-        denominator.setSelection(
-            denominatorAdapter.getPosition(
-                TGSelectableItem(header.timeSignature.denominator.value, null)
-            )
-        )
-        requireView().findViewById<CheckBox>(R.id.time_signature_dlg_options_apply_to_end).isChecked = true
     }
 
-    private fun createAdapter(values: Array<TGSelectableItem>) =
-        ArrayAdapter(requireActivity(), AndroidR.layout.simple_spinner_item, values).apply {
-            setDropDownViewResource(AndroidR.layout.simple_spinner_dropdown_item)
-        }
+    private fun createNumeratorValues(): List<TGTimeSignatureOption> =
+        (1..32).map { TGTimeSignatureOption(it, it.toString()) }
 
-    fun createNumeratorValues(): Array<TGSelectableItem> =
-        Array(32) { index ->
-            val value = index + 1
-            TGSelectableItem(value, value.toString())
-        }
-
-    fun createDenominatorValues(): Array<TGSelectableItem> {
-        val values = mutableListOf<TGSelectableItem>()
+    private fun createDenominatorValues(): List<TGTimeSignatureOption> {
+        val values = mutableListOf<TGTimeSignatureOption>()
         var value = 1
         while (value <= 32) {
-            values.add(TGSelectableItem(value, value.toString()))
+            values.add(TGTimeSignatureOption(value, value.toString()))
             value *= 2
         }
-        return values.toTypedArray()
+        return values
     }
 
-    fun parseTimeSignature(): TGTimeSignature {
-        val numerator = parseSelectedValue(R.id.time_signature_dlg_ts_numerator_value)
-        val denominator = parseSelectedValue(R.id.time_signature_dlg_ts_denominator_value)
-        return getSongManager().factory.newTimeSignature().also {
-            it.setNumerator(numerator)
-            it.denominator.setValue(denominator)
+    fun createTimeSignature(state: TGTimeSignatureDialogUiState): TGTimeSignature =
+        getSongManager().factory.newTimeSignature().also {
+            it.setNumerator(state.numerator)
+            it.denominator.setValue(state.denominator)
         }
-    }
 
-    private fun parseSelectedValue(id: Int): Int =
-        (requireView().findViewById<Spinner>(id).selectedItem as TGSelectableItem).item as Int
-
-    fun parseNumeratorValue(spinner: Spinner): Int =
-        (spinner.selectedItem as TGSelectableItem).item as Int
-
-    fun parseDenominatorValue(spinner: Spinner): Int =
-        (spinner.selectedItem as TGSelectableItem).item as Int
-
-    fun parseApplyToEnd(): Boolean =
-        requireView().findViewById<CheckBox>(R.id.time_signature_dlg_options_apply_to_end).isChecked
-
-    fun changeTimeSignature() {
+    fun changeTimeSignature(state: TGTimeSignatureDialogUiState) {
         val processor = TGActionProcessor(findContext(), TGChangeTimeSignatureAction.NAME)
         processor.setAttribute(TGDocumentContextAttributes.ATTRIBUTE_SONG, getSong())
         processor.setAttribute(TGDocumentContextAttributes.ATTRIBUTE_HEADER, getHeader())
-        processor.setAttribute(TGDocumentContextAttributes.ATTRIBUTE_TIME_SIGNATURE, parseTimeSignature())
-        processor.setAttribute(TGChangeTimeSignatureAction.ATTRIBUTE_APPLY_TO_END, parseApplyToEnd())
+        processor.setAttribute(
+            TGDocumentContextAttributes.ATTRIBUTE_TIME_SIGNATURE,
+            createTimeSignature(state),
+        )
+        processor.setAttribute(TGChangeTimeSignatureAction.ATTRIBUTE_APPLY_TO_END, state.applyToEnd)
         processor.processOnNewThread()
     }
 
     fun getSongManager(): TGSongManager =
         requireNotNull(getAttribute(TGDocumentContextAttributes.ATTRIBUTE_SONG_MANAGER))
+
     fun getSong(): TGSong? = getAttribute(TGDocumentContextAttributes.ATTRIBUTE_SONG)
     fun getHeader(): TGMeasureHeader? = getAttribute(TGDocumentContextAttributes.ATTRIBUTE_HEADER)
+}
+
+@Composable
+private fun TGTimeSignatureDialogContent(
+    initial: TGTimeSignatureDialogUiState,
+    numeratorOptions: List<TGTimeSignatureOption>,
+    denominatorOptions: List<TGTimeSignatureOption>,
+    onSave: (TGTimeSignatureDialogUiState) -> Unit,
+    onCancel: () -> Unit,
+) {
+    var numerator by remember(initial.numerator) { mutableStateOf(initial.numerator) }
+    var denominator by remember(initial.denominator) { mutableStateOf(initial.denominator) }
+    var applyToEnd by remember(initial.applyToEnd) { mutableStateOf(initial.applyToEnd) }
+
+    Column(
+        modifier = Modifier
+            .padding(horizontal = 24.dp, vertical = 16.dp)
+            .heightIn(max = 480.dp)
+            .verticalScroll(rememberScrollState()),
+    ) {
+        Text(
+            text = stringResource(R.string.time_signature_dlg_title),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(bottom = 16.dp),
+        )
+
+        TGTimeSignatureDropdownField(
+            label = stringResource(R.string.time_signature_dlg_ts_numerator_label),
+            options = numeratorOptions,
+            selectedValue = numerator,
+            onValueSelected = { numerator = it },
+        )
+        TGTimeSignatureDropdownField(
+            label = stringResource(R.string.time_signature_dlg_ts_denominator_label),
+            options = denominatorOptions,
+            selectedValue = denominator,
+            onValueSelected = { denominator = it },
+            modifier = Modifier.padding(top = 12.dp),
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp)
+                .clickable { applyToEnd = !applyToEnd },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Checkbox(checked = applyToEnd, onCheckedChange = { applyToEnd = it })
+            Text(
+                text = stringResource(R.string.time_signature_dlg_options_apply_to_end),
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            horizontalArrangement = Arrangement.End,
+        ) {
+            TextButton(onClick = onCancel) {
+                Text(stringResource(R.string.global_button_cancel))
+            }
+            TextButton(
+                onClick = {
+                    onSave(
+                        TGTimeSignatureDialogUiState(
+                            numerator = numerator,
+                            denominator = denominator,
+                            applyToEnd = applyToEnd,
+                        )
+                    )
+                },
+            ) {
+                Text(stringResource(R.string.global_button_ok))
+            }
+        }
+    }
+}
+
+@Composable
+private fun TGTimeSignatureDropdownField(
+    label: String,
+    options: List<TGTimeSignatureOption>,
+    selectedValue: Int,
+    onValueSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selectedLabel = options.firstOrNull { it.value == selectedValue }?.label.orEmpty()
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(bottom = 8.dp),
+        )
+        Box {
+            OutlinedButton(
+                onClick = { expanded = true },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(text = selectedLabel, modifier = Modifier.fillMaxWidth())
+            }
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.widthIn(min = 200.dp).heightIn(max = 280.dp),
+            ) {
+                options.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option.label) },
+                        onClick = {
+                            onValueSelected(option.value)
+                            expanded = false
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TGTimeSignatureDialogContentPreview() {
+    MaterialTheme {
+        TGTimeSignatureDialogContent(
+            initial = TGTimeSignatureDialogUiState(
+                numerator = 4,
+                denominator = 4,
+                applyToEnd = true,
+            ),
+            numeratorOptions = (1..8).map { TGTimeSignatureOption(it, it.toString()) },
+            denominatorOptions = listOf(
+                TGTimeSignatureOption(1, "1"),
+                TGTimeSignatureOption(2, "2"),
+                TGTimeSignatureOption(4, "4"),
+                TGTimeSignatureOption(8, "8"),
+            ),
+            onSave = {},
+            onCancel = {},
+        )
+    }
 }
