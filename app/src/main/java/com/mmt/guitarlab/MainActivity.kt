@@ -47,6 +47,24 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @Suppress("DEPRECATION")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        TGActivity.currentInstance?.onActivityResult(requestCode, resultCode, data)
+    }
+
+    @Suppress("DEPRECATION")
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        @Suppress("UNCHECKED_CAST")
+        val permissionNames = permissions as Array<String>
+        TGActivity.currentInstance?.onRequestPermissionsResult(requestCode, permissionNames, grantResults)
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)

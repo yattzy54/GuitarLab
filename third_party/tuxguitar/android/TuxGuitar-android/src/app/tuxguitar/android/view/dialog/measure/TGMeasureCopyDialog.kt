@@ -23,7 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.tuxguitar.android.R
-import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
+import app.tuxguitar.android.view.dialog.compose.TGComposeDialog
 import app.tuxguitar.document.TGDocumentContextAttributes
 import app.tuxguitar.editor.action.TGActionProcessor
 import app.tuxguitar.editor.action.measure.TGCopyMeasureAction
@@ -31,7 +31,7 @@ import app.tuxguitar.song.models.TGMeasure
 import app.tuxguitar.song.models.TGSong
 import app.tuxguitar.song.models.TGTrack
 
-class TGMeasureCopyDialog : TGComposeBottomSheetDialogFragment() {
+class TGMeasureCopyDialog : TGComposeDialog() {
     @Composable
     override fun SheetContent(onDismiss: () -> Unit) {
         val song = requireNotNull(getSong())

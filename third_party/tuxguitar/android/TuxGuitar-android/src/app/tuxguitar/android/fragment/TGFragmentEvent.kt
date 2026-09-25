@@ -1,11 +1,10 @@
 package app.tuxguitar.android.fragment
 
-import androidx.fragment.app.Fragment
 import app.tuxguitar.event.TGEvent
 
-class TGFragmentEvent(fragment: Fragment, action: String) : TGEvent(EVENT_TYPE) {
+class TGFragmentEvent(screen: TGScreen, action: String) : TGEvent(EVENT_TYPE) {
     init {
-        setAttribute(ATTRIBUTE_FRAGMENT, fragment)
+        setAttribute(ATTRIBUTE_FRAGMENT, screen)
         setAttribute(ATTRIBUTE_ACTION, action)
     }
 

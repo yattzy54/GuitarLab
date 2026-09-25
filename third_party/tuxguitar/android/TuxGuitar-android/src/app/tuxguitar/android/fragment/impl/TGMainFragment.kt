@@ -27,7 +27,7 @@ import app.tuxguitar.android.menu.controller.impl.fragment.TGMainMenu
 class TGMainFragment : TGComposeCachedFragment() {
     private var inflatedRoot: View? = null
 
-    override fun onPostCreate(savedInstanceState: Bundle?) {
+    override fun onPostCreate() {
         attachInstance()
         createActionBar(true, false, R.string.app_name)
     }

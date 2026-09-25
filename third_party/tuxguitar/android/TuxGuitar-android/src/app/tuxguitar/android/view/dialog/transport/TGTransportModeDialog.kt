@@ -30,7 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.tuxguitar.android.R
 import app.tuxguitar.android.action.impl.caret.TGMoveToAction
-import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
+import app.tuxguitar.android.view.dialog.compose.TGComposeDialog
 import app.tuxguitar.android.view.dialog.compose.TGDialogDropdownField
 import app.tuxguitar.android.view.dialog.compose.TGDialogSectionTitle
 import app.tuxguitar.android.view.dialog.compose.TGDropdownOption
@@ -65,7 +65,7 @@ private data class TGTransportValidation(
     val incrementError: Boolean = false,
 )
 
-class TGTransportModeDialog : TGComposeBottomSheetDialogFragment() {
+class TGTransportModeDialog : TGComposeDialog() {
     @Composable
     override fun SheetContent(onDismiss: () -> Unit) {
         TGTransportModeDialogContent(

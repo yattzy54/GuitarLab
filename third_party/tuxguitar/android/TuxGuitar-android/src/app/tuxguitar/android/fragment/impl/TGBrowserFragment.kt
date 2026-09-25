@@ -51,7 +51,7 @@ class TGBrowserFragment : TGComposeCachedFragment() {
     private var saveControlsEnabled by mutableStateOf(false)
     private var listenersRegistered = false
 
-    override fun onPostCreate(savedInstanceState: Bundle?) {
+    override fun onPostCreate() {
         attachInstance()
         createActionBar(true, false, null)
         initializeBrowser()
