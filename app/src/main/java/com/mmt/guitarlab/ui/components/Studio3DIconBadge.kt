@@ -1,27 +1,18 @@
 package com.mmt.guitarlab.ui.components
 
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,17 +26,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.mmt.guitarlab.ui.theme.ElectricAmber
-import com.mmt.guitarlab.ui.theme.ElectricGreen
-import com.mmt.guitarlab.ui.theme.ElectricRuby
-import com.mmt.guitarlab.ui.theme.ElectricTeal
 import com.mmt.guitarlab.ui.theme.StudioCardBg
 import com.mmt.guitarlab.ui.theme.StudioCardBorder
-import com.mmt.guitarlab.ui.theme.StudioCardBorderLight
 import com.mmt.guitarlab.ui.theme.StudioCardElevated
-import com.mmt.guitarlab.ui.theme.StudioTextMuted
-import com.mmt.guitarlab.ui.theme.StudioTextPrimary
 import com.mmt.guitarlab.ui.theme.StudioTextSecondary
 
 enum class Studio3DAccent {
@@ -150,102 +134,6 @@ fun Studio3DIconBadge(
             contentDescription = contentDescription,
             tint = iconColor,
             modifier = Modifier.size(size * 0.52f),
-        )
-    }
-}
-
-/**
- * 3D Studio Card with raised border and deep dark surface
- */
-@Composable
-fun StudioCard(
-    modifier: Modifier = Modifier,
-    shape: RoundedCornerShape = RoundedCornerShape(20.dp),
-    accentBorder: Color? = null,
-    content: @Composable () -> Unit,
-) {
-    val borderColor = accentBorder ?: StudioCardBorder
-    Box(
-        modifier = modifier
-            .clip(shape)
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(StudioCardElevated, StudioCardBg),
-                ),
-            )
-            .border(
-                width = 1.2.dp,
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        borderColor.copy(alpha = 0.8f),
-                        StudioCardBorder.copy(alpha = 0.3f),
-                    ),
-                ),
-                shape = shape,
-            ),
-    ) {
-        content()
-    }
-}
-
-/**
- * Modern Studio Pill for mode toggles, tuning selectors, subdivisions
- */
-@Composable
-fun StudioPill(
-    text: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    leadingIcon: ImageVector? = null,
-    accentColor: Color = ElectricAmber,
-) {
-    val bgBrush = if (selected) {
-        Brush.verticalGradient(
-            colors = listOf(accentColor, accentColor.copy(alpha = 0.82f)),
-        )
-    } else {
-        Brush.verticalGradient(
-            colors = listOf(Color(0xFF222838), Color(0xFF161B26)),
-        )
-    }
-
-    val contentColor = if (selected) Color(0xFF101216) else StudioTextSecondary
-    val borderColor = if (selected) accentColor.copy(alpha = 0.9f) else StudioCardBorder
-
-    Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(brush = bgBrush)
-            .border(
-                width = 1.dp,
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        if (selected) Color.White.copy(alpha = 0.4f) else borderColor,
-                        borderColor.copy(alpha = 0.4f),
-                    ),
-                ),
-                shape = RoundedCornerShape(12.dp),
-            )
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (leadingIcon != null) {
-            Icon(
-                imageVector = leadingIcon,
-                contentDescription = null,
-                tint = contentColor,
-                modifier = Modifier
-                    .size(16.dp)
-                    .padding(end = 4.dp),
-            )
-        }
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-            color = contentColor,
         )
     }
 }

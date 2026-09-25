@@ -1,10 +1,6 @@
 package com.mmt.guitarlab.ui.practice
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,42 +13,29 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.GridOn
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.mmt.guitarlab.domain.model.ChordFormula
 import com.mmt.guitarlab.domain.model.FretboardMode
 import com.mmt.guitarlab.domain.model.MusicTheory
+import com.mmt.guitarlab.domain.model.ScaleFormula
+import com.mmt.guitarlab.domain.model.Tuning
+import com.mmt.guitarlab.domain.model.TuningNote
 import com.mmt.guitarlab.ui.components.Studio3DAccent
 import com.mmt.guitarlab.ui.components.Studio3DIconBadge
 import com.mmt.guitarlab.ui.components.StudioCard
@@ -60,9 +43,7 @@ import com.mmt.guitarlab.ui.components.StudioPill
 import com.mmt.guitarlab.ui.theme.ElectricAmber
 import com.mmt.guitarlab.ui.theme.ElectricGreen
 import com.mmt.guitarlab.ui.theme.ElectricTeal
-import com.mmt.guitarlab.ui.theme.StudioCardBg
-import com.mmt.guitarlab.ui.theme.StudioCardBorder
-import com.mmt.guitarlab.ui.theme.StudioCardElevated
+import com.mmt.guitarlab.ui.theme.GuitarLabTheme
 import com.mmt.guitarlab.ui.theme.StudioDarkBg
 import com.mmt.guitarlab.ui.theme.StudioTextMuted
 import com.mmt.guitarlab.ui.theme.StudioTextPrimary
@@ -71,9 +52,10 @@ import com.mmt.guitarlab.ui.theme.StudioTextSecondary
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ChordScaleScreen(viewModel: FretboardViewModel = hiltViewModel()) {
-    androidx.compose.runtime.LaunchedEffect(Unit) {
+    LaunchedEffect(Unit) {
         viewModel.setMode(FretboardMode.CHORD_SCALE_FINDER)
     }
+
     val selectedTuning by viewModel.selectedTuning.collectAsStateWithLifecycle()
     val mode by viewModel.mode.collectAsStateWithLifecycle()
     val rootNote by viewModel.rootNote.collectAsStateWithLifecycle()
@@ -81,8 +63,48 @@ fun ChordScaleScreen(viewModel: FretboardViewModel = hiltViewModel()) {
     val selectedScale by viewModel.selectedScale.collectAsStateWithLifecycle()
     val pressedFrets by viewModel.pressedFrets.collectAsStateWithLifecycle()
     val detectedChords by viewModel.detectedChords.collectAsStateWithLifecycle()
-
     val availableTunings by viewModel.availableTunings.collectAsStateWithLifecycle()
+
+    ChordScaleContent(
+        selectedTuning = selectedTuning,
+        availableTunings = availableTunings,
+        mode = mode,
+        rootNote = rootNote,
+        selectedChord = selectedChord,
+        selectedScale = selectedScale,
+        pressedFrets = pressedFrets,
+        detectedChords = detectedChords,
+        onSelectTuning = viewModel::selectTuning,
+        onSelectRootNote = viewModel::setRootNote,
+        onSelectChord = viewModel::selectChord,
+        onSelectScale = viewModel::selectScale,
+        onClearPressedFrets = viewModel::clearPressedFrets,
+        onFretTapped = { strIdx, fret, midi ->
+            if (mode == FretboardMode.REVERSE_LOOKUP) {
+                viewModel.toggleFret(strIdx, fret, midi)
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun ChordScaleContent(
+    selectedTuning: Tuning?,
+    availableTunings: List<Tuning>,
+    mode: FretboardMode,
+    rootNote: String,
+    selectedChord: ChordFormula?,
+    selectedScale: ScaleFormula?,
+    pressedFrets: Set<FretPosition>,
+    detectedChords: List<String>,
+    onSelectTuning: (String) -> Unit,
+    onSelectRootNote: (String) -> Unit,
+    onSelectChord: (ChordFormula) -> Unit,
+    onSelectScale: (ScaleFormula) -> Unit,
+    onClearPressedFrets: () -> Unit,
+    onFretTapped: (Int, Int, Int) -> Unit,
+) {
     val stringCount = selectedTuning?.stringCount ?: 6
     val tuningNotes = selectedTuning?.notes ?: emptyList()
 
@@ -95,423 +117,330 @@ fun ChordScaleScreen(viewModel: FretboardViewModel = hiltViewModel()) {
     ) {
         if (mode == FretboardMode.CHORD_SCALE_FINDER) {
             // Tuning Selector
-            Text(
-                text = "GUITAR TUNING",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                color = StudioTextMuted,
-                letterSpacing = 1.sp,
-            )
+            SectionTitle(title = "GUITAR TUNING")
             Spacer(Modifier.height(8.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                availableTunings.forEach { tun ->
-                    val isSelected = selectedTuning?.id == tun.id
-                    StudioPill(
-                        text = tun.name,
-                        selected = isSelected,
-                        onClick = { viewModel.selectTuning(tun.id) },
-                        accentColor = ElectricTeal,
-                    )
-                }
-            }
+            TuningPickerRow(
+                availableTunings = availableTunings,
+                selectedTuningId = selectedTuning?.id,
+                onSelectTuning = onSelectTuning,
+            )
             Spacer(Modifier.height(16.dp))
 
-            // Root Note Picker (Chromatic 12 notes)
-            Text(
-                text = "ROOT NOTE",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                color = StudioTextMuted,
-                letterSpacing = 1.sp,
-            )
+            // Root Note Picker
+            SectionTitle(title = "ROOT NOTE")
             Spacer(Modifier.height(8.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                MusicTheory.noteNames.forEach { note ->
-                    val isSelected = rootNote == note
-                    StudioPill(
-                        text = note,
-                        selected = isSelected,
-                        onClick = { viewModel.setRootNote(note) },
-                        accentColor = ElectricAmber,
-                    )
-                }
-            }
+            RootNotePickerRow(
+                rootNote = rootNote,
+                onSelectRootNote = onSelectRootNote,
+            )
 
             Spacer(Modifier.height(16.dp))
 
             // Chord Type Selector
-            Text(
-                text = "CHORDS",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                color = StudioTextMuted,
-                letterSpacing = 1.sp,
-            )
+            SectionTitle(title = "CHORDS")
             Spacer(Modifier.height(8.dp))
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                MusicTheory.chordFormulas.forEach { chord ->
-                    val isSelected = selectedChord?.name == chord.name
-                    StudioPill(
-                        text = chord.name,
-                        selected = isSelected,
-                        onClick = { viewModel.selectChord(chord) },
-                        accentColor = ElectricAmber,
-                    )
-                }
-            }
+            ChordFormulasFlowRow(
+                selectedChordName = selectedChord?.name,
+                onSelectChord = onSelectChord,
+            )
 
             Spacer(Modifier.height(16.dp))
 
             // Scale Type Selector
-            Text(
-                text = "SCALES",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                color = StudioTextMuted,
-                letterSpacing = 1.sp,
-            )
+            SectionTitle(title = "SCALES")
             Spacer(Modifier.height(8.dp))
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                MusicTheory.scaleFormulas.forEach { scale ->
-                    val isSelected = selectedScale?.name == scale.name
-                    StudioPill(
-                        text = scale.name,
-                        selected = isSelected,
-                        onClick = { viewModel.selectScale(scale) },
-                        accentColor = ElectricTeal,
-                    )
-                }
-            }
+            ScaleFormulasFlowRow(
+                selectedScaleName = selectedScale?.name,
+                onSelectScale = onSelectScale,
+            )
         } else {
             // Reverse Chord Lookup Header
-            StudioCard(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(14.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Tap any fret to place fingers",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = StudioTextPrimary,
-                        )
-                        if (detectedChords.isNotEmpty()) {
-                            Text(
-                                text = "Detected: ${detectedChords.joinToString(", ")}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Black,
-                                color = ElectricGreen,
-                            )
-                        } else {
-                            Text(
-                                text = "Press 2+ notes to identify chord",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = StudioTextSecondary,
-                            )
-                        }
-                    }
-
-                    if (pressedFrets.isNotEmpty()) {
-                        Studio3DIconBadge(
-                            icon = Icons.Default.Clear,
-                            contentDescription = "Clear",
-                            size = 36.dp,
-                            accent = Studio3DAccent.RUBY,
-                            onClick = { viewModel.clearPressedFrets() },
-                        )
-                    }
-                }
-            }
+            ReverseLookupHeaderCard(
+                detectedChords = detectedChords,
+                hasPressedFrets = pressedFrets.isNotEmpty(),
+                onClear = onClearPressedFrets,
+            )
         }
 
         Spacer(Modifier.height(18.dp))
 
-        // Fretboard Visualizer (Realistic Woodgrain Neck + Mother of Pearl Inlays)
+        // Fretboard Visualizer Title
         val title = if (mode == FretboardMode.CHORD_SCALE_FINDER) {
             val type = selectedChord?.name ?: selectedScale?.name ?: "Diagram"
             "$rootNote $type Fretboard"
-        } else "Interactive Fretboard"
+        } else {
+            "Interactive Fretboard"
+        }
 
-        Text(
-            text = title.uppercase(),
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            color = StudioTextMuted,
-            letterSpacing = 1.sp,
-        )
-
+        SectionTitle(title = title.uppercase())
         Spacer(Modifier.height(10.dp))
 
-        StudioCard(
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(vertical = 16.dp, horizontal = 8.dp),
-            ) {
-                RealisticFretboardCanvas(
-                    stringCount = stringCount,
-                    tuningNotes = tuningNotes,
-                    mode = mode,
-                    rootPitchIndex = MusicTheory.getMidiNoteIndex(rootNote),
-                    targetIntervals = selectedChord?.intervals ?: selectedScale?.intervals ?: emptyList(),
-                    pressedFrets = pressedFrets,
-                    onFretTapped = { strIdx, fret, midi ->
-                        if (mode == FretboardMode.REVERSE_LOOKUP) {
-                            viewModel.toggleFret(strIdx, fret, midi)
-                        }
-                    },
-                )
-            }
-        }
+        ChordScaleFretboardContainer(
+            stringCount = stringCount,
+            tuningNotes = tuningNotes,
+            mode = mode,
+            rootNote = rootNote,
+            selectedChord = selectedChord,
+            selectedScale = selectedScale,
+            pressedFrets = pressedFrets,
+            onFretTapped = onFretTapped,
+        )
 
         Spacer(Modifier.height(24.dp))
     }
 }
 
 @Composable
-fun RealisticFretboardCanvas(
-    stringCount: Int,
-    tuningNotes: List<com.mmt.guitarlab.domain.model.TuningNote>,
-    mode: FretboardMode,
-    rootPitchIndex: Int,
-    targetIntervals: List<Int>,
-    pressedFrets: Set<FretPosition>,
-    onFretTapped: (stringIndex: Int, fret: Int, midiNote: Int) -> Unit,
+private fun SectionTitle(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.Bold,
+        color = StudioTextMuted,
+        letterSpacing = 1.sp,
+    )
+}
+
+@Composable
+private fun TuningPickerRow(
+    availableTunings: List<Tuning>,
+    selectedTuningId: String?,
+    onSelectTuning: (String) -> Unit,
 ) {
-    val totalFrets = 15
-    val fretWidth = 54.dp
-    val stringSpacing = 28.dp
-    val textMeasurer = rememberTextMeasurer()
-    val totalWidth = fretWidth * (totalFrets + 1) + 60.dp
-    val totalHeight = stringSpacing * (stringCount + 1)
-
-    // Layout constants in DP
-    val startXdp = 44.dp
-    val startYdp = 18.dp
-
-    Canvas(
+    Row(
         modifier = Modifier
-            .size(width = totalWidth, height = totalHeight)
-            .pointerInput(mode, stringCount, tuningNotes) {
-                detectTapGestures { offset ->
-                    val fWidthPx = fretWidth.toPx()
-                    val sHeightPx = stringSpacing.toPx()
-                    val startXPx = startXdp.toPx()
-                    val startYPx = startYdp.toPx()
-
-                    val relX = offset.x - startXPx
-                    val relY = offset.y - startYPx
-
-                    // Vertical hit-testing for string index
-                    if (relY >= -sHeightPx / 2f && relY <= (stringCount - 0.5f) * sHeightPx) {
-                        val stringIdx = ((relY + sHeightPx / 2f) / sHeightPx).toInt().coerceIn(0, stringCount - 1)
-                        
-                        // Fret hit-testing:
-                        // relX < 0 is open string (fret 0)
-                        // relX in [0, fWidthPx) is fret 1 (between nut and fret wire 1)
-                        // relX in [fWidthPx * (f-1), fWidthPx * f) is fret f
-                        val fret = if (relX < 0) {
-                            0
-                        } else {
-                            val calculatedFret = (relX / fWidthPx).toInt() + 1
-                            calculatedFret.coerceIn(0, totalFrets)
-                        }
-
-                        val baseMidi = tuningNotes.getOrNull(stringIdx)?.midiNote ?: (64 - stringIdx * 5)
-                        onFretTapped(stringIdx, fret, baseMidi + fret)
-                    }
-                }
-            },
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        val fWidth = fretWidth.toPx()
-        val sHeight = stringSpacing.toPx()
-        val startX = startXdp.toPx()
-        val startY = startYdp.toPx()
-        val neckHeight = (stringCount - 1) * sHeight
-
-        // Dark Studio Ebony Wood Neck Background
-        drawRoundRect(
-            brush = Brush.verticalGradient(
-                listOf(Color(0xFF1E232F), Color(0xFF131720)),
-            ),
-            topLeft = Offset(startX, startY - 8.dp.toPx()),
-            size = Size(totalFrets * fWidth, neckHeight + 16.dp.toPx()),
-            cornerRadius = CornerRadius(6.dp.toPx(), 6.dp.toPx()),
-        )
-
-        // Mother of Pearl Fret Markers: Single dots at 3, 5, 7, 9, 15; Double dots at 12
-        val singleDotFrets = listOf(3, 5, 7, 9, 15)
-        singleDotFrets.forEach { f ->
-            val cx = startX + (f - 0.5f) * fWidth
-            val cy = startY + neckHeight / 2f
-            drawCircle(
-                color = Color(0xFF8899B0).copy(alpha = 0.45f),
-                radius = 5.dp.toPx(),
-                center = Offset(cx, cy),
+        availableTunings.forEach { tun ->
+            val isSelected = selectedTuningId == tun.id
+            StudioPill(
+                text = tun.name,
+                selected = isSelected,
+                onClick = { onSelectTuning(tun.id) },
+                accentColor = ElectricTeal,
             )
         }
+    }
+}
 
-        // Double dot at fret 12
-        val cx12 = startX + (12 - 0.5f) * fWidth
-        drawCircle(
-            color = Color(0xFF8899B0).copy(alpha = 0.45f),
-            radius = 4.5.dp.toPx(),
-            center = Offset(cx12, startY + neckHeight * 0.28f),
-        )
-        drawCircle(
-            color = Color(0xFF8899B0).copy(alpha = 0.45f),
-            radius = 4.5.dp.toPx(),
-            center = Offset(cx12, startY + neckHeight * 0.72f),
-        )
-
-        // Draw Nut (Fret 0 wire)
-        drawLine(
-            color = Color(0xFFE2E8F0),
-            start = Offset(startX, startY - 8.dp.toPx()),
-            end = Offset(startX, startY + neckHeight + 8.dp.toPx()),
-            strokeWidth = 6.dp.toPx(),
-        )
-
-        // Draw Fret 0 indicator label
-        drawText(
-            textMeasurer = textMeasurer,
-            text = "0",
-            topLeft = Offset(startX - 22.dp.toPx(), startY + neckHeight + 12.dp.toPx()),
-            style = TextStyle(
-                color = Color(0xFFFBBF24),
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-            ),
-        )
-
-        // Draw Frets 1..15
-        for (fret in 1..totalFrets) {
-            val x = startX + fret * fWidth
-            drawLine(
-                color = Color(0xFF3E4B66),
-                start = Offset(x, startY - 8.dp.toPx()),
-                end = Offset(x, startY + neckHeight + 8.dp.toPx()),
-                strokeWidth = 2.5.dp.toPx(),
+@Composable
+private fun RootNotePickerRow(
+    rootNote: String,
+    onSelectRootNote: (String) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        MusicTheory.noteNames.forEach { note ->
+            val isSelected = rootNote == note
+            StudioPill(
+                text = note,
+                selected = isSelected,
+                onClick = { onSelectRootNote(note) },
+                accentColor = ElectricAmber,
             )
+        }
+    }
+}
 
-            // Fret Numbers below neck centered between fret-1 and fret
-            drawText(
-                textMeasurer = textMeasurer,
-                text = "$fret",
-                topLeft = Offset(x - fWidth / 2f - 4.dp.toPx(), startY + neckHeight + 12.dp.toPx()),
-                style = TextStyle(
-                    color = if (fret in listOf(3, 5, 7, 9, 12, 15)) Color(0xFFE2E8F0) else Color(0xFF64748B),
-                    fontSize = 11.sp,
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ChordFormulasFlowRow(
+    selectedChordName: String?,
+    onSelectChord: (ChordFormula) -> Unit,
+) {
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        MusicTheory.chordFormulas.forEach { chord ->
+            val isSelected = selectedChordName == chord.name
+            StudioPill(
+                text = chord.name,
+                selected = isSelected,
+                onClick = { onSelectChord(chord) },
+                accentColor = ElectricAmber,
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ScaleFormulasFlowRow(
+    selectedScaleName: String?,
+    onSelectScale: (ScaleFormula) -> Unit,
+) {
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        MusicTheory.scaleFormulas.forEach { scale ->
+            val isSelected = selectedScaleName == scale.name
+            StudioPill(
+                text = scale.name,
+                selected = isSelected,
+                onClick = { onSelectScale(scale) },
+                accentColor = ElectricTeal,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReverseLookupHeaderCard(
+    detectedChords: List<String>,
+    hasPressedFrets: Boolean,
+    onClear: () -> Unit,
+) {
+    StudioCard(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Tap any fret to place fingers",
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                ),
-            )
-        }
-
-        // Draw Strings & Note Inlays
-        for (stringIdx in 0 until stringCount) {
-            val y = startY + stringIdx * sHeight
-            val noteObj = tuningNotes.getOrNull(stringIdx)
-            val baseMidi = noteObj?.midiNote ?: (64 - stringIdx * 5)
-            val stringName = noteObj?.noteName ?: "E"
-
-            // Steel/Nickel guitar string with thickness variation (thickest at bottom)
-            val stringThickness = (stringIdx) * 0.5f + 1.2f
-            drawLine(
-                color = Color(0xFFB0BCCC),
-                start = Offset(startX - 30.dp.toPx(), y),
-                end = Offset(startX + totalFrets * fWidth, y),
-                strokeWidth = stringThickness.dp.toPx(),
-            )
-
-            // String Name Label to the far left
-            drawText(
-                textMeasurer = textMeasurer,
-                text = stringName,
-                topLeft = Offset(startX - 38.dp.toPx(), y - 7.dp.toPx()),
-                style = TextStyle(
-                    color = Color(0xFFFDE68A),
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Black,
-                ),
-            )
-
-            // Notes on frets (0 to totalFrets)
-            for (fret in 0..totalFrets) {
-                val noteMidi = baseMidi + fret
-                val pitchClass = (noteMidi % 12 + 12) % 12
-                val noteName = MusicTheory.noteNames[pitchClass]
-                val intervalFromRoot = (pitchClass - rootPitchIndex + 12) % 12
-                val isTargetNote = targetIntervals.contains(intervalFromRoot)
-                val isRoot = intervalFromRoot == 0 && isTargetNote
-                val isPressed = mode == FretboardMode.REVERSE_LOOKUP &&
-                    pressedFrets.any { it.stringIndex == stringIdx && it.fret == fret }
-
-                // Correct note center:
-                // Fret 0 is open note to the left of the nut (startX - 16.dp)
-                // Fret f (1..15) is centered between fret wire (f-1) and f: startX + (f - 0.5f) * fWidth
-                val nx = if (fret == 0) (startX - 16.dp.toPx()) else (startX + (fret - 0.5f) * fWidth)
-
-                if ((mode == FretboardMode.CHORD_SCALE_FINDER && isTargetNote) || isPressed) {
-                    val dotColor = when {
-                        isPressed -> ElectricTeal
-                        isRoot -> ElectricAmber
-                        else -> Color(0xFF00B4D8)
-                    }
-
-                    // Outer halo for root notes or pressed notes
-                    if (isRoot || isPressed) {
-                        drawCircle(
-                            color = (if (isPressed) ElectricTeal else ElectricAmber).copy(alpha = 0.35f),
-                            radius = 16.dp.toPx(),
-                            center = Offset(nx, y),
-                        )
-                    }
-
-                    // Note Circle
-                    drawCircle(
-                        color = dotColor,
-                        radius = 12.dp.toPx(),
-                        center = Offset(nx, y),
+                    color = StudioTextPrimary,
+                )
+                if (detectedChords.isNotEmpty()) {
+                    Text(
+                        text = "Detected: ${detectedChords.joinToString(", ")}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Black,
+                        color = ElectricGreen,
                     )
-
-                    // Text Note Name inside circle
-                    drawText(
-                        textMeasurer = textMeasurer,
-                        text = if (isPressed) "$noteName" else noteName,
-                        topLeft = Offset(nx - 5.dp.toPx(), y - 7.dp.toPx()),
-                        style = TextStyle(
-                            color = Color(0xFF0C1017),
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Black,
-                        ),
+                } else {
+                    Text(
+                        text = "Press 2+ notes to identify chord",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = StudioTextSecondary,
                     )
                 }
             }
+
+            if (hasPressedFrets) {
+                Studio3DIconBadge(
+                    icon = Icons.Default.Clear,
+                    contentDescription = "Clear",
+                    size = 36.dp,
+                    accent = Studio3DAccent.RUBY,
+                    onClick = onClear,
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun ChordScaleFretboardContainer(
+    stringCount: Int,
+    tuningNotes: List<TuningNote>,
+    mode: FretboardMode,
+    rootNote: String,
+    selectedChord: ChordFormula?,
+    selectedScale: ScaleFormula?,
+    pressedFrets: Set<FretPosition>,
+    onFretTapped: (Int, Int, Int) -> Unit,
+) {
+    StudioCard(modifier = Modifier.fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(vertical = 16.dp, horizontal = 8.dp),
+        ) {
+            RealisticFretboardCanvas(
+                stringCount = stringCount,
+                tuningNotes = tuningNotes,
+                mode = mode,
+                rootPitchIndex = MusicTheory.getMidiNoteIndex(rootNote),
+                targetIntervals = selectedChord?.intervals ?: selectedScale?.intervals ?: emptyList(),
+                pressedFrets = pressedFrets,
+                onFretTapped = onFretTapped,
+            )
+        }
+    }
+}
+
+// ==================== PREVIEWS ====================
+
+@Preview(showBackground = true, backgroundColor = 0xFF121212)
+@Composable
+private fun ChordScaleContentPreview() {
+    GuitarLabTheme {
+        ChordScaleContent(
+            selectedTuning = Tuning(
+                id = "standard",
+                name = "Standard E",
+                notes = listOf(
+                    TuningNote(1, "E", 2, 82.4f, midiNote = 0),
+                    TuningNote(2, "A", 2, 110.0f, midiNote = 0),
+                    TuningNote(3, "D", 3, 146.8f, midiNote = 0),
+                    TuningNote(4, "G", 3, 196.0f, midiNote = 0),
+                    TuningNote(5, "B", 3, 246.9f, midiNote = 0),
+                    TuningNote(6, "E", 4, 329.6f, midiNote = 0),
+                ),
+                stringCount = 6,
+                category = "Standard",
+                isFavorite = false
+            ),
+            availableTunings = listOf(
+                Tuning(
+                    id = "standard",
+                    name = "Standard E",
+                    notes = listOf(
+                        TuningNote(1, "E", 2, 82.4f, midiNote = 0),
+                        TuningNote(2, "A", 2, 110.0f, midiNote = 0),
+                        TuningNote(3, "D", 3, 146.8f, midiNote = 0),
+                        TuningNote(4, "G", 3, 196.0f, midiNote = 0),
+                        TuningNote(5, "B", 3, 246.9f, midiNote = 0),
+                        TuningNote(6, "E", 4, 329.6f, midiNote = 0),
+                    ),
+                    stringCount = 6,
+                    category = "Standard",
+                    isFavorite = false
+                ),
+                Tuning(
+                    id = "standard",
+                    name = "Standard E",
+                    notes = listOf(
+                        TuningNote(1, "E", 2, 82.4f, midiNote = 0),
+                        TuningNote(2, "A", 2, 110.0f, midiNote = 0),
+                        TuningNote(3, "D", 3, 146.8f, midiNote = 0),
+                        TuningNote(4, "G", 3, 196.0f, midiNote = 0),
+                        TuningNote(5, "B", 3, 246.9f, midiNote = 0),
+                        TuningNote(6, "E", 4, 329.6f, midiNote = 0),
+                    ),
+                    stringCount = 6,
+                    category = "Standard",
+                    isFavorite = false
+                ),
+            ),
+            mode = FretboardMode.CHORD_SCALE_FINDER,
+            rootNote = "C",
+            selectedChord = ChordFormula("Major", listOf(0, 4, 7)),
+            selectedScale = null,
+            pressedFrets = emptySet(),
+            detectedChords = emptyList(),
+            onSelectTuning = {},
+            onSelectRootNote = {},
+            onSelectChord = {},
+            onSelectScale = {},
+            onClearPressedFrets = {},
+            onFretTapped = { _, _, _ -> }
+        )
     }
 }

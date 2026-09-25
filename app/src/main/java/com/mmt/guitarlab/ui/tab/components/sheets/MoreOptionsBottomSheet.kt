@@ -180,38 +180,3 @@ fun MoreOptionsBottomSheet(
         }
     }
 }
-
-@Composable
-private fun OptionItemRow(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(Color(0xFF181B22))
-            .border(1.dp, Color(0xFF2E333D), RoundedCornerShape(14.dp))
-            .clickable { onClick() }
-            .padding(14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(Color(0xFF272C38)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(imageVector = icon, contentDescription = null, tint = Color(0xFFFBBF24), modifier = Modifier.size(18.dp))
-        }
-
-        Column {
-            Text(text = title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
-            Text(text = subtitle, fontSize = 11.sp, color = Color(0xFF9CA3AF))
-        }
-    }
-}

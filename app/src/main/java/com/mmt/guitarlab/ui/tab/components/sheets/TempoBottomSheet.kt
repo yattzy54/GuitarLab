@@ -18,6 +18,7 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,8 +26,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mmt.guitarlab.ui.theme.GuitarLabTheme
+import com.mmt.guitarlab.ui.theme.StudioDarkBg
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -141,6 +145,30 @@ fun TempoBottomSheet(
                     }
                 }
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(showBackground = true, backgroundColor = 0xFF121212)
+@Composable
+private fun TempoBottomSheetPreview() {
+    GuitarLabTheme {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+        Box(
+            modifier = Modifier
+                .background(StudioDarkBg)
+                .fillMaxWidth()
+                .height(400.dp)
+        ) {
+            TempoBottomSheet(
+                sheetState = sheetState,
+                onDismissRequest = {},
+                speedRatio = 0.75f,
+                onSpeedRatioChange = {},
+                baseTempoBpm = 120,
+            )
         }
     }
 }

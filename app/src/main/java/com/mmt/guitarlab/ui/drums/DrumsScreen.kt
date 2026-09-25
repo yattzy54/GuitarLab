@@ -1,5 +1,6 @@
 package com.mmt.guitarlab.ui.drums
 
+import GroovePresetBottomSheet
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,24 +25,17 @@ import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.GraphicEq
-import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
@@ -55,11 +49,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -72,17 +64,43 @@ import com.mmt.guitarlab.ui.components.Studio3DAccent
 import com.mmt.guitarlab.ui.components.Studio3DIconBadge
 import com.mmt.guitarlab.ui.components.StudioCard
 import com.mmt.guitarlab.ui.theme.ElectricAmber
-import com.mmt.guitarlab.ui.theme.ElectricGreen
 import com.mmt.guitarlab.ui.theme.ElectricRuby
 import com.mmt.guitarlab.ui.theme.ElectricTeal
 import com.mmt.guitarlab.ui.theme.GuitarLabTheme
-import com.mmt.guitarlab.ui.theme.StudioCardBg
 import com.mmt.guitarlab.ui.theme.StudioCardBorder
 import com.mmt.guitarlab.ui.theme.StudioCardElevated
 import com.mmt.guitarlab.ui.theme.StudioDarkBg
 import com.mmt.guitarlab.ui.theme.StudioTextMuted
 import com.mmt.guitarlab.ui.theme.StudioTextPrimary
 import com.mmt.guitarlab.ui.theme.StudioTextSecondary
+
+// --- Статические константы вынесены за пределы Composable для оптимизации ---
+
+private val QUICK_BPM_VALUES = listOf(60, 80, 100, 120, 140, 160, 180)
+
+private val DISPLAYED_SOUNDS = listOf(
+    DrumSound.CRASH to ("CR" to Color(0xFFA855F7)),
+    DrumSound.HIHAT_OPEN to ("OH" to Color(0xFF00E676)),
+    DrumSound.HIHAT_CLOSED to ("CH" to ElectricTeal),
+    DrumSound.TOM_LOW to ("TOM" to Color(0xFF3B82F6)),
+    DrumSound.SNARE to ("SN" to ElectricRuby),
+    DrumSound.KICK to ("KICK" to ElectricAmber),
+)
+
+private val AUDITION_PADS = listOf(
+    DrumSound.KICK to ("KICK" to ElectricAmber),
+    DrumSound.SNARE to ("SNARE" to ElectricRuby),
+    DrumSound.HIHAT_CLOSED to ("HAT" to ElectricTeal),
+    DrumSound.TOM_LOW to ("TOM" to Color(0xFF3B82F6)),
+    DrumSound.CRASH to ("CRASH" to Color(0xFFA855F7)),
+)
+
+private val SWING_PRESETS = listOf(
+    "Straight" to 0f,
+    "Light" to 0.18f,
+    "Triplet" to 0.33f,
+    "Heavy" to 0.48f,
+)
 
 @Composable
 fun DrumsScreen(
@@ -191,110 +209,21 @@ fun DrumsContent(
 
         Spacer(Modifier.height(14.dp))
 
-        // DRUM KIT & PRESET SELECTOR CARDS (Bottom Sheet Triggers)
+        // DRUM KIT & PRESET SELECTOR CARDS (Вынесены в отдельные компоненты)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            // Kit Selector Card
-            StudioCard(
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable { showKitBottomSheet = true },
-                accentBorder = ElectricAmber.copy(alpha = 0.5f),
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = currentKit.iconEmoji,
-                        fontSize = 22.sp,
-                    )
-                    Spacer(Modifier.width(10.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "DRUM KIT",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = ElectricAmber,
-                            fontSize = 9.5.sp,
-                            letterSpacing = 0.8.sp,
-                        )
-                        Text(
-                            text = currentKit.displayName,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = StudioTextPrimary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                    Icon(
-                        imageVector = Icons.Default.ChevronRight,
-                        contentDescription = "Change Kit",
-                        tint = StudioTextMuted,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-            }
-
-            // Preset Selector Card
-            StudioCard(
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable { showPresetBottomSheet = true },
-                accentBorder = ElectricTeal.copy(alpha = 0.5f),
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(ElectricTeal.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MusicNote,
-                            contentDescription = null,
-                            tint = ElectricTeal,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    }
-                    Spacer(Modifier.width(10.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "GROOVE PRESET",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = ElectricTeal,
-                            fontSize = 9.5.sp,
-                            letterSpacing = 0.8.sp,
-                        )
-                        Text(
-                            text = pattern.name,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = StudioTextPrimary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                    Icon(
-                        imageVector = Icons.Default.ChevronRight,
-                        contentDescription = "Browse Presets",
-                        tint = StudioTextMuted,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-            }
+            KitSelectorCard(
+                currentKit = currentKit,
+                modifier = Modifier.weight(1f),
+                onClick = { showKitBottomSheet = true },
+            )
+            PresetSelectorCard(
+                patternName = pattern.name,
+                modifier = Modifier.weight(1f),
+                onClick = { showPresetBottomSheet = true },
+            )
         }
 
         Spacer(Modifier.height(14.dp))
@@ -454,7 +383,7 @@ fun DrumsContent(
                         .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    listOf(60, 80, 100, 120, 140, 160, 180).forEach { quickBpm ->
+                    QUICK_BPM_VALUES.forEach { quickBpm ->
                         val isSelected = bpm == quickBpm
                         Box(
                             modifier = Modifier
@@ -516,15 +445,6 @@ fun DrumsContent(
 
                 Spacer(Modifier.height(12.dp))
 
-                val displayedSounds = listOf(
-                    DrumSound.CRASH to ("CR" to Color(0xFFA855F7)),
-                    DrumSound.HIHAT_OPEN to ("OH" to Color(0xFF00E676)),
-                    DrumSound.HIHAT_CLOSED to ("CH" to ElectricTeal),
-                    DrumSound.TOM_LOW to ("TOM" to Color(0xFF3B82F6)),
-                    DrumSound.SNARE to ("SN" to ElectricRuby),
-                    DrumSound.KICK to ("KICK" to ElectricAmber),
-                )
-
                 // Step headers (1..16)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -554,7 +474,7 @@ fun DrumsContent(
                 Spacer(Modifier.height(6.dp))
 
                 // Drum rows
-                displayedSounds.forEach { (sound, info) ->
+                DISPLAYED_SOUNDS.forEach { (sound, info) ->
                     val (label, soundColor) = info
                     val rowHits = pattern.grid[sound] ?: BooleanArray(16) { false }
                     Row(
@@ -563,7 +483,6 @@ fun DrumsContent(
                             .padding(vertical = 3.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        // Sound label / preview
                         Text(
                             text = label,
                             style = MaterialTheme.typography.labelSmall,
@@ -574,7 +493,6 @@ fun DrumsContent(
                                 .clickable { onPreviewSound(sound) },
                         )
 
-                        // 16 step boxes
                         Row(
                             modifier = Modifier.weight(1f),
                             horizontalArrangement = Arrangement.spacedBy(3.dp),
@@ -612,12 +530,11 @@ fun DrumsContent(
 
                 Spacer(Modifier.height(14.dp))
 
-                // Sequencer Action Bar (Clear, Randomize, Reset)
+                // Sequencer Action Bar
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    // Clear
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -631,16 +548,10 @@ fun DrumsContent(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Clear, null, tint = StudioTextMuted, modifier = Modifier.size(14.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text(
-                                text = "Clear",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = StudioTextSecondary,
-                            )
+                            Text(text = "Clear", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = StudioTextSecondary)
                         }
                     }
 
-                    // Randomize
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -654,16 +565,10 @@ fun DrumsContent(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.AutoAwesome, null, tint = ElectricAmber, modifier = Modifier.size(14.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text(
-                                text = "Random",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = ElectricAmber,
-                            )
+                            Text(text = "Random", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = ElectricAmber)
                         }
                     }
 
-                    // Reset
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -677,12 +582,7 @@ fun DrumsContent(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Refresh, null, tint = ElectricTeal, modifier = Modifier.size(14.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text(
-                                text = "Reset",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = ElectricTeal,
-                            )
+                            Text(text = "Reset", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = ElectricTeal)
                         }
                     }
                 }
@@ -706,14 +606,7 @@ fun DrumsContent(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    val pads = listOf(
-                        DrumSound.KICK to ("KICK" to ElectricAmber),
-                        DrumSound.SNARE to ("SNARE" to ElectricRuby),
-                        DrumSound.HIHAT_CLOSED to ("HAT" to ElectricTeal),
-                        DrumSound.TOM_LOW to ("TOM" to Color(0xFF3B82F6)),
-                        DrumSound.CRASH to ("CRASH" to Color(0xFFA855F7)),
-                    )
-                    pads.forEach { (sound, info) ->
+                    AUDITION_PADS.forEach { (sound, info) ->
                         val (label, color) = info
                         Box(
                             modifier = Modifier
@@ -743,7 +636,6 @@ fun DrumsContent(
         // Groove & Master Controls Card
         StudioCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
-                // Groove / Swing Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -782,18 +674,11 @@ fun DrumsContent(
                     ),
                 )
 
-                // Quick Swing presets
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    val swingPresets = listOf(
-                        "Straight" to 0f,
-                        "Light" to 0.18f,
-                        "Triplet" to 0.33f,
-                        "Heavy" to 0.48f,
-                    )
-                    swingPresets.forEach { (label, swVal) ->
+                    SWING_PRESETS.forEach { (label, swVal) ->
                         val isSel = kotlin.math.abs(swing - swVal) < 0.05f
                         Box(
                             modifier = Modifier
@@ -822,7 +707,6 @@ fun DrumsContent(
 
                 Spacer(Modifier.height(14.dp))
 
-                // Master Volume
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -860,321 +744,31 @@ fun DrumsContent(
         }
     }
 
-    // MODAL BOTTOM SHEET 1: DRUM KIT SELECTOR
+    // Модальные листы
     if (showKitBottomSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showKitBottomSheet = false },
+        DrumKitBottomSheet(
+            currentKit = currentKit,
             sheetState = kitSheetState,
-            containerColor = StudioCardBg,
-            contentColor = StudioTextPrimary,
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .padding(bottom = 28.dp),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Studio3DIconBadge(
-                        icon = Icons.Default.Album,
-                        contentDescription = null,
-                        size = 40.dp,
-                        accent = Studio3DAccent.AMBER,
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = "SELECT DRUM KIT",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Black,
-                            color = StudioTextPrimary,
-                        )
-                        Text(
-                            text = "Choose acoustic & electronic drum sound profiles",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = StudioTextSecondary,
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(16.dp))
-
-                Column(
-                    modifier = Modifier.verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    DrumKit.entries.forEach { kit ->
-                        val isSelected = kit == currentKit
-                        val borderCol = if (isSelected) ElectricAmber else StudioCardBorder
-                        val bgCol = if (isSelected) ElectricAmber.copy(alpha = 0.12f) else StudioCardElevated
-
-                        StudioCard(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    onSetDrumKit(kit)
-                                    showKitBottomSheet = false
-                                },
-                            accentBorder = borderCol,
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(bgCol)
-                                    .padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    text = kit.iconEmoji,
-                                    fontSize = 28.sp,
-                                )
-                                Spacer(Modifier.width(14.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            text = kit.displayName,
-                                            style = MaterialTheme.typography.titleSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = StudioTextPrimary,
-                                        )
-                                        Spacer(Modifier.width(8.dp))
-                                        Box(
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(6.dp))
-                                                .background(StudioCardBorder)
-                                                .padding(horizontal = 6.dp, vertical = 2.dp),
-                                        ) {
-                                            Text(
-                                                text = kit.styleCategory,
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = StudioTextSecondary,
-                                                fontSize = 9.5.sp,
-                                            )
-                                        }
-                                    }
-                                    Spacer(Modifier.height(2.dp))
-                                    Text(
-                                        text = kit.description,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = StudioTextMuted,
-                                        fontSize = 12.sp,
-                                    )
-                                }
-
-                                Spacer(Modifier.width(8.dp))
-
-                                // Audition sample button
-                                IconButton(
-                                    onClick = {
-                                        onSetDrumKit(kit)
-                                        onPreviewSound(DrumSound.KICK)
-                                        onPreviewSound(DrumSound.SNARE)
-                                    },
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .clip(CircleShape)
-                                        .background(StudioCardBorder),
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.VolumeUp,
-                                        contentDescription = "Audition Kit",
-                                        tint = ElectricAmber,
-                                        modifier = Modifier.size(18.dp),
-                                    )
-                                }
-
-                                if (isSelected) {
-                                    Spacer(Modifier.width(6.dp))
-                                    Icon(
-                                        imageVector = Icons.Default.Check,
-                                        contentDescription = "Selected",
-                                        tint = ElectricAmber,
-                                        modifier = Modifier.size(22.dp),
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+            onDismiss = { showKitBottomSheet = false },
+            onSelectKit = onSetDrumKit,
+            onPreviewSound = onPreviewSound,
+        )
     }
 
-    // MODAL BOTTOM SHEET 2: PRESET GROOVE SELECTOR
     if (showPresetBottomSheet) {
-        var selectedStyleFilter by remember { mutableStateOf("All") }
-
-        ModalBottomSheet(
-            onDismissRequest = { showPresetBottomSheet = false },
+        GroovePresetBottomSheet(
+            currentPattern = pattern,
+            patterns = patterns,
             sheetState = presetSheetState,
-            containerColor = StudioCardBg,
-            contentColor = StudioTextPrimary,
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .padding(bottom = 28.dp),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Studio3DIconBadge(
-                        icon = Icons.Default.MusicNote,
-                        contentDescription = null,
-                        size = 40.dp,
-                        accent = Studio3DAccent.TEAL,
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = "GROOVE PRESET CATALOG",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Black,
-                            color = StudioTextPrimary,
-                        )
-                        Text(
-                            text = "Choose drum rhythm patterns for practice & jamming",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = StudioTextSecondary,
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(14.dp))
-
-                // Style Filters
-                val styleCategories = listOf("All", "Rock", "Metal", "Blues", "Funk", "Jazz", "Reggae", "Latin", "Pop", "Hip Hop")
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    styleCategories.forEach { style ->
-                        val isSel = selectedStyleFilter == style
-                        FilterChip(
-                            selected = isSel,
-                            onClick = { selectedStyleFilter = style },
-                            label = { Text(style) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = ElectricTeal,
-                                selectedLabelColor = Color.Black,
-                                containerColor = StudioCardElevated,
-                                labelColor = StudioTextSecondary,
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                borderColor = if (isSel) ElectricTeal else StudioCardBorder,
-                                enabled = true,
-                                selected = isSel,
-                            ),
-                            shape = RoundedCornerShape(10.dp),
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(14.dp))
-
-                val filteredPatterns = remember(selectedStyleFilter, patterns) {
-                    if (selectedStyleFilter == "All") patterns
-                    else patterns.filter { it.style.equals(selectedStyleFilter, ignoreCase = true) }
-                }
-
-                Column(
-                    modifier = Modifier
-                        .height(380.dp)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    filteredPatterns.forEach { pat ->
-                        val isSelected = pat.id == pattern.id
-                        val borderCol = if (isSelected) ElectricTeal else StudioCardBorder
-                        val bgCol = if (isSelected) ElectricTeal.copy(alpha = 0.12f) else StudioCardElevated
-
-                        StudioCard(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    onSelectPattern(pat)
-                                    showPresetBottomSheet = false
-                                },
-                            accentBorder = borderCol,
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(bgCol)
-                                    .padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            text = pat.name,
-                                            style = MaterialTheme.typography.titleSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = StudioTextPrimary,
-                                        )
-                                        Spacer(Modifier.width(8.dp))
-                                        Box(
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(6.dp))
-                                                .background(ElectricTeal.copy(alpha = 0.2f))
-                                                .padding(horizontal = 6.dp, vertical = 2.dp),
-                                        ) {
-                                            Text(
-                                                text = pat.style,
-                                                style = MaterialTheme.typography.labelSmall,
-                                                fontWeight = FontWeight.Bold,
-                                                color = ElectricTeal,
-                                                fontSize = 9.5.sp,
-                                            )
-                                        }
-                                    }
-
-                                    Spacer(Modifier.height(4.dp))
-
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            imageVector = Icons.Default.Speed,
-                                            contentDescription = null,
-                                            tint = StudioTextMuted,
-                                            modifier = Modifier.size(13.dp),
-                                        )
-                                        Spacer(Modifier.width(4.dp))
-                                        Text(
-                                            text = "Default: ${pat.defaultBpm} BPM",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = StudioTextMuted,
-                                            fontSize = 11.5.sp,
-                                        )
-                                    }
-                                }
-
-                                if (isSelected) {
-                                    Icon(
-                                        imageVector = Icons.Default.Check,
-                                        contentDescription = "Selected",
-                                        tint = ElectricTeal,
-                                        modifier = Modifier.size(22.dp),
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+            onDismiss = { showPresetBottomSheet = false },
+            onSelectPattern = onSelectPattern,
+        )
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, backgroundColor = 0xFF12151C)
 @Composable
-private fun DrumsScreenPreview() {
+private fun DrumsContentPreview() {
     GuitarLabTheme {
         DrumsContent(
             isPlaying = false,

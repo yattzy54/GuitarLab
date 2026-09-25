@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -31,8 +32,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mmt.guitarlab.ui.theme.GuitarLabTheme
+import com.mmt.guitarlab.ui.theme.StudioDarkBg
 
 /**
  * Fixed Bottom Control Bar for Tab Player:
@@ -192,6 +196,50 @@ fun SongsterrBottomControlBar(
                     modifier = Modifier.size(16.dp)
                 )
             }
+        }
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF121212)
+@Composable
+private fun SongsterrBottomControlBarPreview() {
+    GuitarLabTheme {
+        Column(
+            modifier = Modifier
+                .background(StudioDarkBg)
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            // Состояние 1: Пауза, обычный режим без петли
+            SongsterrBottomControlBar(
+                isPlaying = false,
+                onTogglePlay = {},
+                activeTrackName = "Guitar 1 (Distortion)",
+                speedRatio = 1.0f,
+                isLoopActive = false,
+                loopRange = null,
+                onToggleLoop = {},
+                onOpenMixer = {},
+                onOpenTempoPicker = {},
+                onOpenMoreMenu = {},
+                trackCount = 3,
+            )
+
+            // Состояние 2: Воспроизведение, с активной петлей и измененной скоростью
+            SongsterrBottomControlBar(
+                isPlaying = true,
+                onTogglePlay = {},
+                activeTrackName = "Solo Lead",
+                speedRatio = 0.75f,
+                isLoopActive = true,
+                loopRange = Pair(12, 16),
+                onToggleLoop = {},
+                onOpenMixer = {},
+                onOpenTempoPicker = {},
+                onOpenMoreMenu = {},
+                trackCount = 3,
+            )
         }
     }
 }
