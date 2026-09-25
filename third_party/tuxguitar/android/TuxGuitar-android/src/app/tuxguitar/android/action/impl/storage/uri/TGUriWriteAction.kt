@@ -20,5 +20,5 @@ class TGUriWriteAction(context: TGContext) : TGActionBase(context, NAME) {
    finally { outputStream?.close() }
   } catch (throwable: Throwable) { throw TGActionException(throwable) }
  }
- companion object { const val NAME = "action.storage.uri.write-uri"; val ATTRIBUTE_ACTIVITY = TGActivity::class.java.name; val ATTRIBUTE_URI = Uri::class.java.name }
+ companion object { const val NAME = "action.storage.uri.write-uri"; @JvmField val ATTRIBUTE_ACTIVITY = TGActivity::class.java.name; @JvmField val ATTRIBUTE_URI = Uri::class.java.name }
 }
