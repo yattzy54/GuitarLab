@@ -1,5 +1,8 @@
 package app.tuxguitar.android.view.dialog.harmonic
 
+import app.tuxguitar.android.ui.state.bind
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
+
 import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 import androidx.compose.foundation.layout.Arrangement
@@ -17,7 +20,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -41,11 +43,7 @@ import app.tuxguitar.song.models.TGNote
 import app.tuxguitar.song.models.TGString
 import app.tuxguitar.song.models.effects.TGEffectHarmonic
 
-data class TGHarmonicFields(
-    val type: Int,
-    val data: Int,
-    val naturalAvailable: Boolean,
-)
+
 
 private data class TGHarmonicTypeOption(
     val value: Int,
@@ -126,8 +124,9 @@ fun TGHarmonicDialogContent(
         TGHarmonicTypeOption(TGEffectHarmonic.TYPE_SEMI, R.string.harmonic_dlg_type_sh),
     )
 
-    var type by remember { mutableIntStateOf(initial.type) }
-    var data by remember { mutableIntStateOf(initial.data) }
+    val viewModel = scopedEditorViewModel { TGHarmonicDialogViewModel(initial) }
+    var type by viewModel.bind({ it.type }, viewModel::onTypeChanged)
+    var data by viewModel.bind({ it.data }, viewModel::onDataChanged)
 
     val dataOptions = remember(type) {
         if (type == TGEffectHarmonic.TYPE_NATURAL) {

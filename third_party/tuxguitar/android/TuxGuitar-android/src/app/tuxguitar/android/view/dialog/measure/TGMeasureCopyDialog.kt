@@ -1,5 +1,8 @@
 package app.tuxguitar.android.view.dialog.measure
 
+import app.tuxguitar.android.ui.state.bind
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
+
 import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 import androidx.compose.foundation.layout.Arrangement
@@ -81,9 +84,10 @@ fun TGMeasureCopyDialogContent(
     onSave: (Int, Int, Boolean) -> Unit,
     onCancel: () -> Unit,
 ) {
-    var fromMeasure by remember { mutableStateOf(initialFrom) }
-    var toMeasure by remember { mutableStateOf(initialTo) }
-    var allTracks by remember { mutableStateOf(initialAllTracks) }
+    val viewModel = scopedEditorViewModel { TGMeasureCopyDialogViewModel(TGMeasureCopyDialogState(initialFrom, initialTo, initialAllTracks)) }
+    var fromMeasure by viewModel.bind({ it.fromMeasure }, viewModel::onFromMeasureChanged)
+    var toMeasure by viewModel.bind({ it.toMeasure }, viewModel::onToMeasureChanged)
+    var allTracks by viewModel.bind({ it.allTracks }, viewModel::onAllTracksChanged)
     val lastMeasure = values.lastOrNull() ?: initialTo
 
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {

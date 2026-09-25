@@ -1,6 +1,8 @@
 package app.tuxguitar.android.fragment
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 
 /**
  * [TGScreen] variant for full-screen destinations rendered with Jetpack
@@ -15,6 +17,8 @@ abstract class TGComposeCachedFragment : TGScreen() {
 
     @Composable
     final override fun Content() {
-        FragmentContent()
+        CompositionLocalProvider(LocalViewModelStoreOwner provides this) {
+            FragmentContent()
+        }
     }
 }

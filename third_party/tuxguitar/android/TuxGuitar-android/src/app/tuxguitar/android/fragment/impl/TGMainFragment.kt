@@ -7,6 +7,10 @@ import android.view.MenuInflater
 import android.view.View
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.tuxguitar.android.ui.state.editorViewModel
+import app.tuxguitar.android.view.keyboard.TGTabKeyboard
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import app.tuxguitar.android.R
@@ -25,6 +29,7 @@ import app.tuxguitar.android.menu.controller.impl.fragment.TGMainMenu
  * so the surrounding fragment/navigation layer can still be Compose-based.
  */
 class TGMainFragment : TGComposeCachedFragment() {
+    private val viewModel by lazy { editorViewModel { TGMainViewModel(findActivity().isReadOnly) } }
     private var inflatedRoot: View? = null
 
     override fun onPostCreate() {
@@ -44,22 +49,30 @@ class TGMainFragment : TGComposeCachedFragment() {
     fun getRightView(): View? = findChildViewById(R.id.main_right)
     fun getBodyView(): View? = findChildViewById(R.id.main_body)
 
+    fun toggleKeyboard() = viewModel.toggleKeyboard()
+
     fun attachInstance() {
         TGMainFragmentController.getInstance(findContext()).attachInstance(this)
     }
 
     @Composable
     override fun FragmentContent() {
+        val state by viewModel.state.collectAsStateWithLifecycle()
         AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { context ->
                 LayoutInflater.from(context).inflate(R.layout.view_main, null, false).also {
                     inflatedRoot = it
-                    if (findActivity().isReadOnly) {
-                        it.findViewById<View>(R.id.main_bottom).visibility = View.GONE
-                    }
+                    it.findViewById<View>(R.id.main_bottom).visibility =
+                        if (state.readOnly) View.GONE else View.VISIBLE
+                    it.findViewById<TGTabKeyboard>(R.id.tgTabKeyboard)
+                        .setKeyboardVisible(state.keyboardVisible, animateChange = false)
                 }
             },
+            update = {
+                it.findViewById<TGTabKeyboard>(R.id.tgTabKeyboard).setKeyboardVisible(state.keyboardVisible)
+            },
+            onRelease = { if (inflatedRoot === it) inflatedRoot = null },
         )
     }
 }

@@ -1,5 +1,8 @@
 package app.tuxguitar.android.view.dialog.stroke
 
+import app.tuxguitar.android.ui.state.bind
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
+
 import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 import androidx.compose.foundation.layout.Arrangement
@@ -40,10 +43,7 @@ import app.tuxguitar.song.models.TGDuration
 import app.tuxguitar.song.models.TGMeasure
 import app.tuxguitar.song.models.TGStroke
 
-data class TGStrokeDialogUiState(
-    val direction: Int,
-    val duration: Int,
-)
+
 
 private data class TGStrokeOption(
     val value: Int,
@@ -110,8 +110,9 @@ private fun TGStrokeDialogContent(
         TGStrokeDurationOption(TGDuration.THIRTY_SECOND, R.string.stroke_dlg_duration_32),
         TGStrokeDurationOption(TGDuration.SIXTY_FOURTH, R.string.stroke_dlg_duration_64),
     )
-    var direction by remember(initial.direction) { mutableStateOf(initial.direction) }
-    var duration by remember(initial.duration) { mutableStateOf(initial.duration) }
+    val viewModel = scopedEditorViewModel { TGStrokeDialogViewModel(initial) }
+    var direction by viewModel.bind({ it.direction }, viewModel::onDirectionChanged)
+    var duration by viewModel.bind({ it.duration }, viewModel::onDurationChanged)
     val durationsEnabled = direction != TGStroke.STROKE_NONE
 
     Column(

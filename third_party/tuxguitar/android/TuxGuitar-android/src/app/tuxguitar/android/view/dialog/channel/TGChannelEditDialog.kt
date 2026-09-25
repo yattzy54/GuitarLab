@@ -1,5 +1,8 @@
 package app.tuxguitar.android.view.dialog.channel
 
+import app.tuxguitar.android.ui.state.bind
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
+
 import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 import androidx.compose.foundation.layout.Arrangement
@@ -19,7 +22,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -48,20 +50,7 @@ import app.tuxguitar.song.managers.TGSongManager
 import app.tuxguitar.song.models.TGChannel
 import app.tuxguitar.song.models.TGSong
 
-data class TGChannelEditFields(
-    val name: String,
-    val program: Short,
-    val bank: Short,
-    val percussion: Boolean,
-    val percussionEnabled: Boolean,
-    val bankEnabled: Boolean,
-    val volume: Int,
-    val balance: Int,
-    val reverb: Int,
-    val chorus: Int,
-    val phaser: Int,
-    val tremolo: Int,
-)
+
 
 class TGChannelEditDialog : TGComposeDialog() {
     @Composable
@@ -69,7 +58,8 @@ class TGChannelEditDialog : TGComposeDialog() {
         val instrumentPrograms = remember { createInstrumentProgramOptions() }
         val percussionPrograms = remember { createPercussionProgramOptions() }
         val bankOptions = remember { createBankOptions() }
-        var fields by remember { mutableStateOf(createFields()) }
+        val viewModel = scopedEditorViewModel { TGChannelEditDialogViewModel(createFields()) }
+        var fields by viewModel.bind({ it }, viewModel::onFieldsChanged)
 
         fun refresh() {
             fields = createFields()

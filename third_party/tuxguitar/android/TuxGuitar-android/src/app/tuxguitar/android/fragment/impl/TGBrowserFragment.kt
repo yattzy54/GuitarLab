@@ -5,9 +5,8 @@ import android.view.Menu
 import android.view.MenuInflater
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.tuxguitar.android.ui.state.editorViewModel
 import app.tuxguitar.action.TGActionManager
 import app.tuxguitar.android.R
 import app.tuxguitar.android.action.TGActionAdapterManager
@@ -40,15 +39,7 @@ class TGBrowserFragment : TGComposeCachedFragment() {
     private val destroyListener = TGBrowserDestroyListener(this)
     private val itemListener = TGBrowserItemListener(this)
 
-    private val elements = mutableStateListOf<TGBrowserElement>()
-    private val collectionOptions = mutableStateListOf<TGSelectableItem>()
-    private val formatOptions = mutableStateListOf<TGSelectableItem>()
-
-    private var selectedCollection by mutableStateOf<TGSelectableItem?>(null)
-    private var selectedFormat by mutableStateOf<TGSelectableItem?>(null)
-    private var saveElementName by mutableStateOf("")
-    private var showSavePanel by mutableStateOf(false)
-    private var saveControlsEnabled by mutableStateOf(false)
+    private val viewModel by lazy { editorViewModel { TGBrowserViewModel() } }
     private var listenersRegistered = false
 
     override fun onPostCreate() {
@@ -141,12 +132,10 @@ class TGBrowserFragment : TGComposeCachedFragment() {
         }
 
         val newOptions = createCollectionValues()
-        collectionOptions.clear()
-        collectionOptions.addAll(newOptions)
-        selectedCollection = newOptions.firstOrNull { isSameObject(it.getItem(), selectedCollectionValue) } ?: newOptions.firstOrNull()
+        viewModel.updateCollections(newOptions, selectedCollectionValue)
     }
 
-    fun findSelectedCollection(): TGBrowserCollection? = selectedCollection?.getItem() as? TGBrowserCollection
+    fun findSelectedCollection(): TGBrowserCollection? = viewModel.state.value.selectedCollection?.getItem() as? TGBrowserCollection
 
     fun findCurrentCollection(): TGBrowserCollection? = TGBrowserManager.getInstance(findContext()).session.collection
 
@@ -176,13 +165,10 @@ class TGBrowserFragment : TGComposeCachedFragment() {
 
     fun fillFormats() {
         val newOptions = createFormatValues()
-        val previousSelection = findSelectedFormat()
-        formatOptions.clear()
-        formatOptions.addAll(newOptions)
-        selectedFormat = newOptions.firstOrNull { isSameObject(it.getItem(), previousSelection) } ?: newOptions.firstOrNull()
+        viewModel.updateFormats(newOptions)
     }
 
-    fun findSelectedFormat(): TGFileFormat? = selectedFormat?.getItem() as? TGFileFormat
+    fun findSelectedFormat(): TGFileFormat? = viewModel.state.value.selectedFormat?.getItem() as? TGFileFormat
 
     @Throws(TGBrowserException::class)
     fun addBrowserDefaults() {
@@ -203,18 +189,20 @@ class TGBrowserFragment : TGComposeCachedFragment() {
 
     fun updateSavePanel(resetName: Boolean) {
         val session = TGBrowserManager.getInstance(findContext()).session
-        showSavePanel = session.sessionType == TGBrowserSession.WRITE_MODE
-        if (resetName) {
-            saveElementName = findActivity().getString(R.string.storage_default_filename)
-        }
+        viewModel.updateSavePanel(
+            visible = session.sessionType == TGBrowserSession.WRITE_MODE,
+            defaultName = if (resetName) findActivity().getString(R.string.storage_default_filename) else null,
+        )
     }
 
     @Throws(TGBrowserException::class)
     fun updateItems() {
         val session = TGBrowserManager.getInstance(findContext()).session
         val browser = session.browser
-        saveControlsEnabled = browser != null && browser.isWritable()
-        showSavePanel = session.sessionType == TGBrowserSession.WRITE_MODE
+        viewModel.updateSavePanel(
+            visible = session.sessionType == TGBrowserSession.WRITE_MODE,
+            writable = browser != null && browser.isWritable(),
+        )
     }
 
     fun processOpenCloseSession(collection: TGBrowserCollection?) {
@@ -226,7 +214,7 @@ class TGBrowserFragment : TGComposeCachedFragment() {
     }
 
     fun processSelectedCollection(item: TGSelectableItem) {
-        selectedCollection = item
+        viewModel.selectCollection(item)
         val session = TGBrowserManager.getInstance(findContext()).session
         val currentCollection = session.collection
         val selectedCollectionValue = findSelectedCollection()
@@ -236,11 +224,11 @@ class TGBrowserFragment : TGComposeCachedFragment() {
     }
 
     fun onSaveElementNameChange(value: String) {
-        saveElementName = value
+        viewModel.setSaveName(value)
     }
 
     fun onFormatSelected(item: TGSelectableItem) {
-        selectedFormat = item
+        viewModel.selectFormat(item)
     }
 
     fun processSaveButton() {
@@ -248,7 +236,7 @@ class TGBrowserFragment : TGComposeCachedFragment() {
             val session = TGBrowserManager.getInstance(findContext()).session
             if (session.browser != null) {
                 val format = findSelectedFormat() ?: return
-                val elementName = saveElementName + createExtension(format, TGFileFormatUtils.DEFAULT_EXTENSION)
+                val elementName = viewModel.state.value.saveElementName + createExtension(format, TGFileFormatUtils.DEFAULT_EXTENSION)
                 val element = findElement(elementName)
                 if (element != null) {
                     if (element.isWritable()) {
@@ -293,8 +281,7 @@ class TGBrowserFragment : TGComposeCachedFragment() {
 
     fun refreshListView() {
         val browserSession = TGBrowserManager.getInstance(findContext()).session
-        elements.clear()
-        browserSession.currentElements?.let(elements::addAll)
+        viewModel.updateElements(browserSession.currentElements.orEmpty())
     }
 
     @Throws(TGBrowserException::class)
@@ -321,24 +308,25 @@ class TGBrowserFragment : TGComposeCachedFragment() {
 
     @Composable
     override fun FragmentContent() {
+        val state by viewModel.state.collectAsStateWithLifecycle()
         TGBrowserScreen(
-            collections = collectionOptions,
-            selectedCollection = selectedCollection,
+            collections = state.collectionOptions,
+            selectedCollection = state.selectedCollection,
             onCollectionSelected = ::processSelectedCollection,
             elementsContent = {
                 TGBrowserElementList(
-                    elements = elements,
+                    elements = state.elements,
                     onElementClick = itemListener::processElementAction,
                 )
             },
-            showSavePanel = showSavePanel,
-            saveElementName = saveElementName,
+            showSavePanel = state.showSavePanel,
+            saveElementName = state.saveElementName,
             onSaveElementNameChange = ::onSaveElementNameChange,
-            formatOptions = formatOptions,
-            selectedFormat = selectedFormat,
+            formatOptions = state.formatOptions,
+            selectedFormat = state.selectedFormat,
             onFormatSelected = ::onFormatSelected,
             onSaveClick = ::processSaveButton,
-            saveControlsEnabled = saveControlsEnabled,
+            saveControlsEnabled = state.saveControlsEnabled,
         )
     }
 }

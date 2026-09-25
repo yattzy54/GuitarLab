@@ -1,5 +1,8 @@
 package app.tuxguitar.android.view.dialog.grace
 
+import app.tuxguitar.android.ui.state.bind
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
+
 import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 import androidx.compose.foundation.Image
@@ -20,8 +23,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -47,14 +48,7 @@ import app.tuxguitar.song.models.TGString
 import app.tuxguitar.song.models.TGVelocities
 import app.tuxguitar.song.models.effects.TGEffectGrace
 
-data class TGGraceFields(
-    val fret: Int,
-    val deadNote: Boolean,
-    val onBeat: Boolean,
-    val duration: Int,
-    val dynamic: Int,
-    val transition: Int,
-)
+
 
 private data class TGGraceOption(
     val value: Int,
@@ -151,12 +145,13 @@ fun TGGraceDialogContent(
         TGGraceOption(TGEffectGrace.TRANSITION_HAMMER, R.string.grace_dlg_transition_hammer),
     )
 
-    var fret by remember { mutableIntStateOf(initial.fret) }
-    var deadNote by remember { mutableStateOf(initial.deadNote) }
-    var onBeat by remember { mutableStateOf(initial.onBeat) }
-    var duration by remember { mutableIntStateOf(initial.duration) }
-    var dynamic by remember { mutableIntStateOf(initial.dynamic) }
-    var transition by remember { mutableIntStateOf(initial.transition) }
+    val viewModel = scopedEditorViewModel { TGGraceDialogViewModel(initial) }
+    var fret by viewModel.bind({ it.fret }, viewModel::onFretChanged)
+    var deadNote by viewModel.bind({ it.deadNote }, viewModel::onDeadNoteChanged)
+    var onBeat by viewModel.bind({ it.onBeat }, viewModel::onOnBeatChanged)
+    var duration by viewModel.bind({ it.duration }, viewModel::onDurationChanged)
+    var dynamic by viewModel.bind({ it.dynamic }, viewModel::onDynamicChanged)
+    var transition by viewModel.bind({ it.transition }, viewModel::onTransitionChanged)
 
     Column(
         modifier = Modifier

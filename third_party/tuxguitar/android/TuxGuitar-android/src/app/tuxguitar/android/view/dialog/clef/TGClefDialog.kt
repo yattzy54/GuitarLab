@@ -1,5 +1,8 @@
 package app.tuxguitar.android.view.dialog.clef
 
+import app.tuxguitar.android.ui.state.bind
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
+
 import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 import androidx.compose.foundation.clickable
@@ -39,10 +42,7 @@ import app.tuxguitar.song.models.TGMeasure
 import app.tuxguitar.song.models.TGSong
 import app.tuxguitar.song.models.TGTrack
 
-data class TGClefDialogUiState(
-    val clef: Int,
-    val applyToEnd: Boolean,
-)
+
 
 private data class TGClefOption(
     val value: Int,
@@ -96,8 +96,9 @@ private fun TGClefDialogContent(
     onSave: (TGClefDialogUiState) -> Unit,
     onCancel: () -> Unit,
 ) {
-    var clef by remember(initial.clef) { mutableStateOf(initial.clef) }
-    var applyToEnd by remember(initial.applyToEnd) { mutableStateOf(initial.applyToEnd) }
+    val viewModel = scopedEditorViewModel { TGClefDialogViewModel(initial) }
+    var clef by viewModel.bind({ it.clef }, viewModel::onClefChanged)
+    var applyToEnd by viewModel.bind({ it.applyToEnd }, viewModel::onApplyToEndChanged)
 
     Column(
         modifier = Modifier

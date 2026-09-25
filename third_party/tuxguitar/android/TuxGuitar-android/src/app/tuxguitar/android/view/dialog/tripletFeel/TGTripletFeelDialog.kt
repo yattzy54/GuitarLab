@@ -1,5 +1,8 @@
 package app.tuxguitar.android.view.dialog.tripletFeel
 
+import app.tuxguitar.android.ui.state.bind
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
+
 import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 import androidx.compose.foundation.clickable
@@ -19,8 +22,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,10 +36,7 @@ import app.tuxguitar.editor.action.composition.TGChangeTripletFeelAction
 import app.tuxguitar.song.models.TGMeasureHeader
 import app.tuxguitar.song.models.TGSong
 
-data class TGTripletFeelDialogUiState(
-    val tripletFeel: Int,
-    val applyToEnd: Boolean,
-)
+
 
 private data class TGTripletFeelOption(
     val value: Int,
@@ -89,8 +87,9 @@ private fun TGTripletFeelDialogContent(
         TGTripletFeelOption(TGMeasureHeader.TRIPLET_FEEL_EIGHTH, R.string.triplet_feel_dlg_eighth),
         TGTripletFeelOption(TGMeasureHeader.TRIPLET_FEEL_SIXTEENTH, R.string.triplet_feel_dlg_sixteenth),
     )
-    var tripletFeel by remember(initial.tripletFeel) { mutableStateOf(initial.tripletFeel) }
-    var applyToEnd by remember(initial.applyToEnd) { mutableStateOf(initial.applyToEnd) }
+    val viewModel = scopedEditorViewModel { TGTripletFeelDialogViewModel(initial) }
+    var tripletFeel by viewModel.bind({ it.tripletFeel }, viewModel::onTripletFeelChanged)
+    var applyToEnd by viewModel.bind({ it.applyToEnd }, viewModel::onApplyToEndChanged)
 
     Column(
         modifier = Modifier

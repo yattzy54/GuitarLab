@@ -1,5 +1,8 @@
 package app.tuxguitar.android.view.dialog.pickstroke
 
+import app.tuxguitar.android.ui.state.bind
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
+
 import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 import androidx.compose.foundation.layout.Arrangement
@@ -89,7 +92,8 @@ private fun TGPickStrokeDialogContent(
     onSave: (Int) -> Unit,
     onCancel: () -> Unit,
 ) {
-    var direction by remember(initialDirection) { mutableStateOf(initialDirection) }
+    val viewModel = scopedEditorViewModel { TGPickStrokeDialogViewModel(TGPickStrokeDialogState(initialDirection)) }
+    var direction by viewModel.bind({ it.direction }, viewModel::onDirectionChanged)
 
     Column(
         modifier = Modifier

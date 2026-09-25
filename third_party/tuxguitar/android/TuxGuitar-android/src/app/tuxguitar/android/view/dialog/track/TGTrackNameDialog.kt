@@ -1,5 +1,8 @@
 package app.tuxguitar.android.view.dialog.track
 
+import app.tuxguitar.android.ui.state.bind
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
+
 import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 import androidx.compose.foundation.layout.Column
@@ -10,8 +13,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -54,7 +55,8 @@ fun TGTrackNameDialogContent(
     onSave: (String) -> Unit,
     onCancel: () -> Unit,
 ) {
-    var name by remember(initialName) { mutableStateOf(initialName) }
+    val viewModel = scopedEditorViewModel { TGTrackNameDialogViewModel(TGTrackNameDialogState(initialName)) }
+    var name by viewModel.bind({ it.name }, viewModel::onNameChanged)
 
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
         Text(

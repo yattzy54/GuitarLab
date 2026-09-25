@@ -1,5 +1,8 @@
 package app.tuxguitar.android.view.dialog.info
 
+import app.tuxguitar.android.ui.state.bind
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
+
 import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 import androidx.compose.foundation.layout.Arrangement
@@ -16,8 +19,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -29,32 +30,6 @@ import app.tuxguitar.document.TGDocumentContextAttributes
 import app.tuxguitar.editor.action.TGActionProcessor
 import app.tuxguitar.editor.action.composition.TGChangeInfoAction
 import app.tuxguitar.song.models.TGSong
-
-data class TGSongInfoFields(
-    val name: String = "",
-    val artist: String = "",
-    val album: String = "",
-    val author: String = "",
-    val date: String = "",
-    val copyright: String = "",
-    val writer: String = "",
-    val transcriber: String = "",
-    val comments: String = "",
-) {
-    companion object {
-        fun from(song: TGSong): TGSongInfoFields = TGSongInfoFields(
-            name = song.name.orEmpty(),
-            artist = song.artist.orEmpty(),
-            album = song.album.orEmpty(),
-            author = song.author.orEmpty(),
-            date = song.date.orEmpty(),
-            copyright = song.copyright.orEmpty(),
-            writer = song.writer.orEmpty(),
-            transcriber = song.transcriber.orEmpty(),
-            comments = song.comments.orEmpty(),
-        )
-    }
-}
 
 class TGSongInfoDialog : TGComposeDialog() {
     @Composable
@@ -94,15 +69,16 @@ fun TGSongInfoDialogContent(
     onSave: (TGSongInfoFields) -> Unit,
     onCancel: () -> Unit,
 ) {
-    var name by remember { mutableStateOf(initial.name) }
-    var artist by remember { mutableStateOf(initial.artist) }
-    var album by remember { mutableStateOf(initial.album) }
-    var author by remember { mutableStateOf(initial.author) }
-    var date by remember { mutableStateOf(initial.date) }
-    var copyright by remember { mutableStateOf(initial.copyright) }
-    var writer by remember { mutableStateOf(initial.writer) }
-    var transcriber by remember { mutableStateOf(initial.transcriber) }
-    var comments by remember { mutableStateOf(initial.comments) }
+    val viewModel = scopedEditorViewModel { TGSongInfoDialogViewModel(initial) }
+    var name by viewModel.bind({ it.name }, viewModel::onNameChanged)
+    var artist by viewModel.bind({ it.artist }, viewModel::onArtistChanged)
+    var album by viewModel.bind({ it.album }, viewModel::onAlbumChanged)
+    var author by viewModel.bind({ it.author }, viewModel::onAuthorChanged)
+    var date by viewModel.bind({ it.date }, viewModel::onDateChanged)
+    var copyright by viewModel.bind({ it.copyright }, viewModel::onCopyrightChanged)
+    var writer by viewModel.bind({ it.writer }, viewModel::onWriterChanged)
+    var transcriber by viewModel.bind({ it.transcriber }, viewModel::onTranscriberChanged)
+    var comments by viewModel.bind({ it.comments }, viewModel::onCommentsChanged)
 
     Column(
         modifier = Modifier
