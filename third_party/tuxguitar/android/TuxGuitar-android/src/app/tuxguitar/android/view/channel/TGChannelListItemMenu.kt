@@ -46,6 +46,6 @@ class TGChannelListItemMenu(activity: TGActivity, private val channel: TGChannel
     fun createRemoveChannelAction(): TGActionProcessorListener {
         val tgActionProcessor: TGActionProcessor = this.createActionProcessor(TGRemoveChannelAction.NAME)
         tgActionProcessor.setAttribute(TGDocumentContextAttributes.ATTRIBUTE_CHANNEL, this.channel)
-        return this.createConfirmableActionProcessor(tgActionProcessor, this.activity.getString(R.string.action_channel_list_item_remove_confirm_question))
+        return this.createConfirmableActionProcessor(tgActionProcessor, getActivity().getString(R.string.action_channel_list_item_remove_confirm_question))
     }
 }

@@ -1,7 +1,7 @@
 package app.tuxguitar.android.view.util
 
 open class TGSelectableItem(
-    private val item: Any?,
+    @get:JvmName("getItemValue") val item: Any?,
     private val label: String?,
     private val dropDownLabel: String? = label,
 ) {
