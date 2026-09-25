@@ -1,8 +1,8 @@
 package app.tuxguitar.android.view.dialog.message
 
-import app.tuxguitar.android.view.dialog.fragment.TGDialogFragmentController
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogController
 
-class TGMessageDialogController : TGDialogFragmentController<TGMessageDialog>() {
+class TGMessageDialogController : TGComposeBottomSheetDialogController<TGMessageDialog>() {
     override fun createNewInstance(): TGMessageDialog = TGMessageDialog()
 
     companion object {

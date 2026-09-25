@@ -1,26 +1,35 @@
 package app.tuxguitar.android.view.dialog.confirm
 
-import android.annotation.SuppressLint
-import android.app.Dialog
-import androidx.appcompat.app.AlertDialog
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import app.tuxguitar.android.R
-import app.tuxguitar.android.view.dialog.fragment.TGDialogFragment
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
 
-class TGConfirmDialog : TGDialogFragment() {
-    @SuppressLint("InflateParams")
-    override fun onCreateDialog(): Dialog {
-        return AlertDialog.Builder(requireActivity())
-            .setTitle(R.string.confirm_dlg_title)
-            .setMessage(getMessage())
-            .setPositiveButton(R.string.global_button_ok) { dialog, _ ->
+class TGConfirmDialog : TGComposeBottomSheetDialogFragment() {
+    @Composable
+    override fun SheetContent(onDismiss: () -> Unit) {
+        TGConfirmDialogContent(
+            message = getMessage().orEmpty(),
+            onConfirm = {
                 onSuccess()
-                dialog.dismiss()
-            }
-            .setNegativeButton(R.string.global_button_cancel) { dialog, _ ->
+                onDismiss()
+            },
+            onCancel = {
                 onCancel()
-                dialog.dismiss()
-            }
-            .create()
+                onDismiss()
+            },
+        )
     }
 
     fun onSuccess() {
@@ -37,4 +46,46 @@ class TGConfirmDialog : TGDialogFragment() {
 
     fun getCancelRunnable(): Runnable? =
         getAttribute(TGConfirmDialogController.ATTRIBUTE_CANCEL_RUNNABLE)
+}
+
+@Composable
+fun TGConfirmDialogContent(
+    message: String,
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
+        Text(
+            text = stringResource(R.string.confirm_dlg_title),
+            style = MaterialTheme.typography.titleLarge,
+        )
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(top = 12.dp, bottom = 24.dp),
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+        ) {
+            TextButton(onClick = onCancel) {
+                Text(stringResource(R.string.global_button_cancel))
+            }
+            TextButton(onClick = onConfirm) {
+                Text(stringResource(R.string.global_button_ok))
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TGConfirmDialogContentPreview() {
+    MaterialTheme {
+        TGConfirmDialogContent(
+            message = "Are you sure you want to delete this track? This action cannot be undone.",
+            onConfirm = {},
+            onCancel = {},
+        )
+    }
 }

@@ -1,7 +1,7 @@
 package app.tuxguitar.android.view.dialog.measure
 
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragmentController
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogController
 
-class TGMeasureCleanDialogController : TGModalFragmentController<TGMeasureCleanDialog>() {
+class TGMeasureCleanDialogController : TGComposeBottomSheetDialogController<TGMeasureCleanDialog>() {
     override fun createNewInstance(): TGMeasureCleanDialog = TGMeasureCleanDialog()
 }

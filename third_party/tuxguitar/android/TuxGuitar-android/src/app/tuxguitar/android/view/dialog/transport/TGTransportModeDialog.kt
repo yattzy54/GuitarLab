@@ -1,294 +1,447 @@
 package app.tuxguitar.android.view.dialog.transport
 
-import android.annotation.SuppressLint
-import android.graphics.BlendMode
-import android.graphics.BlendModeColorFilter
-import android.graphics.Color
-import android.os.Bundle
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.View
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
-import android.widget.CheckBox
-import android.widget.CompoundButton
-import android.widget.RadioButton
-import android.widget.Spinner
-import android.widget.TextView
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import app.tuxguitar.android.R
 import app.tuxguitar.android.action.impl.caret.TGMoveToAction
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragment
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
+import app.tuxguitar.android.view.dialog.compose.TGDialogDropdownField
+import app.tuxguitar.android.view.dialog.compose.TGDialogSectionTitle
+import app.tuxguitar.android.view.dialog.compose.TGDropdownOption
 import app.tuxguitar.document.TGDocumentContextAttributes
 import app.tuxguitar.editor.action.TGActionProcessor
 import app.tuxguitar.player.base.MidiPlayer
 import app.tuxguitar.player.base.MidiPlayerMode
-import app.tuxguitar.song.models.TGBeat
 import app.tuxguitar.song.models.TGMeasureHeader
-import app.tuxguitar.song.models.TGTrack
 
-class TGTransportModeDialog : TGModalFragment(R.layout.view_transport_mode) {
-    protected lateinit var simple: RadioButton
-    protected lateinit var custom: RadioButton
-    protected lateinit var simpleLabel: TextView
-    protected lateinit var simplePercentLabel: TextView
-    protected lateinit var simplePercent: Spinner
-    protected lateinit var simpleLoop: CheckBox
-    protected lateinit var customLabel: TextView
-    protected lateinit var customFromLabel: TextView
-    protected lateinit var customFrom: Spinner
-    protected lateinit var customToLabel: TextView
-    protected lateinit var customTo: Spinner
-    protected lateinit var customIncrementLabel: TextView
-    protected lateinit var customIncrement: Spinner
-    protected lateinit var loopLabel: TextView
-    protected lateinit var loopFromLabel: TextView
-    protected lateinit var loopFrom: Spinner
-    protected lateinit var loopToLabel: TextView
-    protected lateinit var loopTo: Spinner
-    protected var ok = false
+data class TGTransportModeFields(
+    val customMode: Boolean,
+    val simplePercent: Int,
+    val simpleLoop: Boolean,
+    val customFrom: Int,
+    val customTo: Int,
+    val customIncrement: Int,
+    val loopFromMeasure: Int?,
+    val loopToMeasure: Int?,
+    val measures: List<TGDropdownOption<Int?>>,
+)
 
-    private val bgcolorErr = Color.rgb(230, 110, 110)
-    private val bgcolorOK = Color.TRANSPARENT
-    private val colorErr = Color.GRAY
-    private val colorOK = Color.TRANSPARENT
+private enum class TGTransportTempoField {
+    FROM,
+    TO,
+    INCREMENT,
+}
 
-    override fun onPostCreate(savedInstanceState: Bundle?) {
-        createActionBar(true, false, R.string.transport_mode_dlg_title)
+private data class TGTransportValidation(
+    val valid: Boolean,
+    val fromError: Boolean = false,
+    val toError: Boolean = false,
+    val incrementError: Boolean = false,
+)
+
+class TGTransportModeDialog : TGComposeBottomSheetDialogFragment() {
+    @Composable
+    override fun SheetContent(onDismiss: () -> Unit) {
+        TGTransportModeDialogContent(
+            initial = createInitialFields(),
+            onSave = { fields ->
+                updateMode(fields)
+                onDismiss()
+            },
+            onCancel = onDismiss,
+        )
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, menuInflater: MenuInflater) {
-        menuInflater.inflate(R.menu.menu_modal_fragment_ok, menu)
-        menu.findItem(R.id.action_ok).setOnMenuItemClickListener {
-            val type = if (custom.isChecked) MidiPlayerMode.TYPE_CUSTOM else MidiPlayerMode.TYPE_SIMPLE
-            val loop = type == MidiPlayerMode.TYPE_CUSTOM ||
-                (type == MidiPlayerMode.TYPE_SIMPLE && simpleLoop.isChecked)
-            val simplePcInt = selectedInt(simplePercent)
-            val loopStart = if (loopFrom.selectedItemId == 0L) -1 else getMeasureNb(loopFrom)
-            val loopEnd = if (loopTo.selectedItemId == 0L) -1 else getMeasureNb(loopTo)
-
-            if (loop) {
-                val track = MidiPlayer.getInstance(findContext()).song.getTrack(0)
-                val beat: TGBeat = track.getMeasure(if (loopStart > 0) loopStart - 1 else 0).getBeat(0)
-                TGActionProcessor(findContext(), TGMoveToAction.NAME).apply {
-                    setAttribute(TGDocumentContextAttributes.ATTRIBUTE_BEAT, beat)
-                    process()
-                }
-            }
-
-            MidiPlayer.getInstance(findContext()).mode.apply {
-                setType(type)
-                setLoop(loop)
-                setSimplePercent(simplePcInt)
-                setCustomPercentFrom(selectedInt(customFrom))
-                setCustomPercentTo(selectedInt(customTo))
-                setCustomPercentIncrement(selectedInt(customIncrement))
-                setLoopSHeader(loopStart)
-                setLoopEHeader(loopEnd)
-            }
-            close()
-            true
-        }
-    }
-
-    override fun onPrepareOptionsMenu(menu: Menu) {
-        menu.findItem(R.id.action_ok).apply {
-            isEnabled = ok
-            icon?.colorFilter = BlendModeColorFilter(
-                if (ok) colorOK else colorErr,
-                BlendMode.SRC_ATOP
-            )
-        }
-    }
-
-    @SuppressLint("InflateParams")
-    override fun onPostInflateView() {
-        val percentAdapter = ArrayAdapter(
-            requireActivity(),
-            android.R.layout.simple_spinner_item,
-            createPercentValues()
-        )
-        val loopFromAdapter = ArrayAdapter(
-            requireActivity(),
-            android.R.layout.simple_spinner_item,
-            createLoopFromValues()
-        )
-        val loopToAdapter = ArrayAdapter(
-            requireActivity(),
-            android.R.layout.simple_spinner_item,
-            createLoopToValuesFrom(1)
-        )
-
-        simple = requireView().findViewById(R.id.transport_mode_dlg_simple)
-        custom = requireView().findViewById(R.id.transport_mode_dlg_trainer)
-        simpleLabel = requireView().findViewById(R.id.transport_mode_dlg_simple_label)
-        simplePercentLabel = requireView().findViewById(R.id.transport_mode_dlg_simple_tempo_percent_label)
-        simplePercent = requireView().findViewById(R.id.transport_mode_dlg_simple_tempo_percent_value)
-        simpleLoop = requireView().findViewById(R.id.transport_mode_dlg_simple_loop)
-        customLabel = requireView().findViewById(R.id.transport_mode_dlg_trainer_label)
-        customFromLabel = requireView().findViewById(R.id.transport_mode_dlg_trainer_tempo_percent_from_label)
-        customFrom = requireView().findViewById(R.id.transport_mode_dlg_trainer_tempo_percent_from_value)
-        customToLabel = requireView().findViewById(R.id.transport_mode_dlg_trainer_tempo_percent_to_label)
-        customTo = requireView().findViewById(R.id.transport_mode_dlg_trainer_tempo_percent_to_value)
-        customIncrementLabel = requireView().findViewById(R.id.transport_mode_dlg_trainer_tempo_increment_label)
-        customIncrement = requireView().findViewById(R.id.transport_mode_dlg_trainer_tempo_increment_value)
-        loopLabel = requireView().findViewById(R.id.transport_mode_dlg_loop_range_label)
-        loopFromLabel = requireView().findViewById(R.id.transport_mode_dlg_loop_range_from_label)
-        loopFrom = requireView().findViewById(R.id.transport_mode_dlg_loop_range_from_value)
-        loopToLabel = requireView().findViewById(R.id.transport_mode_dlg_loop_range_to_label)
-        loopTo = requireView().findViewById(R.id.transport_mode_dlg_loop_range_to_value)
-
+    private fun createInitialFields(): TGTransportModeFields {
         val mode = MidiPlayer.getInstance(findContext()).mode
-        val isTrainer = mode.type == MidiPlayerMode.TYPE_CUSTOM
-        simple.isChecked = !isTrainer
-        custom.isChecked = isTrainer
-        enableTrainerMode(isTrainer)
-        enableLoop(isTrainer || mode.isLoop())
-
-        custom.setOnCheckedChangeListener { _, checked ->
-            enableTrainerMode(checked)
-            enableLoop(checked || simpleLoop.isChecked)
-        }
-        simpleLoop.setOnCheckedChangeListener { _, checked -> enableLoop(checked) }
-        customFrom.setOnItemSelectedListener(trainerTempoListener())
-        customTo.setOnItemSelectedListener(trainerTempoListener())
-        customIncrement.setOnItemSelectedListener(trainerTempoListener())
-        loopFrom.setOnItemSelectedListener(object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>?,
-                view: View?,
-                position: Int,
-                id: Long
-            ) {
-                val oldToItem = loopTo.selectedItem.toString()
-                val oldToItemId = loopTo.selectedItemId
-                loopToAdapter.clear()
-                loopToAdapter.addAll(
-                    createLoopToValuesFrom(
-                        if (loopFrom.selectedItemId < 1L) 1 else getMeasureNb(loopFrom)
-                    )
-                )
-                when {
-                    oldToItemId == 0L -> loopTo.setSelection(0)
-                    loopToAdapter.getPosition(oldToItem) > -1 ->
-                        loopTo.setSelection(loopToAdapter.getPosition(oldToItem))
-                    else -> loopTo.setSelection(loopToAdapter.getPosition(loopFrom.selectedItem.toString()))
-                }
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
-        })
-
-        percentAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        loopFromAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        loopToAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        simplePercent.adapter = percentAdapter
-        simplePercent.setSelection(percentAdapter.getPosition(mode.simplePercent))
-        simpleLoop.isChecked = mode.isLoop()
-        customFrom.adapter = percentAdapter
-        customFrom.setSelection(percentAdapter.getPosition(mode.customPercentFrom))
-        customTo.adapter = percentAdapter
-        customTo.setSelection(percentAdapter.getPosition(mode.customPercentTo))
-        customIncrement.adapter = percentAdapter
-        customIncrement.setSelection(percentAdapter.getPosition(mode.customPercentIncrement))
-        loopFrom.adapter = loopFromAdapter
-        loopFrom.setSelection(if (mode.loopSHeader > 0) mode.loopSHeader else 0)
-        loopTo.adapter = loopToAdapter
-        loopTo.setSelection(if (mode.loopEHeader > 0) mode.loopEHeader else 0)
+        return TGTransportModeFields(
+            customMode = mode.type == MidiPlayerMode.TYPE_CUSTOM,
+            simplePercent = mode.simplePercent,
+            simpleLoop = mode.isLoop(),
+            customFrom = mode.customPercentFrom,
+            customTo = mode.customPercentTo,
+            customIncrement = mode.customPercentIncrement,
+            loopFromMeasure = mode.loopSHeader.takeIf { it > 0 },
+            loopToMeasure = mode.loopEHeader.takeIf { it > 0 },
+            measures = createLoopMeasureOptions(),
+        )
     }
 
-    private fun trainerTempoListener() = object : AdapterView.OnItemSelectedListener {
-        override fun onItemSelected(
-            parent: AdapterView<*>?,
-            view: View?,
-            position: Int,
-            id: Long
-        ) {
-            if (parent != null) trainerTempoOnSelect(parent)
-        }
-
-        override fun onNothingSelected(parent: AdapterView<*>?) = Unit
-    }
-
-    fun trainerTempoOnSelect(parent: AdapterView<*>) {
-        var valid = true
-        if (parent == customFrom) {
-            if (selectedInt(customFrom) >= selectedInt(customTo)) {
-                valid = false
-                customFrom.setBackgroundColor(bgcolorErr)
-                customTo.setBackgroundColor(bgcolorOK)
-            }
-        } else if (parent == customTo) {
-            if (selectedInt(customTo) <= selectedInt(customFrom)) {
-                valid = false
-                customTo.setBackgroundColor(bgcolorErr)
-                customFrom.setBackgroundColor(bgcolorOK)
-            }
-        }
-        if (valid) {
-            customTo.setBackgroundColor(bgcolorOK)
-            customFrom.setBackgroundColor(bgcolorOK)
-            if (selectedInt(customIncrement) > selectedInt(customTo) - selectedInt(customFrom)) {
-                valid = false
-                customIncrement.setBackgroundColor(bgcolorErr)
-            } else {
-                customIncrement.setBackgroundColor(bgcolorOK)
-            }
-        }
-        ok = valid
-        requireActivity().invalidateOptionsMenu()
-    }
-
-    fun createPercentValues(): Array<Int> = (MIN_SELECTION..MAX_SELECTION).toList().toTypedArray()
-
-    fun createLoopFromValues(): List<String> = buildList {
-        add(getString(R.string.transport_mode_dlg_loop_range_from_default))
+    private fun createLoopMeasureOptions(): List<TGDropdownOption<Int?>> = buildList {
         for (measure in 1..MidiPlayer.getInstance(findContext()).song.countMeasureHeaders()) {
-            add(getItemText(measure))
-        }
-    }
-
-    fun createLoopToValuesFrom(firstMeasure: Int): List<String> = buildList {
-        add(getString(R.string.transport_mode_dlg_loop_range_to_default))
-        for (measure in firstMeasure..MidiPlayer.getInstance(findContext()).song.countMeasureHeaders()) {
-            add(getItemText(measure))
+            add(TGDropdownOption(measure, getItemText(measure)))
         }
     }
 
     private fun getItemText(measure: Int): String {
-        val header: TGMeasureHeader =
-            MidiPlayer.getInstance(findContext()).song.getMeasureHeader(measure - 1)
+        val header: TGMeasureHeader = MidiPlayer.getInstance(findContext()).song.getMeasureHeader(measure - 1)
         return "#$measure" + if (header.hasMarker()) " (${header.getMarker().getTitle()})" else ""
     }
 
-    private fun getMeasureNb(spinner: Spinner): Int =
-        Regex("#(\\d+) ?.*").replace(spinner.selectedItem.toString(), "$1").toInt()
+    private fun updateMode(fields: TGTransportModeFields) {
+        val type = if (fields.customMode) MidiPlayerMode.TYPE_CUSTOM else MidiPlayerMode.TYPE_SIMPLE
+        val loop = type == MidiPlayerMode.TYPE_CUSTOM || (type == MidiPlayerMode.TYPE_SIMPLE && fields.simpleLoop)
+        val loopStart = fields.loopFromMeasure ?: -1
+        val loopEnd = fields.loopToMeasure ?: -1
 
-    private fun enableTrainerMode(isTrainer: Boolean) {
-        simpleLabel.isEnabled = !isTrainer
-        simplePercentLabel.isEnabled = !isTrainer
-        simplePercent.isEnabled = !isTrainer
-        simpleLoop.isEnabled = !isTrainer
-        customLabel.isEnabled = isTrainer
-        customFromLabel.isEnabled = isTrainer
-        customFrom.isEnabled = isTrainer
-        customToLabel.isEnabled = isTrainer
-        customTo.isEnabled = isTrainer
-        customIncrementLabel.isEnabled = isTrainer
-        customIncrement.isEnabled = isTrainer
+        if (loop) {
+            val track = MidiPlayer.getInstance(findContext()).song.getTrack(0)
+            val beat = track.getMeasure(if (loopStart > 0) loopStart - 1 else 0).getBeat(0)
+            TGActionProcessor(findContext(), TGMoveToAction.NAME).apply {
+                setAttribute(TGDocumentContextAttributes.ATTRIBUTE_BEAT, beat)
+                process()
+            }
+        }
+
+        MidiPlayer.getInstance(findContext()).mode.apply {
+            setType(type)
+            setLoop(loop)
+            setSimplePercent(fields.simplePercent)
+            setCustomPercentFrom(fields.customFrom)
+            setCustomPercentTo(fields.customTo)
+            setCustomPercentIncrement(fields.customIncrement)
+            setLoopSHeader(loopStart)
+            setLoopEHeader(loopEnd)
+        }
+    }
+}
+
+@Composable
+fun TGTransportModeDialogContent(
+    initial: TGTransportModeFields,
+    onSave: (TGTransportModeFields) -> Unit,
+    onCancel: () -> Unit,
+) {
+    val percentOptions = remember {
+        (1..500).map { TGDropdownOption(it, it.toString()) }
+    }
+    val loopFromDefault = stringResource(R.string.transport_mode_dlg_loop_range_from_default)
+    val loopToDefault = stringResource(R.string.transport_mode_dlg_loop_range_to_default)
+    val loopFromOptions = remember(initial.measures, loopFromDefault) {
+        buildList {
+            add(TGDropdownOption<Int?>(null, loopFromDefault))
+            addAll(initial.measures)
+        }
     }
 
-    private fun enableLoop(enable: Boolean) {
-        loopLabel.isEnabled = enable
-        loopFromLabel.isEnabled = enable
-        loopFrom.isEnabled = enable
-        loopToLabel.isEnabled = enable
-        loopTo.isEnabled = enable
+    var customMode by remember { mutableStateOf(initial.customMode) }
+    var simplePercent by remember { mutableIntStateOf(initial.simplePercent) }
+    var simpleLoop by remember { mutableStateOf(initial.simpleLoop) }
+    var customFrom by remember { mutableIntStateOf(initial.customFrom) }
+    var customTo by remember { mutableIntStateOf(initial.customTo) }
+    var customIncrement by remember { mutableIntStateOf(initial.customIncrement) }
+    var loopFromMeasure by remember { mutableStateOf(initial.loopFromMeasure) }
+    var loopToMeasure by remember { mutableStateOf(initial.loopToMeasure) }
+    var lastChangedField by remember { mutableStateOf(TGTransportTempoField.FROM) }
+
+    val loopEnabled = customMode || simpleLoop
+    val loopToOptions = remember(initial.measures, loopFromMeasure, loopToDefault) {
+        buildList {
+            add(TGDropdownOption<Int?>(null, loopToDefault))
+            addAll(initial.measures.filter { (it.value ?: 0) >= (loopFromMeasure ?: 1) })
+        }
     }
 
-    private fun selectedInt(spinner: Spinner): Int = spinner.selectedItem as Int
+    LaunchedEffect(loopFromMeasure, loopToOptions) {
+        val validValues = loopToOptions.map { it.value }.toSet()
+        if (loopToMeasure !in validValues) {
+            loopToMeasure = if (loopToMeasure == null) null else loopFromMeasure
+        }
+    }
 
-    protected companion object {
-        const val MIN_SELECTION = 1
-        const val MAX_SELECTION = 500
+    val validation = remember(customFrom, customTo, customIncrement, lastChangedField) {
+        validateTransport(customFrom, customTo, customIncrement, lastChangedField)
+    }
+
+    Column(
+        modifier = Modifier
+            .padding(horizontal = 24.dp, vertical = 16.dp)
+            .heightIn(max = 560.dp)
+            .verticalScroll(rememberScrollState()),
+    ) {
+        Text(
+            text = stringResource(R.string.transport_mode_dlg_title),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(bottom = 16.dp),
+        )
+
+        TransportRadioOption(
+            label = stringResource(R.string.transport_mode_dlg_simple),
+            selected = !customMode,
+            onClick = { customMode = false },
+        )
+        TransportRadioOption(
+            label = stringResource(R.string.transport_mode_dlg_trainer),
+            selected = customMode,
+            onClick = { customMode = true },
+        )
+
+        TGDialogSectionTitle(
+            text = stringResource(R.string.transport_mode_dlg_simple),
+            enabled = !customMode,
+            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
+        )
+        TGDialogDropdownField(
+            label = stringResource(R.string.transport_mode_dlg_simple_tempo_percent_label),
+            selectedOption = percentOptions.first { it.value == simplePercent },
+            options = percentOptions,
+            onSelected = { simplePercent = it.value },
+            enabled = !customMode,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .alpha(if (!customMode) 1f else 0.38f)
+                .padding(top = 8.dp)
+                .selectable(
+                    selected = simpleLoop,
+                    enabled = !customMode,
+                    onClick = { if (!customMode) simpleLoop = !simpleLoop },
+                    role = Role.Checkbox,
+                ),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Checkbox(
+                checked = simpleLoop,
+                enabled = !customMode,
+                onCheckedChange = { simpleLoop = it },
+            )
+            Text(text = stringResource(R.string.transport_mode_dlg_simple_loop))
+        }
+
+        TGDialogSectionTitle(
+            text = stringResource(R.string.transport_mode_dlg_trainer),
+            enabled = customMode,
+            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
+        )
+        TGDialogDropdownField(
+            label = stringResource(R.string.transport_mode_dlg_trainer_tempo_percent_from_label),
+            selectedOption = percentOptions.first { it.value == customFrom },
+            options = percentOptions,
+            onSelected = {
+                customFrom = it.value
+                lastChangedField = TGTransportTempoField.FROM
+            },
+            enabled = customMode,
+            isError = validation.fromError,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        TGDialogDropdownField(
+            label = stringResource(R.string.transport_mode_dlg_trainer_tempo_percent_to_label),
+            selectedOption = percentOptions.first { it.value == customTo },
+            options = percentOptions,
+            onSelected = {
+                customTo = it.value
+                lastChangedField = TGTransportTempoField.TO
+            },
+            enabled = customMode,
+            isError = validation.toError,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+        )
+        TGDialogDropdownField(
+            label = stringResource(R.string.transport_mode_dlg_trainer_tempo_increment_label),
+            selectedOption = percentOptions.first { it.value == customIncrement },
+            options = percentOptions,
+            onSelected = {
+                customIncrement = it.value
+                lastChangedField = TGTransportTempoField.INCREMENT
+            },
+            enabled = customMode,
+            isError = validation.incrementError,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+        )
+
+        TGDialogSectionTitle(
+            text = stringResource(R.string.transport_mode_dlg_loop_range_label),
+            enabled = loopEnabled,
+            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
+        )
+        TGDialogDropdownField(
+            label = stringResource(R.string.transport_mode_dlg_loop_range_from_label),
+            selectedOption = loopFromOptions.first { it.value == loopFromMeasure },
+            options = loopFromOptions,
+            onSelected = { loopFromMeasure = it.value },
+            enabled = loopEnabled,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        TGDialogDropdownField(
+            label = stringResource(R.string.transport_mode_dlg_loop_range_to_label),
+            selectedOption = loopToOptions.first { it.value == loopToMeasure },
+            options = loopToOptions,
+            onSelected = { loopToMeasure = it.value },
+            enabled = loopEnabled,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            horizontalArrangement = Arrangement.End,
+        ) {
+            TextButton(onClick = onCancel) {
+                Text(stringResource(R.string.global_button_cancel))
+            }
+            TextButton(
+                onClick = {
+                    onSave(
+                        TGTransportModeFields(
+                            customMode = customMode,
+                            simplePercent = simplePercent,
+                            simpleLoop = simpleLoop,
+                            customFrom = customFrom,
+                            customTo = customTo,
+                            customIncrement = customIncrement,
+                            loopFromMeasure = loopFromMeasure,
+                            loopToMeasure = loopToMeasure,
+                            measures = initial.measures,
+                        )
+                    )
+                },
+                enabled = validation.valid,
+            ) {
+                Text(stringResource(R.string.global_button_ok))
+            }
+        }
+    }
+}
+
+private fun validateTransport(
+    customFrom: Int,
+    customTo: Int,
+    customIncrement: Int,
+    lastChangedField: TGTransportTempoField,
+): TGTransportValidation {
+    var valid = true
+    var fromError = false
+    var toError = false
+    var incrementError = false
+
+    if (lastChangedField == TGTransportTempoField.FROM) {
+        if (customFrom >= customTo) {
+            valid = false
+            fromError = true
+        }
+    } else if (lastChangedField == TGTransportTempoField.TO) {
+        if (customTo <= customFrom) {
+            valid = false
+            toError = true
+        }
+    }
+
+    if (valid && customIncrement > (customTo - customFrom)) {
+        valid = false
+        incrementError = true
+    }
+
+    return TGTransportValidation(
+        valid = valid,
+        fromError = fromError,
+        toError = toError,
+        incrementError = incrementError,
+    )
+}
+
+@Composable
+private fun TransportRadioOption(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(selected = selected, onClick = null)
+        Text(text = label, modifier = Modifier.padding(start = 8.dp))
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TGTransportModeDialogSimplePreview() {
+    MaterialTheme {
+        TGTransportModeDialogContent(
+            initial = TGTransportModeFields(
+                customMode = false,
+                simplePercent = 100,
+                simpleLoop = true,
+                customFrom = 80,
+                customTo = 100,
+                customIncrement = 5,
+                loopFromMeasure = null,
+                loopToMeasure = 3,
+                measures = listOf(
+                    TGDropdownOption(1, "#1"),
+                    TGDropdownOption(2, "#2 (Verse)"),
+                    TGDropdownOption(3, "#3"),
+                ),
+            ),
+            onSave = {},
+            onCancel = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TGTransportModeDialogCustomPreview() {
+    MaterialTheme {
+        TGTransportModeDialogContent(
+            initial = TGTransportModeFields(
+                customMode = true,
+                simplePercent = 100,
+                simpleLoop = false,
+                customFrom = 70,
+                customTo = 100,
+                customIncrement = 10,
+                loopFromMeasure = 2,
+                loopToMeasure = 4,
+                measures = listOf(
+                    TGDropdownOption(1, "#1"),
+                    TGDropdownOption(2, "#2 (Verse)"),
+                    TGDropdownOption(3, "#3"),
+                    TGDropdownOption(4, "#4 (Chorus)"),
+                ),
+            ),
+            onSave = {},
+            onCancel = {},
+        )
     }
 }

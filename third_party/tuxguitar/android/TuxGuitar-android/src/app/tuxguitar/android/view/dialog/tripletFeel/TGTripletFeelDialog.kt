@@ -1,68 +1,71 @@
 package app.tuxguitar.android.view.dialog.tripletFeel
 
-import android.annotation.SuppressLint
-import android.os.Bundle
-import android.view.Menu
-import android.view.MenuInflater
-import android.widget.CheckBox
-import android.widget.RadioButton
-import android.widget.RadioGroup
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import app.tuxguitar.android.R
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragment
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
 import app.tuxguitar.document.TGDocumentContextAttributes
 import app.tuxguitar.editor.action.TGActionProcessor
 import app.tuxguitar.editor.action.composition.TGChangeTripletFeelAction
 import app.tuxguitar.song.models.TGMeasureHeader
 import app.tuxguitar.song.models.TGSong
 
-class TGTripletFeelDialog : TGModalFragment(R.layout.view_triplet_feel_dialog) {
-    override fun onPostCreate(savedInstanceState: Bundle?) {
-        createActionBar(true, false, R.string.triplet_feel_dlg_title)
+data class TGTripletFeelDialogUiState(
+    val tripletFeel: Int,
+    val applyToEnd: Boolean,
+)
+
+private data class TGTripletFeelOption(
+    val value: Int,
+    val labelRes: Int,
+)
+
+class TGTripletFeelDialog : TGComposeBottomSheetDialogFragment() {
+    @Composable
+    override fun SheetContent(onDismiss: () -> Unit) {
+        val header = getHeader()
+        TGTripletFeelDialogContent(
+            initial = TGTripletFeelDialogUiState(
+                tripletFeel = header.tripletFeel,
+                applyToEnd = true,
+            ),
+            onSave = { state ->
+                changeTripletFeel(state)
+                onDismiss()
+            },
+            onCancel = onDismiss,
+        )
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, menuInflater: MenuInflater) {
-        menuInflater.inflate(R.menu.menu_modal_fragment_ok, menu)
-        menu.findItem(R.id.action_ok).setOnMenuItemClickListener {
-            changeTripletFeel()
-            close()
-            true
-        }
-    }
-
-    @SuppressLint("InflateParams")
-    override fun onPostInflateView() {
-        val tripletFeel = getHeader().tripletFeel
-        updateRadio(R.id.triplet_feel_dlg_none, TGMeasureHeader.TRIPLET_FEEL_NONE, tripletFeel)
-        updateRadio(R.id.triplet_feel_dlg_eighth, TGMeasureHeader.TRIPLET_FEEL_EIGHTH, tripletFeel)
-        updateRadio(R.id.triplet_feel_dlg_sixteenth, TGMeasureHeader.TRIPLET_FEEL_SIXTEENTH, tripletFeel)
-        requireView().findViewById<CheckBox>(R.id.triplet_feel_dlg_options_apply_to_end).isChecked = true
-    }
-
-    fun updateRadio(id: Int, value: Int, selection: Int?) {
-        val button = requireView().findViewById<RadioButton>(id)
-        button.tag = value
-        button.isChecked = selection == value
-    }
-
-    fun parseTripletFeelValue(): Int {
-        val group = requireView().findViewById<RadioGroup>(R.id.triplet_feel_dlg_value)
-        val id = group.checkedRadioButtonId
-        return if (id != -1) {
-            group.findViewById<RadioButton>(id)?.tag as? Int ?: TGMeasureHeader.TRIPLET_FEEL_NONE
-        } else {
-            TGMeasureHeader.TRIPLET_FEEL_NONE
-        }
-    }
-
-    fun parseApplyToEnd(): Boolean =
-        requireView().findViewById<CheckBox>(R.id.triplet_feel_dlg_options_apply_to_end).isChecked
-
-    fun changeTripletFeel() {
+    fun changeTripletFeel(state: TGTripletFeelDialogUiState) {
         val processor = TGActionProcessor(findContext(), TGChangeTripletFeelAction.NAME)
         processor.setAttribute(TGDocumentContextAttributes.ATTRIBUTE_SONG, getSong())
         processor.setAttribute(TGDocumentContextAttributes.ATTRIBUTE_HEADER, getHeader())
-        processor.setAttribute(TGChangeTripletFeelAction.ATTRIBUTE_TRIPLET_FEEL, parseTripletFeelValue())
-        processor.setAttribute(TGChangeTripletFeelAction.ATTRIBUTE_APPLY_TO_END, parseApplyToEnd())
+        processor.setAttribute(TGChangeTripletFeelAction.ATTRIBUTE_TRIPLET_FEEL, state.tripletFeel)
+        processor.setAttribute(TGChangeTripletFeelAction.ATTRIBUTE_APPLY_TO_END, state.applyToEnd)
         processor.processOnNewThread()
     }
 
@@ -71,4 +74,106 @@ class TGTripletFeelDialog : TGModalFragment(R.layout.view_triplet_feel_dialog) {
 
     fun getHeader(): TGMeasureHeader =
         requireNotNull(getAttribute(TGDocumentContextAttributes.ATTRIBUTE_HEADER))
+}
+
+@Composable
+private fun TGTripletFeelDialogContent(
+    initial: TGTripletFeelDialogUiState,
+    onSave: (TGTripletFeelDialogUiState) -> Unit,
+    onCancel: () -> Unit,
+) {
+    val options = listOf(
+        TGTripletFeelOption(TGMeasureHeader.TRIPLET_FEEL_NONE, R.string.triplet_feel_dlg_none),
+        TGTripletFeelOption(TGMeasureHeader.TRIPLET_FEEL_EIGHTH, R.string.triplet_feel_dlg_eighth),
+        TGTripletFeelOption(TGMeasureHeader.TRIPLET_FEEL_SIXTEENTH, R.string.triplet_feel_dlg_sixteenth),
+    )
+    var tripletFeel by remember(initial.tripletFeel) { mutableStateOf(initial.tripletFeel) }
+    var applyToEnd by remember(initial.applyToEnd) { mutableStateOf(initial.applyToEnd) }
+
+    Column(
+        modifier = Modifier
+            .padding(horizontal = 24.dp, vertical = 16.dp)
+            .heightIn(max = 480.dp)
+            .verticalScroll(rememberScrollState()),
+    ) {
+        Text(
+            text = stringResource(R.string.triplet_feel_dlg_title),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(bottom = 16.dp),
+        )
+
+        options.forEach { option ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectable(
+                        selected = tripletFeel == option.value,
+                        onClick = { tripletFeel = option.value },
+                    )
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RadioButton(
+                    selected = tripletFeel == option.value,
+                    onClick = { tripletFeel = option.value },
+                )
+                Text(
+                    text = stringResource(option.labelRes),
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp)
+                .clickable { applyToEnd = !applyToEnd },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Checkbox(checked = applyToEnd, onCheckedChange = { applyToEnd = it })
+            Text(
+                text = stringResource(R.string.triplet_feel_dlg_options_apply_to_end),
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            horizontalArrangement = Arrangement.End,
+        ) {
+            TextButton(onClick = onCancel) {
+                Text(stringResource(R.string.global_button_cancel))
+            }
+            TextButton(
+                onClick = {
+                    onSave(
+                        TGTripletFeelDialogUiState(
+                            tripletFeel = tripletFeel,
+                            applyToEnd = applyToEnd,
+                        )
+                    )
+                },
+            ) {
+                Text(stringResource(R.string.global_button_ok))
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TGTripletFeelDialogContentPreview() {
+    MaterialTheme {
+        TGTripletFeelDialogContent(
+            initial = TGTripletFeelDialogUiState(
+                tripletFeel = TGMeasureHeader.TRIPLET_FEEL_EIGHTH,
+                applyToEnd = true,
+            ),
+            onSave = {},
+            onCancel = {},
+        )
+    }
 }

@@ -1,7 +1,7 @@
 package app.tuxguitar.android.view.dialog.tripletFeel
 
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragmentController
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogController
 
-class TGTripletFeelDialogController : TGModalFragmentController<TGTripletFeelDialog>() {
+class TGTripletFeelDialogController : TGComposeBottomSheetDialogController<TGTripletFeelDialog>() {
     override fun createNewInstance(): TGTripletFeelDialog = TGTripletFeelDialog()
 }

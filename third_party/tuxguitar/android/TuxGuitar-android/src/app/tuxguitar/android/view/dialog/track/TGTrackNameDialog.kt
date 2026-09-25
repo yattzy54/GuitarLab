@@ -1,52 +1,88 @@
 package app.tuxguitar.android.view.dialog.track
 
-import android.annotation.SuppressLint
-import android.os.Bundle
-import android.view.Menu
-import android.view.MenuInflater
-import android.widget.EditText
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import app.tuxguitar.android.R
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragment
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
+import app.tuxguitar.android.view.dialog.compose.TGDialogActionButtons
 import app.tuxguitar.document.TGDocumentContextAttributes
 import app.tuxguitar.editor.action.TGActionProcessor
 import app.tuxguitar.editor.action.track.TGSetTrackNameAction
 import app.tuxguitar.song.models.TGTrack
 
-class TGTrackNameDialog : TGModalFragment(R.layout.view_track_name_dialog) {
-    override fun onPostCreate(savedInstanceState: Bundle?) {
-        createActionBar(true, false, R.string.track_name_dlg_title)
+class TGTrackNameDialog : TGComposeBottomSheetDialogFragment() {
+    @Composable
+    override fun SheetContent(onDismiss: () -> Unit) {
+        TGTrackNameDialogContent(
+            initialName = getTrack()?.name.orEmpty(),
+            onSave = { name ->
+                updateTrackName(name)
+                onDismiss()
+            },
+            onCancel = onDismiss,
+        )
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, menuInflater: MenuInflater) {
-        menuInflater.inflate(R.menu.menu_modal_fragment_ok, menu)
-        menu.findItem(R.id.action_ok).setOnMenuItemClickListener {
-            updateTrackName()
-            close()
-            true
-        }
-    }
-
-    @SuppressLint("InflateParams")
-    override fun onPostInflateView() {
-        setTextFieldValue(R.id.track_name_dlg_name_value, requireNotNull(getTrack()).name)
-    }
-
-    fun setTextFieldValue(textFieldId: Int, value: String?) {
-        requireView().findViewById<EditText>(textFieldId).text.append(value)
-    }
-
-    fun getTextFieldValue(textFieldId: Int): String =
-        requireView().findViewById<EditText>(textFieldId).text.toString()
-
-    fun updateTrackName() {
+    fun updateTrackName(name: String) {
         val processor = TGActionProcessor(findContext(), TGSetTrackNameAction.NAME)
         processor.setAttribute(TGDocumentContextAttributes.ATTRIBUTE_TRACK, getTrack())
-        processor.setAttribute(
-            TGSetTrackNameAction.ATTRIBUTE_TRACK_NAME,
-            getTextFieldValue(R.id.track_name_dlg_name_value)
-        )
+        processor.setAttribute(TGSetTrackNameAction.ATTRIBUTE_TRACK_NAME, name)
         processor.processOnNewThread()
     }
 
     fun getTrack(): TGTrack? = getAttribute(TGDocumentContextAttributes.ATTRIBUTE_TRACK)
+}
+
+@Composable
+fun TGTrackNameDialogContent(
+    initialName: String,
+    onSave: (String) -> Unit,
+    onCancel: () -> Unit,
+) {
+    var name by remember(initialName) { mutableStateOf(initialName) }
+
+    Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
+        Text(
+            text = stringResource(R.string.track_name_dlg_title),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(bottom = 16.dp),
+        )
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(stringResource(R.string.track_name_dlg_name_label)) },
+            singleLine = true,
+        )
+        TGDialogActionButtons(
+            onConfirm = { onSave(name) },
+            onCancel = onCancel,
+            modifier = Modifier.padding(top = 16.dp),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TGTrackNameDialogContentPreview() {
+    MaterialTheme {
+        TGTrackNameDialogContent(
+            initialName = "Lead Guitar",
+            onSave = {},
+            onCancel = {},
+        )
+    }
 }

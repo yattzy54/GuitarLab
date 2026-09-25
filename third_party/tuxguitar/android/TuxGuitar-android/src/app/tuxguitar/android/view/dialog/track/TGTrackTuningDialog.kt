@@ -1,16 +1,41 @@
 package app.tuxguitar.android.view.dialog.track
 
-import android.annotation.SuppressLint
-import android.os.Bundle
-import android.view.Menu
-import android.view.MenuInflater
-import android.widget.ArrayAdapter
-import android.widget.CheckBox
-import android.widget.ListView
-import android.widget.Spinner
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import app.tuxguitar.android.R
 import app.tuxguitar.android.action.impl.gui.TGOpenDialogAction
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragment
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
+import app.tuxguitar.android.view.dialog.compose.TGDialogActionButtons
+import app.tuxguitar.android.view.dialog.compose.TGDialogDropdownField
 import app.tuxguitar.android.view.dialog.message.TGMessageDialogController
 import app.tuxguitar.android.view.util.TGSelectableItem
 import app.tuxguitar.document.TGDocumentContextAttributes
@@ -22,40 +47,81 @@ import app.tuxguitar.song.models.TGString
 import app.tuxguitar.song.models.TGTrack
 import app.tuxguitar.song.models.TGTuning
 
-class TGTrackTuningDialog : TGModalFragment(R.layout.view_track_tuning_dialog) {
-    val tuning = mutableListOf<TGTrackTuningModel>()
+class TGTrackTuningDialog : TGComposeBottomSheetDialogFragment() {
+    val tuning = mutableStateListOf<TGTrackTuningModel>()
     private val tuningPresets = mutableListOf<TGTrackTuningPresetModel>()
     val actionHandler = TGTrackTuningActionHandler(this)
 
-    override fun onPostCreate(savedInstanceState: Bundle?) {
-        createActionBar(true, false, R.string.track_tuning_dlg_title)
+    private var initialized = false
+    private var selectedOffset by mutableIntStateOf(0)
+    private var selectedPreset by mutableStateOf<TGTrackTuningPresetModel?>(null)
+    private var offsetEnabled by mutableStateOf(true)
+
+    @Composable
+    override fun SheetContent(onDismiss: () -> Unit) {
+        ensureInitialized()
+
+        val offsetOptions = createSelectableOffsets().toList()
+        val presetOptions = createSelectablePresets().toList()
+        val selectedOffsetIndex = offsetOptions.indexOfFirst {
+            (it.getItem() as? Int) == selectedOffset
+        }.takeIf { it >= 0 } ?: 0
+        val selectedPresetIndex = presetOptions.indexOfFirst {
+            (it.getItem() as? TGTrackTuningPresetModel) == selectedPreset
+        }.takeIf { it >= 0 } ?: 0
+
+        TGTrackTuningDialogContent(
+            title = stringResource(R.string.track_tuning_dlg_title),
+            addLabel = stringResource(R.string.global_button_add),
+            offsetLabel = stringResource(R.string.track_tuning_dlg_offset_label),
+            presetLabel = stringResource(R.string.track_tuning_dlg_preset_label),
+            offsetOptions = offsetOptions.map { it.getLabel().orEmpty() },
+            selectedOffsetIndex = selectedOffsetIndex,
+            offsetEnabled = offsetEnabled,
+            presetOptions = presetOptions.map { it.getLabel().orEmpty() },
+            selectedPresetIndex = selectedPresetIndex,
+            tuningLabels = tuning.map { it.getName() },
+            editLabel = stringResource(R.string.action_track_tuning_list_item_edit),
+            removeLabel = stringResource(R.string.action_track_tuning_list_item_remove),
+            onAdd = actionHandler::openAddTuningModelDialog,
+            onSelectOffset = { index ->
+                selectedOffset = offsetOptions[index].getItem() as Int
+            },
+            onSelectPreset = { index ->
+                selectedPreset = presetOptions[index].getItem() as? TGTrackTuningPresetModel
+                onSelectPreset()
+            },
+            onEditTuning = { index ->
+                tuning.getOrNull(index)?.let(actionHandler::openEditTuningModelDialog)
+            },
+            onRemoveTuning = { index ->
+                tuning.getOrNull(index)?.let(actionHandler::removeTuningModel)
+            },
+            onConfirm = {
+                if (updateTrackProperties()) {
+                    onDismiss()
+                }
+            },
+            onCancel = onDismiss,
+        )
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, menuInflater: MenuInflater) {
-        menuInflater.inflate(R.menu.menu_track_tuning, menu)
-        menu.findItem(R.id.action_add)
-            .setOnMenuItemClickListener(actionHandler.createAddTuningModelAction())
-        menu.findItem(R.id.action_ok).setOnMenuItemClickListener {
-            if (updateTrackProperties()) close()
-            true
+    private fun ensureInitialized() {
+        if (initialized) {
+            return
         }
-    }
 
-    @SuppressLint("InflateParams")
-    override fun onPostInflateView() {
         val songManager = requireNotNull(
             getAttribute<TGSongManager>(TGDocumentContextAttributes.ATTRIBUTE_SONG_MANAGER)
         )
         val song = requireNotNull(getAttribute<TGSong>(TGDocumentContextAttributes.ATTRIBUTE_SONG))
         val track = requireNotNull(getAttribute<TGTrack>(TGDocumentContextAttributes.ATTRIBUTE_TRACK))
-        val percussionChannel = songManager.isPercussionChannel(song, track.getChannelId())
 
+        selectedOffset = track.getOffset()
         createTuningPresets()
-        fillTuningListView()
-        fillOffset(track)
-        fillPreset()
         updateTuningFromTrack(track)
-        updateItems(percussionChannel)
+        updateItems(songManager.isPercussionChannel(song, track.getChannelId()))
+        initialized = true
     }
 
     fun createSelectableIntegers(minimum: Int, maximum: Int): Array<TGSelectableItem> =
@@ -70,21 +136,16 @@ class TGTrackTuningDialog : TGModalFragment(R.layout.view_track_tuning_dialog) {
         createSelectableIntegers(TGTrack.MIN_OFFSET, TGTrack.MAX_OFFSET)
 
     fun createSelectablePresets(): Array<TGSelectableItem> =
-        (listOf(TGSelectableItem(null, findActivity().getString(
-            R.string.track_tuning_dlg_preset_select_value
-        ))).plus(tuningPresets.map { TGSelectableItem(it, createTuningPresetLabel(it)) }))
-            .toTypedArray()
+        (listOf(
+            TGSelectableItem(
+                null,
+                findActivity().getString(R.string.track_tuning_dlg_preset_select_value)
+            )
+        ) + tuningPresets.map { TGSelectableItem(it, createTuningPresetLabel(it)) }).toTypedArray()
 
-    fun findSelectedOffset(): Int =
-        (requireView().findViewById<Spinner>(R.id.track_tuning_dlg_offset_value)
-            .selectedItem as TGSelectableItem).getItem() as Int
+    fun findSelectedOffset(): Int = selectedOffset
 
-    fun findSelectedPreset(): TGTrackTuningPresetModel? =
-        (requireView().findViewById<Spinner>(R.id.track_tuning_dlg_preset_value)
-            .selectedItem as? TGSelectableItem)?.getItem() as? TGTrackTuningPresetModel
-
-    fun findOptionValue(optionId: Int): Boolean =
-        requireView().findViewById<CheckBox>(optionId).isChecked
+    fun findSelectedPreset(): TGTrackTuningPresetModel? = selectedPreset
 
     fun findSelectedTuning(): List<TGString> {
         val songManager = requireNotNull(
@@ -99,66 +160,16 @@ class TGTrackTuningDialog : TGModalFragment(R.layout.view_track_tuning_dialog) {
         }
     }
 
-    fun fillTuningListView() {
-        requireView().findViewById<ListView>(R.id.track_tuning_dlg_list_view).apply {
-            adapter = TGTrackTuningAdapter(this@TGTrackTuningDialog, requireView().context)
-        }
-        updateTuningListView()
-    }
-
-    fun fillOffset(track: TGTrack) {
-        val adapter = ArrayAdapter(
-            requireActivity(),
-            android.R.layout.simple_spinner_item,
-            createSelectableOffsets()
-        )
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        requireView().findViewById<Spinner>(R.id.track_tuning_dlg_offset_value).apply {
-            this.adapter = adapter
-            setSelection(adapter.getPosition(TGSelectableItem(track.getOffset(), null)), false)
-        }
-    }
-
-    fun fillPreset() {
-        val adapter = ArrayAdapter(
-            requireActivity(),
-            android.R.layout.simple_spinner_item,
-            createSelectablePresets()
-        )
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        requireView().findViewById<Spinner>(R.id.track_tuning_dlg_preset_value).apply {
-            this.adapter = adapter
-            onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(
-                    parent: android.widget.AdapterView<*>?,
-                    view: android.view.View?,
-                    position: Int,
-                    id: Long
-                ) {
-                    onSelectPreset()
-                }
-
-                override fun onNothingSelected(parent: android.widget.AdapterView<*>?) = Unit
-            }
-        }
-    }
-
     fun updateItems(percussionChannel: Boolean) {
         updateOffset(!percussionChannel)
     }
 
     fun updateOffset(enabled: Boolean) {
-        requireView().findViewById<Spinner>(R.id.track_tuning_dlg_offset_value).isEnabled = enabled
+        offsetEnabled = enabled
     }
 
     private fun updateTuningPresetSelection() {
-        val selection = tuningPresets.lastOrNull { isUsingPreset(it) }
-        if (selection != findSelectedPreset()) {
-            val spinner = requireView().findViewById<Spinner>(R.id.track_tuning_dlg_preset_value)
-            @Suppress("UNCHECKED_CAST")
-            val adapter = spinner.adapter as ArrayAdapter<TGSelectableItem>
-            spinner.setSelection(adapter.getPosition(TGSelectableItem(selection, null)), false)
-        }
+        selectedPreset = tuningPresets.lastOrNull(::isUsingPreset)
     }
 
     private fun isUsingPreset(preset: TGTrackTuningPresetModel): Boolean {
@@ -169,22 +180,14 @@ class TGTrackTuningDialog : TGModalFragment(R.layout.view_track_tuning_dialog) {
     }
 
     fun updateTuningControls() {
-        updateTuningListView()
         updateTuningPresetSelection()
     }
 
-    fun updateTuningListView() {
-        (requireView().findViewById<ListView>(R.id.track_tuning_dlg_list_view)
-            .adapter as TGTrackTuningAdapter).notifyDataSetChanged()
-    }
-
     fun updateTuningFromTrack(track: TGTrack) {
-        tuning.clear()
-        for (index in 0 until track.stringCount()) {
-            val string = track.getString(index + 1)
-            tuning.add(TGTrackTuningModel().apply { value = string.getValue() })
+        val models = (0 until track.stringCount()).map { index ->
+            TGTrackTuningModel().apply { value = track.getString(index + 1).getValue() }
         }
-        updateTuningControls()
+        updateTuningModels(models)
     }
 
     private fun updateTuningFromPreset(preset: TGTrackTuningPresetModel) {
@@ -195,23 +198,27 @@ class TGTrackTuningDialog : TGModalFragment(R.layout.view_track_tuning_dialog) {
     }
 
     fun modifyTuningModel(model: TGTrackTuningModel, value: Int?) {
-        if (tuning.contains(model)) {
-            model.value = value
+        val index = tuning.indexOf(model)
+        if (index >= 0) {
+            tuning[index] = TGTrackTuningModel().apply { this.value = value }
             updateTuningControls()
         }
     }
 
     fun addTuningModel(model: TGTrackTuningModel) {
-        if (tuning.add(model)) updateTuningControls()
+        tuning.add(model)
+        updateTuningControls()
     }
 
     fun removeTuningModel(model: TGTrackTuningModel) {
-        if (tuning.remove(model)) updateTuningControls()
+        tuning.remove(model)
+        updateTuningControls()
     }
 
     fun updateTuningModels(models: List<TGTrackTuningModel>) {
         tuning.clear()
-        if (tuning.addAll(models)) updateTuningControls()
+        tuning.addAll(models)
+        updateTuningControls()
     }
 
     private fun onSelectPreset() {
@@ -298,14 +305,167 @@ class TGTrackTuningDialog : TGModalFragment(R.layout.view_track_tuning_dialog) {
     }
 
     fun postModifyTuningModel(model: TGTrackTuningModel, value: Int?) {
-        postWhenReady { modifyTuningModel(model, value) }
+        postWhenReady(Runnable { modifyTuningModel(model, value) })
     }
 
     fun postAddTuningModel(model: TGTrackTuningModel) {
-        postWhenReady { addTuningModel(model) }
+        postWhenReady(Runnable { addTuningModel(model) })
     }
 
     fun postRemoveTuningModel(model: TGTrackTuningModel) {
-        postWhenReady { removeTuningModel(model) }
+        postWhenReady(Runnable { removeTuningModel(model) })
+    }
+}
+
+@Composable
+fun TGTrackTuningDialogContent(
+    title: String,
+    addLabel: String,
+    offsetLabel: String,
+    presetLabel: String,
+    offsetOptions: List<String>,
+    selectedOffsetIndex: Int,
+    offsetEnabled: Boolean,
+    presetOptions: List<String>,
+    selectedPresetIndex: Int,
+    tuningLabels: List<String>,
+    editLabel: String,
+    removeLabel: String,
+    onAdd: () -> Unit,
+    onSelectOffset: (Int) -> Unit,
+    onSelectPreset: (Int) -> Unit,
+    onEditTuning: (Int) -> Unit,
+    onRemoveTuning: (Int) -> Unit,
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(top = 12.dp),
+            )
+            IconButton(onClick = onAdd) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = addLabel,
+                )
+            }
+        }
+        TGDialogDropdownField(
+            label = presetLabel,
+            selectedText = presetOptions[selectedPresetIndex],
+            options = presetOptions,
+            onOptionSelected = onSelectPreset,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+        )
+        TGDialogDropdownField(
+            label = offsetLabel,
+            selectedText = offsetOptions[selectedOffsetIndex],
+            options = offsetOptions,
+            onOptionSelected = onSelectOffset,
+            enabled = offsetEnabled,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp),
+        )
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 300.dp)
+                .padding(top = 16.dp),
+        ) {
+            itemsIndexed(tuningLabels, key = { index, _ -> index }) { index, label ->
+                TGTrackTuningListItem(
+                    label = label,
+                    editLabel = editLabel,
+                    removeLabel = removeLabel,
+                    onEdit = { onEditTuning(index) },
+                    onRemove = { onRemoveTuning(index) },
+                )
+                if (index < tuningLabels.lastIndex) {
+                    HorizontalDivider()
+                }
+            }
+        }
+        TGDialogActionButtons(
+            onConfirm = onConfirm,
+            onCancel = onCancel,
+            modifier = Modifier.padding(top = 16.dp),
+        )
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun TGTrackTuningListItem(
+    label: String,
+    editLabel: String,
+    removeLabel: String,
+    onEdit: () -> Unit,
+    onRemove: () -> Unit,
+) {
+    var expanded by androidx.compose.runtime.remember { mutableStateOf(false) }
+
+    Box(modifier = Modifier.fillMaxWidth()) {
+        ListItem(
+            headlineContent = { Text(label) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .combinedClickable(onClick = {}, onLongClick = { expanded = true }),
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            DropdownMenuItem(
+                text = { Text(editLabel) },
+                onClick = {
+                    expanded = false
+                    onEdit()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(removeLabel) },
+                onClick = {
+                    expanded = false
+                    onRemove()
+                },
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TGTrackTuningDialogContentPreview() {
+    MaterialTheme {
+        TGTrackTuningDialogContent(
+            title = "Tuning",
+            addLabel = "Add",
+            offsetLabel = "Offset",
+            presetLabel = "Preset",
+            offsetOptions = listOf("Offset #0", "Offset #1", "Offset #2"),
+            selectedOffsetIndex = 0,
+            offsetEnabled = true,
+            presetOptions = listOf("-- Presets --", "Standard", "Drop D"),
+            selectedPresetIndex = 1,
+            tuningLabels = listOf("E", "A", "D", "G", "B", "E"),
+            editLabel = "Edit",
+            removeLabel = "Remove",
+            onAdd = {},
+            onSelectOffset = {},
+            onSelectPreset = {},
+            onEditTuning = {},
+            onRemoveTuning = {},
+            onConfirm = {},
+            onCancel = {},
+        )
     }
 }

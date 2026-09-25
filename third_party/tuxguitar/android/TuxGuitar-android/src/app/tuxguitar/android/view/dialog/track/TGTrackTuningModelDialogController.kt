@@ -1,8 +1,8 @@
 package app.tuxguitar.android.view.dialog.track
 
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragmentController
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogController
 
-class TGTrackTuningModelDialogController : TGModalFragmentController<TGTrackTuningModelDialog>() {
+class TGTrackTuningModelDialogController : TGComposeBottomSheetDialogController<TGTrackTuningModelDialog>() {
     override fun createNewInstance(): TGTrackTuningModelDialog = TGTrackTuningModelDialog()
 
     companion object {

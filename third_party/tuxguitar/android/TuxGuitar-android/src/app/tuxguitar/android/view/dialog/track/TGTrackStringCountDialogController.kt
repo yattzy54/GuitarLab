@@ -1,7 +1,7 @@
 package app.tuxguitar.android.view.dialog.track
 
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragmentController
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogController
 
-class TGTrackStringCountDialogController : TGModalFragmentController<TGTrackStringCountDialog>() {
+class TGTrackStringCountDialogController : TGComposeBottomSheetDialogController<TGTrackStringCountDialog>() {
     override fun createNewInstance(): TGTrackStringCountDialog = TGTrackStringCountDialog()
 }

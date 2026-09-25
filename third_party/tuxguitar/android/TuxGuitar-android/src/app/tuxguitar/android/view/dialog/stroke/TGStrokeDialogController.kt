@@ -1,7 +1,7 @@
 package app.tuxguitar.android.view.dialog.stroke
 
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragmentController
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogController
 
-class TGStrokeDialogController : TGModalFragmentController<TGStrokeDialog>() {
+class TGStrokeDialogController : TGComposeBottomSheetDialogController<TGStrokeDialog>() {
     override fun createNewInstance(): TGStrokeDialog = TGStrokeDialog()
 }

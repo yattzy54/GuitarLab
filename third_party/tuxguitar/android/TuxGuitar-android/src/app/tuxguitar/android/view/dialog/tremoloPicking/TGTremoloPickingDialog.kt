@@ -1,13 +1,29 @@
 package app.tuxguitar.android.view.dialog.tremoloPicking
 
-import android.annotation.SuppressLint
-import android.os.Bundle
-import android.view.Menu
-import android.view.MenuInflater
-import android.widget.RadioButton
-import android.widget.RadioGroup
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import app.tuxguitar.android.R
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragment
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
 import app.tuxguitar.document.TGDocumentContextAttributes
 import app.tuxguitar.editor.action.TGActionProcessor
 import app.tuxguitar.editor.action.effect.TGChangeTremoloPickingAction
@@ -19,72 +35,42 @@ import app.tuxguitar.song.models.TGNote
 import app.tuxguitar.song.models.TGString
 import app.tuxguitar.song.models.effects.TGEffectTremoloPicking
 
-class TGTremoloPickingDialog : TGModalFragment(R.layout.view_tremolo_picking_dialog) {
-    override fun onPostCreate(savedInstanceState: Bundle?) {
-        createActionBar(true, false, R.string.tremolo_picking_dlg_title)
+private data class TGTremoloPickingDurationOption(
+    val value: Int,
+    val label: String,
+    val iconResId: Int,
+)
+
+class TGTremoloPickingDialog : TGComposeBottomSheetDialogFragment() {
+    @Composable
+    override fun SheetContent(onDismiss: () -> Unit) {
+        val selectedDuration = getNote()?.takeIf { it.effect.isTremoloPicking }
+            ?.effect?.tremoloPicking?.duration?.value ?: TGDuration.EIGHTH
+        TGTremoloPickingDialogContent(
+            options = createDurationOptions(),
+            selectedDuration = selectedDuration,
+            onSave = { duration ->
+                updateEffect(createTremoloPicking(duration))
+                onDismiss()
+            },
+            onClean = {
+                updateEffect(null)
+                onDismiss()
+            },
+            onCancel = onDismiss,
+        )
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, menuInflater: MenuInflater) {
-        menuInflater.inflate(R.menu.menu_modal_fragment_ok_clean, menu)
-        menu.findItem(R.id.action_ok).setOnMenuItemClickListener {
-            updateEffect()
-            close()
-            true
+    private fun createDurationOptions(): List<TGTremoloPickingDurationOption> = listOf(
+        TGTremoloPickingDurationOption(TGDuration.EIGHTH, getString(R.string.tremolo_picking_dlg_duration_8), R.drawable.duration_8),
+        TGTremoloPickingDurationOption(TGDuration.SIXTEENTH, getString(R.string.tremolo_picking_dlg_duration_16), R.drawable.duration_16),
+        TGTremoloPickingDurationOption(TGDuration.THIRTY_SECOND, getString(R.string.tremolo_picking_dlg_duration_32), R.drawable.duration_32),
+    )
+
+    fun createTremoloPicking(duration: Int): TGEffectTremoloPicking =
+        getSongManager().factory.newEffectTremoloPicking().also {
+            it.duration.setValue(duration)
         }
-        menu.findItem(R.id.action_clean).setOnMenuItemClickListener {
-            cleanEffect()
-            close()
-            true
-        }
-    }
-
-    @SuppressLint("InflateParams")
-    override fun onPostInflateView() {
-        fillDurations()
-    }
-
-    fun fillDurations() {
-        val note = getNote()
-        val duration = if (note != null && note.effect.isTremoloPicking) {
-            note.effect.tremoloPicking.duration.value
-        } else {
-            TGDuration.EIGHTH
-        }
-        fillDuration(R.id.tremolo_picking_dlg_duration_8, TGDuration.EIGHTH, duration)
-        fillDuration(R.id.tremolo_picking_dlg_duration_16, TGDuration.SIXTEENTH, duration)
-        fillDuration(R.id.tremolo_picking_dlg_duration_32, TGDuration.THIRTY_SECOND, duration)
-    }
-
-    fun fillDuration(id: Int, value: Int, selection: Int) {
-        requireView().findViewById<RadioButton>(id).apply {
-            tag = value
-            isChecked = value == selection
-        }
-    }
-
-    fun findSelectedDuration(): Int {
-        val group = requireView().findViewById<RadioGroup>(R.id.tremolo_picking_dlg_duration_group)
-        val id = group.checkedRadioButtonId
-        return if (id != -1) {
-            group.findViewById<RadioButton>(id)?.tag as? Int ?: TGDuration.EIGHTH
-        } else {
-            TGDuration.EIGHTH
-        }
-    }
-
-    fun createTremoloPicking(): TGEffectTremoloPicking {
-        return getSongManager().factory.newEffectTremoloPicking().also {
-            it.duration.setValue(findSelectedDuration())
-        }
-    }
-
-    fun cleanEffect() {
-        updateEffect(null)
-    }
-
-    fun updateEffect() {
-        updateEffect(createTremoloPicking())
-    }
 
     fun updateEffect(effect: TGEffectTremoloPicking?) {
         val processor = TGActionProcessor(findContext(), TGChangeTremoloPickingAction.NAME)
@@ -102,4 +88,75 @@ class TGTremoloPickingDialog : TGModalFragment(R.layout.view_tremolo_picking_dia
     fun getBeat(): TGBeat? = getAttribute(TGDocumentContextAttributes.ATTRIBUTE_BEAT)
     fun getNote(): TGNote? = getAttribute(TGDocumentContextAttributes.ATTRIBUTE_NOTE)
     fun getString(): TGString? = getAttribute(TGDocumentContextAttributes.ATTRIBUTE_STRING)
+}
+
+@Composable
+private fun TGTremoloPickingDialogContent(
+    options: List<TGTremoloPickingDurationOption>,
+    selectedDuration: Int,
+    onSave: (Int) -> Unit,
+    onClean: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    val initialIndex = options.indexOfFirst { it.value == selectedDuration }.takeIf { it >= 0 } ?: 0
+    var selectedIndex by remember(selectedDuration, options) { mutableIntStateOf(initialIndex) }
+
+    Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
+        Text(
+            text = stringResource(R.string.tremolo_picking_dlg_title),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(bottom = 16.dp),
+        )
+        options.forEachIndexed { index, option ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectable(selected = selectedIndex == index, onClick = { selectedIndex = index })
+                    .padding(vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RadioButton(selected = selectedIndex == index, onClick = { selectedIndex = index })
+                Image(
+                    painter = painterResource(option.iconResId),
+                    contentDescription = null,
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                )
+                Text(option.label)
+            }
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            horizontalArrangement = Arrangement.End,
+        ) {
+            TextButton(onClick = onClean) {
+                Text(stringResource(R.string.global_button_clean))
+            }
+            TextButton(onClick = onCancel) {
+                Text(stringResource(R.string.global_button_cancel))
+            }
+            TextButton(onClick = { onSave(options[selectedIndex].value) }) {
+                Text(stringResource(R.string.global_button_ok))
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TGTremoloPickingDialogContentPreview() {
+    MaterialTheme {
+        TGTremoloPickingDialogContent(
+            options = listOf(
+                TGTremoloPickingDurationOption(TGDuration.EIGHTH, "Eighth", R.drawable.duration_8),
+                TGTremoloPickingDurationOption(TGDuration.SIXTEENTH, "Sixteenth", R.drawable.duration_16),
+                TGTremoloPickingDurationOption(TGDuration.THIRTY_SECOND, "Thirty-Second", R.drawable.duration_32),
+            ),
+            selectedDuration = TGDuration.SIXTEENTH,
+            onSave = {},
+            onClean = {},
+            onCancel = {},
+        )
+    }
 }

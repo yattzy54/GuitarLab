@@ -1,18 +1,34 @@
 package app.tuxguitar.android.view.dialog.harmonic
 
-import android.annotation.SuppressLint
-import android.os.Bundle
-import android.R as AndroidR
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.View
-import android.widget.ArrayAdapter
-import android.widget.RadioButton
-import android.widget.RadioGroup
-import android.widget.Spinner
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import app.tuxguitar.android.R
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragment
-import app.tuxguitar.android.view.util.TGSelectableItem
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
+import app.tuxguitar.android.view.dialog.compose.TGDialogDropdownField
+import app.tuxguitar.android.view.dialog.compose.TGDropdownOption
 import app.tuxguitar.document.TGDocumentContextAttributes
 import app.tuxguitar.editor.action.TGActionProcessor
 import app.tuxguitar.editor.action.effect.TGChangeHarmonicNoteAction
@@ -23,145 +39,60 @@ import app.tuxguitar.song.models.TGNote
 import app.tuxguitar.song.models.TGString
 import app.tuxguitar.song.models.effects.TGEffectHarmonic
 
-class TGHarmonicDialog : TGModalFragment(R.layout.view_harmonic_dialog) {
-    override fun onPostCreate(savedInstanceState: Bundle?) {
-        createActionBar(true, false, R.string.harmonic_dlg_title)
+data class TGHarmonicFields(
+    val type: Int,
+    val data: Int,
+    val naturalAvailable: Boolean,
+)
+
+private data class TGHarmonicTypeOption(
+    val value: Int,
+    val labelRes: Int,
+    val enabled: Boolean = true,
+)
+
+class TGHarmonicDialog : TGComposeBottomSheetDialogFragment() {
+    @Composable
+    override fun SheetContent(onDismiss: () -> Unit) {
+        TGHarmonicDialogContent(
+            initial = createInitialFields(),
+            onSave = {
+                updateEffect(createHarmonic(it))
+                onDismiss()
+            },
+            onClean = {
+                updateEffect(null)
+                onDismiss()
+            },
+            onCancel = onDismiss,
+        )
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, menuInflater: MenuInflater) {
-        menuInflater.inflate(R.menu.menu_modal_fragment_ok_clean, menu)
-        menu.findItem(R.id.action_ok).setOnMenuItemClickListener {
-            updateEffect()
-            close()
-            true
-        }
-        menu.findItem(R.id.action_clean).setOnMenuItemClickListener {
-            cleanEffect()
-            close()
-            true
-        }
-    }
-
-    @SuppressLint("InflateParams")
-    override fun onPostInflateView() {
-        fillHarmonics()
-        fillData()
-    }
-
-    fun isNaturalHarmonicAvailable(): Boolean {
-        val note = getNote() ?: return false
-        return TGEffectHarmonic.NATURAL_FREQUENCIES.any {
-            note.value % 12 == it[0] % 12
-        }
-    }
-
-    fun getCurrentType(): Int {
+    private fun createInitialFields(): TGHarmonicFields {
         val note = getNote()
-        if (note != null && note.effect.isHarmonic) return note.effect.harmonic.type
-        return if (isNaturalHarmonicAvailable()) {
+        val type = if (note != null && note.effect.isHarmonic) {
+            note.effect.harmonic.type
+        } else if (isNaturalHarmonicAvailable()) {
             TGEffectHarmonic.TYPE_NATURAL
         } else {
             TGEffectHarmonic.TYPE_ARTIFICIAL
         }
+        val data = if (note != null && note.effect.isHarmonic) note.effect.harmonic.data else 0
+        return TGHarmonicFields(type = type, data = data, naturalAvailable = isNaturalHarmonicAvailable())
     }
 
-    fun getTypeLabel(type: Int): String = when (type) {
-        TGEffectHarmonic.TYPE_NATURAL -> TGEffectHarmonic.KEY_NATURAL
-        TGEffectHarmonic.TYPE_ARTIFICIAL -> TGEffectHarmonic.KEY_ARTIFICIAL
-        TGEffectHarmonic.TYPE_TAPPED -> TGEffectHarmonic.KEY_TAPPED
-        TGEffectHarmonic.TYPE_PINCH -> TGEffectHarmonic.KEY_PINCH
-        TGEffectHarmonic.TYPE_SEMI -> TGEffectHarmonic.KEY_SEMI
-        else -> ""
+    private fun isNaturalHarmonicAvailable(): Boolean {
+        val note = getNote() ?: return false
+        return TGEffectHarmonic.NATURAL_FREQUENCIES.any { note.value % 12 == it[0] % 12 }
     }
 
-    fun createDataValues(type: Int): Array<TGSelectableItem> {
-        if (type == TGEffectHarmonic.TYPE_NATURAL) return emptyArray()
-        val label = getTypeLabel(type)
-        return Array(TGEffectHarmonic.NATURAL_FREQUENCIES.size) { index ->
-            TGSelectableItem(
-                index,
-                "$label(${TGEffectHarmonic.NATURAL_FREQUENCIES[index][0]})"
-            )
-        }
-    }
-
-    fun fillData() {
-        val note = getNote()
-        val selection = if (note != null && note.effect.isHarmonic) {
-            note.effect.harmonic.data
-        } else {
-            -1
-        }
-        fillData(getCurrentType(), selection)
-    }
-
-    fun fillData(type: Int, selection: Int) {
-        val values = createDataValues(type)
-        val adapter = ArrayAdapter(
-            requireActivity(),
-            AndroidR.layout.simple_spinner_item,
-            values
-        )
-        adapter.setDropDownViewResource(AndroidR.layout.simple_spinner_dropdown_item)
-        val spinner = requireView().findViewById<Spinner>(R.id.harmonic_dlg_data_value)
-        spinner.adapter = adapter
-        spinner.isEnabled = values.isNotEmpty()
-        spinner.visibility = if (values.isNotEmpty()) View.VISIBLE else View.GONE
-        if (values.isNotEmpty()) {
-            spinner.setSelection(adapter.getPosition(TGSelectableItem(selection, null)))
-        }
-    }
-
-    fun findSelectedData(): Int {
-        val item = requireView().findViewById<Spinner>(R.id.harmonic_dlg_data_value)
-            .selectedItem as? TGSelectableItem
-        return item?.item as? Int ?: 0
-    }
-
-    fun fillHarmonics() {
-        val selected = getCurrentType()
-        val naturalAvailable = isNaturalHarmonicAvailable()
-        fillHarmonic(R.id.harmonic_dlg_type_nh, TGEffectHarmonic.TYPE_NATURAL, selected, naturalAvailable)
-        fillHarmonic(R.id.harmonic_dlg_type_ah, TGEffectHarmonic.TYPE_ARTIFICIAL, selected, true)
-        fillHarmonic(R.id.harmonic_dlg_type_th, TGEffectHarmonic.TYPE_TAPPED, selected, true)
-        fillHarmonic(R.id.harmonic_dlg_type_ph, TGEffectHarmonic.TYPE_PINCH, selected, true)
-        fillHarmonic(R.id.harmonic_dlg_type_sh, TGEffectHarmonic.TYPE_SEMI, selected, true)
-    }
-
-    fun fillHarmonic(id: Int, value: Int, selection: Int, enabled: Boolean) {
-        requireView().findViewById<RadioButton>(id).apply {
-            tag = value
-            isChecked = value == selection
-            isEnabled = enabled
-            setOnClickListener { fillData(value, 0) }
-        }
-    }
-
-    fun findSelectedHarmonic(): Int {
-        val group = requireView().findViewById<RadioGroup>(R.id.harmonic_dlg_type_group)
-        val id = group.checkedRadioButtonId
-        return if (id != -1) {
-            group.findViewById<RadioButton>(id)?.tag as? Int ?: TGEffectHarmonic.TYPE_NATURAL
-        } else {
-            TGEffectHarmonic.TYPE_NATURAL
-        }
-    }
-
-    fun createHarmonic(): TGEffectHarmonic =
+    private fun createHarmonic(fields: TGHarmonicFields): TGEffectHarmonic =
         getSongManager().factory.newEffectHarmonic().also {
-            it.setType(findSelectedHarmonic())
-            it.setData(findSelectedData())
+            it.setType(fields.type)
+            it.setData(fields.data)
         }
 
-    fun cleanEffect() {
-        updateEffect(null)
-    }
-
-    fun updateEffect() {
-        updateEffect(createHarmonic())
-    }
-
-    fun updateEffect(effect: TGEffectHarmonic?) {
+    private fun updateEffect(effect: TGEffectHarmonic?) {
         val processor = TGActionProcessor(findContext(), TGChangeHarmonicNoteAction.NAME)
         processor.setAttribute(TGDocumentContextAttributes.ATTRIBUTE_MEASURE, getMeasure())
         processor.setAttribute(TGDocumentContextAttributes.ATTRIBUTE_BEAT, getBeat())
@@ -176,4 +107,174 @@ class TGHarmonicDialog : TGModalFragment(R.layout.view_harmonic_dialog) {
     fun getBeat(): TGBeat? = getAttribute(TGDocumentContextAttributes.ATTRIBUTE_BEAT)
     fun getNote(): TGNote? = getAttribute(TGDocumentContextAttributes.ATTRIBUTE_NOTE)
     fun getString(): TGString? = getAttribute(TGDocumentContextAttributes.ATTRIBUTE_STRING)
+}
+
+@Composable
+fun TGHarmonicDialogContent(
+    initial: TGHarmonicFields,
+    onSave: (TGHarmonicFields) -> Unit,
+    onClean: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    val typeOptions = listOf(
+        TGHarmonicTypeOption(TGEffectHarmonic.TYPE_NATURAL, R.string.harmonic_dlg_type_nh, initial.naturalAvailable),
+        TGHarmonicTypeOption(TGEffectHarmonic.TYPE_ARTIFICIAL, R.string.harmonic_dlg_type_ah),
+        TGHarmonicTypeOption(TGEffectHarmonic.TYPE_TAPPED, R.string.harmonic_dlg_type_th),
+        TGHarmonicTypeOption(TGEffectHarmonic.TYPE_PINCH, R.string.harmonic_dlg_type_ph),
+        TGHarmonicTypeOption(TGEffectHarmonic.TYPE_SEMI, R.string.harmonic_dlg_type_sh),
+    )
+
+    var type by remember { mutableIntStateOf(initial.type) }
+    var data by remember { mutableIntStateOf(initial.data) }
+
+    val dataOptions = remember(type) {
+        if (type == TGEffectHarmonic.TYPE_NATURAL) {
+            emptyList()
+        } else {
+            val prefix = when (type) {
+                TGEffectHarmonic.TYPE_ARTIFICIAL -> TGEffectHarmonic.KEY_ARTIFICIAL
+                TGEffectHarmonic.TYPE_TAPPED -> TGEffectHarmonic.KEY_TAPPED
+                TGEffectHarmonic.TYPE_PINCH -> TGEffectHarmonic.KEY_PINCH
+                else -> TGEffectHarmonic.KEY_SEMI
+            }
+            TGEffectHarmonic.NATURAL_FREQUENCIES.mapIndexed { index, frequency ->
+                TGDropdownOption(index, "$prefix(${frequency[0]})")
+            }
+        }
+    }
+    if (dataOptions.isNotEmpty() && dataOptions.none { it.value == data }) {
+        data = 0
+    }
+
+    Column(
+        modifier = Modifier
+            .padding(horizontal = 24.dp, vertical = 16.dp)
+            .heightIn(max = 480.dp)
+            .verticalScroll(rememberScrollState()),
+    ) {
+        Text(
+            text = stringResource(R.string.harmonic_dlg_title),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(bottom = 16.dp),
+        )
+
+        typeOptions.forEach { option ->
+            HarmonicRadioOption(
+                label = stringResource(option.labelRes),
+                selected = type == option.value,
+                enabled = option.enabled,
+                onClick = {
+                    if (option.enabled) {
+                        type = option.value
+                        data = 0
+                    }
+                },
+            )
+        }
+
+        if (dataOptions.isNotEmpty()) {
+            TGDialogDropdownField(
+                label = stringResource(
+                    when (type) {
+                        TGEffectHarmonic.TYPE_ARTIFICIAL -> R.string.harmonic_dlg_type_ah
+                        TGEffectHarmonic.TYPE_TAPPED -> R.string.harmonic_dlg_type_th
+                        TGEffectHarmonic.TYPE_PINCH -> R.string.harmonic_dlg_type_ph
+                        else -> R.string.harmonic_dlg_type_sh
+                    }
+                ),
+                selectedOption = dataOptions.first { it.value == data },
+                options = dataOptions,
+                onSelected = { data = it.value },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
+            horizontalArrangement = Arrangement.End,
+        ) {
+            TextButton(onClick = onCancel) {
+                Text(stringResource(R.string.global_button_cancel))
+            }
+            TextButton(onClick = onClean) {
+                Text(stringResource(R.string.global_button_clean))
+            }
+            TextButton(
+                onClick = {
+                    onSave(
+                        TGHarmonicFields(
+                            type = type,
+                            data = data,
+                            naturalAvailable = initial.naturalAvailable,
+                        )
+                    )
+                },
+            ) {
+                Text(stringResource(R.string.global_button_ok))
+            }
+        }
+    }
+}
+
+@Composable
+private fun HarmonicRadioOption(
+    label: String,
+    selected: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .alpha(if (enabled) 1f else 0.38f)
+            .selectable(
+                selected = selected,
+                enabled = enabled,
+                onClick = onClick,
+                role = Role.RadioButton,
+            )
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(selected = selected, onClick = null, enabled = enabled)
+        Text(text = label, modifier = Modifier.padding(start = 8.dp))
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TGHarmonicDialogNaturalPreview() {
+    MaterialTheme {
+        TGHarmonicDialogContent(
+            initial = TGHarmonicFields(
+                type = TGEffectHarmonic.TYPE_NATURAL,
+                data = 0,
+                naturalAvailable = true,
+            ),
+            onSave = {},
+            onClean = {},
+            onCancel = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TGHarmonicDialogArtificialPreview() {
+    MaterialTheme {
+        TGHarmonicDialogContent(
+            initial = TGHarmonicFields(
+                type = TGEffectHarmonic.TYPE_ARTIFICIAL,
+                data = 2,
+                naturalAvailable = false,
+            ),
+            onSave = {},
+            onClean = {},
+            onCancel = {},
+        )
+    }
 }

@@ -1,8 +1,8 @@
 package app.tuxguitar.android.view.dialog.chooser
 
-import app.tuxguitar.android.view.dialog.fragment.TGDialogFragmentController
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogController
 
-class TGChooserDialogController<T> : TGDialogFragmentController<TGChooserDialog<T>>() {
+class TGChooserDialogController<T> : TGComposeBottomSheetDialogController<TGChooserDialog<T>>() {
     override fun createNewInstance(): TGChooserDialog<T> = TGChooserDialog()
 
     companion object {

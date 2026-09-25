@@ -1,11 +1,7 @@
 package app.tuxguitar.android.view.dialog.track
 
-import android.view.MenuItem
-import android.view.View
 import app.tuxguitar.android.action.TGActionProcessorListener
-import app.tuxguitar.android.action.impl.gui.TGOpenCabMenuAction
 import app.tuxguitar.android.action.impl.gui.TGOpenDialogAction
-import app.tuxguitar.android.menu.controller.TGMenuController
 import app.tuxguitar.android.view.dialog.TGDialogController
 import app.tuxguitar.editor.TGEditorManager
 
@@ -19,23 +15,20 @@ class TGTrackTuningActionHandler(private val dialog: TGTrackTuningDialog) {
             it.setAttribute(TGOpenDialogAction.ATTRIBUTE_DIALOG_CONTROLLER, controller)
         }
 
-    fun createOpenCabMenuAction(
-        controller: TGMenuController,
-        selectableView: View
-    ): TGActionProcessorListener =
-        createAction(TGOpenCabMenuAction.NAME).also {
-            it.setAttribute(TGOpenCabMenuAction.ATTRIBUTE_MENU_ACTIVITY, dialog.findActivity())
-            it.setAttribute(TGOpenCabMenuAction.ATTRIBUTE_MENU_CONTROLLER, controller)
-            it.setAttribute(TGOpenCabMenuAction.ATTRIBUTE_MENU_SELECTABLE_VIEW, selectableView)
-        }
+    fun openEditTuningModelDialog(model: TGTrackTuningModel) {
+        createEditTuningModelAction(model).process()
+    }
 
-    fun createTuningModelMenuAction(
-        model: TGTrackTuningModel,
-        selectableView: View
-    ): TGActionProcessorListener =
-        createOpenCabMenuAction(TGTrackTuningListItemMenu(dialog, model), selectableView)
+    fun openAddTuningModelDialog() {
+        createAddTuningModelAction().process()
+    }
 
-    fun createEditTuningModelAction(model: TGTrackTuningModel): TGActionProcessorListener =
+    fun removeTuningModel(model: TGTrackTuningModel) {
+        dialog.postRemoveTuningModel(model)
+        TGEditorManager.getInstance(dialog.findContext()).updateSelection()
+    }
+
+    private fun createEditTuningModelAction(model: TGTrackTuningModel): TGActionProcessorListener =
         createOpenDialogAction(TGTrackTuningModelDialogController()).also { processor ->
             processor.setAttribute(TGTrackTuningModelDialogController.ATTRIBUTE_MODEL, model)
             processor.setAttribute(
@@ -48,7 +41,7 @@ class TGTrackTuningActionHandler(private val dialog: TGTrackTuningDialog) {
             )
         }
 
-    fun createAddTuningModelAction(): TGActionProcessorListener =
+    private fun createAddTuningModelAction(): TGActionProcessorListener =
         createOpenDialogAction(TGTrackTuningModelDialogController()).also { processor ->
             processor.setAttribute(
                 TGTrackTuningModelDialogController.ATTRIBUTE_HANDLER,
@@ -58,12 +51,5 @@ class TGTrackTuningActionHandler(private val dialog: TGTrackTuningDialog) {
                     }
                 }
             )
-        }
-
-    fun createRemoveTuningModelAction(model: TGTrackTuningModel): MenuItem.OnMenuItemClickListener =
-        MenuItem.OnMenuItemClickListener {
-            dialog.postRemoveTuningModel(model)
-            TGEditorManager.getInstance(dialog.findContext()).updateSelection()
-            true
         }
 }
