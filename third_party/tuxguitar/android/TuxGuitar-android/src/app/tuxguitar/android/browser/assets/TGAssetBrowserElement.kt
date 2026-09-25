@@ -12,56 +12,82 @@ import java.io.OutputStream
 
 class TGAssetBrowserElement(
     private val context: TGContext,
-    private val parentElement: TGAssetBrowserElement?,
-    private val name: String
+    val parent: TGAssetBrowserElement?,
+    private val name: String,
 ) : TGBrowserElement {
+    private var childreen: MutableList<TGBrowserElement>? = null
+
     override fun getName(): String = name
-    override fun getParent(): TGAssetBrowserElement? = parentElement
-    override fun isFolder(): Boolean = name.indexOf('.') == -1
+
+    override fun getParent(): TGBrowserElement? = parent
+
+    override fun isFolder(): Boolean = !name.contains('.')
+
     override fun isWritable(): Boolean = false
+
     @Throws(TGBrowserException::class)
-    fun getChildreen(): List<TGBrowserElement> = findChildreen()
+    fun getChildreen(): List<TGBrowserElement> {
+        if (childreen == null) {
+            childreen = findChildreen()
+        }
+        return childreen ?: emptyList()
+    }
+
     @Throws(TGBrowserException::class)
-    fun findChildreen(): List<TGBrowserElement> {
-        return try {
-            val elements = mutableListOf<TGBrowserElement>()
+    fun findChildreen(): MutableList<TGBrowserElement> {
+        try {
+            val elements = ArrayList<TGBrowserElement>()
             val assetManager = findAssetManager()
             if (assetManager != null) {
                 val assets = assetManager.list(fullPath)
                 if (assets != null) {
-                    for (asset in assets) elements.add(TGAssetBrowserElement(context, this, asset))
+                    for (asset in assets) {
+                        elements.add(TGAssetBrowserElement(context, this, asset))
+                    }
                 }
             }
-            elements
+            return elements
         } catch (e: IOException) {
             throw TGBrowserException()
         }
     }
+
     @Throws(TGBrowserException::class)
     override fun getInputStream(): InputStream {
         if (isFolder()) {
-            throw TGBrowserException("Not a file")
+            throw TGBrowserException("Folder cannot be opened as a file")
         }
         return try {
-            val assetManager = findAssetManager() ?: throw TGBrowserException("Asset manager not available")
-            assetManager.open(fullPath)
+            val assetManager = findAssetManager()
+            if (assetManager != null) {
+                assetManager.open(fullPath)
+            } else {
+                throw TGBrowserException("Asset manager is not available")
+            }
         } catch (e: IOException) {
             throw TGBrowserException(e)
         }
     }
+
     @Throws(TGBrowserException::class)
     override fun getOutputStream(): OutputStream {
-        throw TGBrowserException("No writable file system")
+        throw TGBrowserException("Asset browser element is read-only")
     }
+
     private val fullPath: String
+        @Throws(TGBrowserException::class)
         get() {
             var path = name
-            var current = parentElement
-            while (current != null) {
-                path = current.getName() + File.separator + path
-                current = current.getParent()
+            var currentParent = parent
+            while (currentParent != null) {
+                path = currentParent.name + File.separator + path
+                currentParent = currentParent.parent
             }
             return path
         }
-    private fun findAssetManager(): AssetManager? = TGActivityController.getInstance(context).activity?.assets
+
+    private fun findAssetManager(): AssetManager? {
+        val controller = TGActivityController.getInstance(context)
+        return controller.activity?.assets
+    }
 }

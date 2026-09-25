@@ -6,17 +6,20 @@ import app.tuxguitar.tools.browser.base.TGBrowserSettings
 import app.tuxguitar.util.TGContext
 
 class TGAssetBrowserSettings(context: TGContext) {
-    private val titleValue: String = TGActivityController.getInstance(context).activity?.getString(R.string.storage_saf_assets_provider_title) ?: "Assets"
+    val title: String = TGActivityController.getInstance(context).activity?.getString(R.string.storage_saf_assets_provider_title) ?: ""
+    val id: String = DEFAULT_ID
+    val path: String = DEFAULT_PATH
 
-    fun getId(): String = DEFAULT_ID
-    fun getTitle(): String = titleValue
-    fun getPath(): String = DEFAULT_PATH
-    override fun equals(other: Any?): Boolean = other != null && this.hashCode() == other.hashCode()
-    override fun hashCode(): Int = (TGAssetBrowserSettings::class.java.name + "-" + getId()).hashCode()
-    fun toBrowserSettings(): TGBrowserSettings = TGBrowserSettings().apply {
-        this.title = getTitle()
-        this.data = getId()
+    fun toBrowserSettings(): TGBrowserSettings {
+        val settings = TGBrowserSettings()
+        settings.title = this.title
+        settings.data = this.id
+        return settings
     }
+
+    override fun equals(other: Any?): Boolean = this.hashCode() == other?.hashCode()
+
+    override fun hashCode(): Int = (TGAssetBrowserSettings::class.java.name + "-" + this.id).hashCode()
 
     companion object {
         private const val DEFAULT_ID = "browser-assets"

@@ -13,9 +13,10 @@ class TGGoLastMeasureAction(context: TGContext) : TGActionBase(context, NAME) {
         else {
             val caret = getEditor().caret
             val track = caret.track
+            val selectedString = caret.selectedString
             val measure = getSongManager(context).trackManager.getLastMeasure(track)
-            if (track != null && measure != null) {
-                caret.update(track.number, measure.start, caret.selectedString.number)
+            if (track != null && measure != null && selectedString != null) {
+                caret.update(track.number, measure.start, selectedString.number)
             }
         }
     }

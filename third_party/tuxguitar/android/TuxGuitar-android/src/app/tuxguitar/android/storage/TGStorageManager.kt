@@ -11,18 +11,34 @@ import app.tuxguitar.util.singleton.TGSingletonUtil
 class TGStorageManager private constructor(private val context: TGContext) {
     private var provider: TGStorageProvider? = null
 
-    init { createListeners() }
+    init {
+        createListeners()
+    }
 
     fun createListeners() {
         TGActionManager.getInstance(context).addPostExecutionListener(TGStorageEventListener(context))
     }
 
-    fun openDocument() { provider?.openDocument() }
-    fun saveDocument() { provider?.saveDocument() }
-    fun saveDocumentAs() { provider?.saveDocumentAs() }
-    fun updateSession(source: TGAbstractContext) { provider?.updateSession(source) }
+    fun openDocument() {
+        getProvider()?.openDocument()
+    }
+
+    fun saveDocument() {
+        getProvider()?.saveDocument()
+    }
+
+    fun saveDocumentAs() {
+        getProvider()?.saveDocumentAs()
+    }
+
+    fun updateSession(source: TGAbstractContext) {
+        getProvider()?.updateSession(source)
+    }
+
     fun getProvider(): TGStorageProvider? {
-        if (provider == null) loadSettings()
+        if (provider == null) {
+            loadSettings()
+        }
         return provider
     }
 
@@ -38,12 +54,10 @@ class TGStorageManager private constructor(private val context: TGContext) {
 
     companion object {
         @JvmStatic
-        fun getInstance(context: TGContext): TGStorageManager = TGSingletonUtil.getInstance(
-            context,
-            TGStorageManager::class.java.name,
-            object : TGSingletonFactory<TGStorageManager> {
+        fun getInstance(context: TGContext): TGStorageManager {
+            return TGSingletonUtil.getInstance(context, TGStorageManager::class.java.name, object : TGSingletonFactory<TGStorageManager> {
                 override fun createInstance(context: TGContext): TGStorageManager = TGStorageManager(context)
-            }
-        )
+            })
+        }
     }
 }

@@ -8,55 +8,97 @@ import app.tuxguitar.util.TGContext
 import java.io.InputStream
 import java.io.OutputStream
 
-class TGAssetBrowser(private val context: TGContext, private val data: TGAssetBrowserSettings) : TGBrowser {
+class TGAssetBrowser(
+    private val context: TGContext,
+    private val data: TGAssetBrowserSettings,
+) : TGBrowser {
     private var element: TGAssetBrowserElement? = null
 
-    override fun open(cb: TGBrowserCallBack<Any>) {
+    override fun open(callback: TGBrowserCallBack<Any>) {
         try {
             element = null
-            cb.onSuccess(null)
-        } catch (e: RuntimeException) { cb.handleError(e) }
+            callback.onSuccess(element)
+        } catch (e: RuntimeException) {
+            callback.handleError(e)
+        }
     }
-    override fun close(cb: TGBrowserCallBack<Any>) {
+
+    override fun close(callback: TGBrowserCallBack<Any>) {
         try {
             element = null
-            cb.onSuccess(null)
-        } catch (e: RuntimeException) { cb.handleError(e) }
+            callback.onSuccess(element)
+        } catch (e: RuntimeException) {
+            callback.handleError(e)
+        }
     }
-    override fun cdElement(cb: TGBrowserCallBack<Any>, element: TGBrowserElement) {
+
+    override fun cdElement(callback: TGBrowserCallBack<Any>, element: TGBrowserElement) {
         try {
             this.element = element as TGAssetBrowserElement
-            cb.onSuccess(this.element)
-        } catch (e: RuntimeException) { cb.handleError(e) }
+            callback.onSuccess(this.element)
+        } catch (e: RuntimeException) {
+            callback.handleError(e)
+        }
     }
-    override fun cdRoot(cb: TGBrowserCallBack<Any>) {
+
+    override fun cdRoot(callback: TGBrowserCallBack<Any>) {
         try {
-            element = TGAssetBrowserElement(context, null, data.getPath())
-            cb.onSuccess(element)
-        } catch (e: RuntimeException) { cb.handleError(e) }
+            element = TGAssetBrowserElement(context, null, data.path)
+            callback.onSuccess(element)
+        } catch (e: RuntimeException) {
+            callback.handleError(e)
+        }
     }
-    override fun cdUp(cb: TGBrowserCallBack<Any>) {
+
+    override fun cdUp(callback: TGBrowserCallBack<Any>) {
         try {
-            if (element != null && element!!.getParent() != null) element = element!!.getParent()
-            cb.onSuccess(element)
-        } catch (e: RuntimeException) { cb.handleError(e) }
+            if (element != null && element!!.parent != null) {
+                element = element!!.parent
+            }
+            callback.onSuccess(element)
+        } catch (e: RuntimeException) {
+            callback.handleError(e)
+        }
     }
-    override fun listElements(cb: TGBrowserCallBack<List<TGBrowserElement>>) {
+
+    override fun listElements(callback: TGBrowserCallBack<List<TGBrowserElement>>) {
         try {
-            val elements = mutableListOf<TGBrowserElement>()
+            val elements = ArrayList<TGBrowserElement>()
             if (element != null) {
                 elements.addAll(element!!.getChildreen())
-                if (elements.isNotEmpty()) elements.sortWith(TGAssetBrowserElementComparator())
+                if (elements.isNotEmpty()) {
+                    elements.sortWith(TGAssetBrowserElementComparator())
+                }
             }
-            cb.onSuccess(elements)
-        } catch (e: Throwable) { cb.handleError(e) }
+            callback.onSuccess(elements)
+        } catch (e: Throwable) {
+            callback.handleError(e)
+        }
     }
-    override fun createElement(cb: TGBrowserCallBack<TGBrowserElement>, name: String) { try { cb.onSuccess(null) } catch (e: RuntimeException) { cb.handleError(e) } }
-    override fun getInputStream(cb: TGBrowserCallBack<InputStream>, element: TGBrowserElement) {
-        try { cb.onSuccess((element as TGAssetBrowserElement).getInputStream()) } catch (e: Throwable) { cb.handleError(e) }
+
+    override fun createElement(callback: TGBrowserCallBack<TGBrowserElement>, name: String) {
+        try {
+            callback.onSuccess(null)
+        } catch (e: RuntimeException) {
+            callback.handleError(e)
+        }
     }
-    override fun getOutputStream(cb: TGBrowserCallBack<OutputStream>, element: TGBrowserElement) {
-        try { throw TGBrowserException("No writable file system") } catch (e: Throwable) { cb.handleError(e) }
+
+    override fun getInputStream(callback: TGBrowserCallBack<InputStream>, element: TGBrowserElement) {
+        try {
+            callback.onSuccess((element as TGAssetBrowserElement).getInputStream())
+        } catch (e: Throwable) {
+            callback.handleError(e)
+        }
     }
+
+    override fun getOutputStream(callback: TGBrowserCallBack<OutputStream>, element: TGBrowserElement) {
+        try {
+            throw TGBrowserException("No writable file system")
+        } catch (e: Throwable) {
+            callback.handleError(e)
+        }
+    }
+
     override fun isWritable(): Boolean = false
 }

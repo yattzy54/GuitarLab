@@ -12,7 +12,7 @@ import app.tuxguitar.util.error.TGErrorManager
 class TGBrowserSessionHandler(
     private val context: TGContext,
     private val session: TGBrowserSession,
-    private val collection: TGBrowserCollection
+    private val collection: TGBrowserCollection,
 ) : TGBrowserFactoryHandler {
     override fun onCreateBrowser(browser: TGBrowser) {
         val tgActionProcessor = TGActionProcessor(context, TGBrowserLoadSessionAction.NAME)
