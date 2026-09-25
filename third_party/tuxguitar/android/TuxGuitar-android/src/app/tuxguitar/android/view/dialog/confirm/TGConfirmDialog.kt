@@ -11,6 +11,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -56,6 +57,7 @@ fun TGConfirmDialogContent(
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
 ) {
+    val viewModel = scopedEditorViewModel { TGConfirmDialogViewModel() }
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
         Text(
             text = stringResource(R.string.confirm_dlg_title),
@@ -70,10 +72,10 @@ fun TGConfirmDialogContent(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
         ) {
-            TextButton(onClick = onCancel) {
+            TextButton(onClick = { viewModel.decide(TGConfirmationDecision.CANCEL, onCancel) }) {
                 Text(stringResource(R.string.global_button_cancel))
             }
-            TextButton(onClick = onConfirm) {
+            TextButton(onClick = { viewModel.decide(TGConfirmationDecision.CONFIRM, onConfirm) }) {
                 Text(stringResource(R.string.global_button_ok))
             }
         }

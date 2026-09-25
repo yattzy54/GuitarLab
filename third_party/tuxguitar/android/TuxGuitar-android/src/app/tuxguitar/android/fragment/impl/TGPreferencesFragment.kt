@@ -4,9 +4,8 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.tuxguitar.android.ui.state.editorViewModel
 import app.tuxguitar.android.R
 import app.tuxguitar.android.action.impl.storage.TGStorageLoadSettingsAction
 import app.tuxguitar.android.action.impl.transport.TGTransportLoadSettingsAction
@@ -22,10 +21,7 @@ import app.tuxguitar.player.base.MidiPlayer
 class TGPreferencesFragment : TGComposeCachedFragment() {
     private lateinit var sharedPreferences: SharedPreferences
 
-    private var useCollectionBrowser by mutableStateOf(false)
-    private val outputPortOptions = mutableStateListOf<TGPreferencesOutputPortOption>()
-    private var selectedOutputPortKey by mutableStateOf<String?>(null)
-    private var outputPortSummary by mutableStateOf("")
+    private val viewModel by lazy { editorViewModel { TGPreferencesViewModel() } }
 
     override fun onPostCreate() {
         attachInstance()
@@ -43,7 +39,7 @@ class TGPreferencesFragment : TGComposeCachedFragment() {
     }
 
     fun loadCollectionBrowserPreference() {
-        useCollectionBrowser = TGStorageProperties(findContext()).isUseCollectionBrowser()
+        viewModel.setCollectionBrowser(TGStorageProperties(findContext()).isUseCollectionBrowser())
     }
 
     fun loadOutputPortPreferences() {
@@ -60,10 +56,7 @@ class TGPreferencesFragment : TGComposeCachedFragment() {
             }
         }
 
-        outputPortOptions.clear()
-        outputPortOptions.addAll(options)
-        selectedOutputPortKey = currentValue
-        outputPortSummary = createOutputPortSummary(currentLabel)
+        viewModel.setOutputPorts(options, currentValue, createOutputPortSummary(currentLabel))
     }
 
     fun createOutputPortSummary(label: String?): String =
@@ -74,32 +67,32 @@ class TGPreferencesFragment : TGComposeCachedFragment() {
         }
 
     fun onUseCollectionBrowserChange(checked: Boolean) {
-        useCollectionBrowser = checked
+        viewModel.setCollectionBrowser(checked)
         sharedPreferences.edit().putBoolean(TGStorageProperties.PROPERTY_COLLECTION_BROWSER, checked).apply()
         TGActionProcessor(findContext(), TGStorageLoadSettingsAction.NAME).process()
     }
 
     fun onOutputPortSelected(option: TGPreferencesOutputPortOption) {
-        selectedOutputPortKey = option.key
-        outputPortSummary = createOutputPortSummary(option.label)
+        viewModel.selectOutputPort(option, createOutputPortSummary(option.label))
         sharedPreferences.edit().putString(TGTransportProperties.PROPERTY_MIDI_OUTPUT_PORT, option.key).apply()
         TGActionProcessor(findContext(), TGTransportLoadSettingsAction.NAME).process()
     }
 
     @Composable
     override fun FragmentContent() {
+        val state by viewModel.state.collectAsStateWithLifecycle()
         TGPreferencesScreen(
-            useCollectionBrowser = useCollectionBrowser,
+            useCollectionBrowser = state.useCollectionBrowser,
             onUseCollectionBrowserChange = ::onUseCollectionBrowserChange,
-            outputPortOptions = outputPortOptions,
-            selectedOutputPortKey = selectedOutputPortKey,
+            outputPortOptions = state.outputPortOptions,
+            selectedOutputPortKey = state.selectedOutputPortKey,
             onOutputPortSelected = ::onOutputPortSelected,
             generalCategoryTitle = getString(R.string.preferences_general_title),
             collectionBrowserTitle = getString(R.string.preferences_general_use_collection_browser_title),
             collectionBrowserSummary = getString(R.string.preferences_general_use_collection_browser_summary),
             soundCategoryTitle = getString(R.string.preferences_sound_category_title),
             outputPortTitle = getString(R.string.preferences_midi_output_port_title),
-            outputPortSummary = outputPortSummary,
+            outputPortSummary = state.outputPortSummary,
         )
     }
 

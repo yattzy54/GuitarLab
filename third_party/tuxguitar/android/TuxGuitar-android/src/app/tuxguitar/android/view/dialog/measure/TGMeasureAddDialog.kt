@@ -1,5 +1,8 @@
 package app.tuxguitar.android.view.dialog.measure
 
+import app.tuxguitar.android.ui.state.bind
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
+
 import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 import androidx.compose.foundation.clickable
@@ -86,8 +89,9 @@ fun TGMeasureAddDialogContent(
     onSave: (Int, Int) -> Unit,
     onCancel: () -> Unit,
 ) {
-    var count by remember { mutableStateOf(initialCount) }
-    var measureNumber by remember { mutableStateOf(initialMeasureNumber) }
+    val viewModel = scopedEditorViewModel { TGMeasureAddDialogViewModel(TGMeasureAddDialogState(initialCount, initialMeasureNumber)) }
+    var count by viewModel.bind({ it.count }, viewModel::onCountChanged)
+    var measureNumber by viewModel.bind({ it.measureNumber }, viewModel::onMeasureNumberChanged)
 
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
         Text(

@@ -1,5 +1,8 @@
 package app.tuxguitar.android.view.dialog.tempo
 
+import app.tuxguitar.android.ui.state.bind
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
+
 import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 import androidx.compose.foundation.Image
@@ -16,8 +19,6 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -142,11 +143,10 @@ private fun TGTempoDialogContent(
     }.takeIf { it >= 0 } ?: 0
     val initialApplyIndex = applyOptions.indexOfFirst { it.value == selectedApplyTo }.takeIf { it >= 0 } ?: 0
 
-    var tempoIndex by remember(selectedTempoValue, tempoValues) { mutableIntStateOf(initialTempoIndex) }
-    var baseIndex by remember(selectedTempoBase, selectedTempoBaseDotted, tempoBaseOptions) {
-        mutableIntStateOf(initialBaseIndex)
-    }
-    var applyIndex by remember(selectedApplyTo, applyOptions) { mutableIntStateOf(initialApplyIndex) }
+    val viewModel = scopedEditorViewModel { TGTempoDialogViewModel(TGTempoDialogState(initialTempoIndex, initialBaseIndex, initialApplyIndex)) }
+    var tempoIndex by viewModel.bind({ it.tempoIndex }, viewModel::onTempoIndexChanged)
+    var baseIndex by viewModel.bind({ it.baseIndex }, viewModel::onBaseIndexChanged)
+    var applyIndex by viewModel.bind({ it.applyIndex }, viewModel::onApplyIndexChanged)
 
     Column(
         modifier = Modifier

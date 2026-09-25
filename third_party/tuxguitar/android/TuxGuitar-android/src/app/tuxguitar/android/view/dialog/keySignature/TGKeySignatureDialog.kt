@@ -1,5 +1,8 @@
 package app.tuxguitar.android.view.dialog.keySignature
 
+import app.tuxguitar.android.ui.state.bind
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
+
 import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 import androidx.compose.foundation.clickable
@@ -39,10 +42,7 @@ import app.tuxguitar.song.models.TGMeasure
 import app.tuxguitar.song.models.TGSong
 import app.tuxguitar.song.models.TGTrack
 
-data class TGKeySignatureDialogUiState(
-    val keySignature: Int,
-    val applyToEnd: Boolean,
-)
+
 
 private data class TGKeySignatureOption(
     val value: Int,
@@ -106,8 +106,9 @@ private fun TGKeySignatureDialogContent(
     onSave: (TGKeySignatureDialogUiState) -> Unit,
     onCancel: () -> Unit,
 ) {
-    var keySignature by remember(initial.keySignature) { mutableStateOf(initial.keySignature) }
-    var applyToEnd by remember(initial.applyToEnd) { mutableStateOf(initial.applyToEnd) }
+    val viewModel = scopedEditorViewModel { TGKeySignatureDialogViewModel(initial) }
+    var keySignature by viewModel.bind({ it.keySignature }, viewModel::onKeySignatureChanged)
+    var applyToEnd by viewModel.bind({ it.applyToEnd }, viewModel::onApplyToEndChanged)
 
     Column(
         modifier = Modifier

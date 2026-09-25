@@ -1,5 +1,8 @@
 package app.tuxguitar.android.view.dialog.timeSignature
 
+import app.tuxguitar.android.ui.state.bind
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
+
 import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 import androidx.compose.foundation.clickable
@@ -40,11 +43,7 @@ import app.tuxguitar.song.models.TGMeasureHeader
 import app.tuxguitar.song.models.TGSong
 import app.tuxguitar.song.models.TGTimeSignature
 
-data class TGTimeSignatureDialogUiState(
-    val numerator: Int,
-    val denominator: Int,
-    val applyToEnd: Boolean,
-)
+
 
 private data class TGTimeSignatureOption(
     val value: Int,
@@ -118,9 +117,10 @@ private fun TGTimeSignatureDialogContent(
     onSave: (TGTimeSignatureDialogUiState) -> Unit,
     onCancel: () -> Unit,
 ) {
-    var numerator by remember(initial.numerator) { mutableStateOf(initial.numerator) }
-    var denominator by remember(initial.denominator) { mutableStateOf(initial.denominator) }
-    var applyToEnd by remember(initial.applyToEnd) { mutableStateOf(initial.applyToEnd) }
+    val viewModel = scopedEditorViewModel { TGTimeSignatureDialogViewModel(initial) }
+    var numerator by viewModel.bind({ it.numerator }, viewModel::onNumeratorChanged)
+    var denominator by viewModel.bind({ it.denominator }, viewModel::onDenominatorChanged)
+    var applyToEnd by viewModel.bind({ it.applyToEnd }, viewModel::onApplyToEndChanged)
 
     Column(
         modifier = Modifier

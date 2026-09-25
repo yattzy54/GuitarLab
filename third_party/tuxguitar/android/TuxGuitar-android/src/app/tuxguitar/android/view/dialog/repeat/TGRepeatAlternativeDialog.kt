@@ -1,5 +1,8 @@
 package app.tuxguitar.android.view.dialog.repeat
 
+import app.tuxguitar.android.ui.state.bind
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
+
 import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 import androidx.compose.foundation.layout.Arrangement
@@ -13,8 +16,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -96,7 +97,8 @@ fun TGRepeatAlternativeDialogContent(
     onClean: () -> Unit,
     onCancel: () -> Unit,
 ) {
-    var selectedEndings by remember { mutableStateOf(initialSelectedEndings) }
+    val viewModel = scopedEditorViewModel { TGRepeatAlternativeDialogViewModel(TGRepeatAlternativeDialogState(initialSelectedEndings)) }
+    var selectedEndings by viewModel.bind({ it.selectedEndings }, viewModel::onSelectedEndingsChanged)
 
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
         Text(

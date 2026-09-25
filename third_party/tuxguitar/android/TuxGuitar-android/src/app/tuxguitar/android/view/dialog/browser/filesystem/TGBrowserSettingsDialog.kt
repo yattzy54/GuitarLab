@@ -17,9 +17,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.tuxguitar.android.ui.state.editorViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -37,6 +37,9 @@ import app.tuxguitar.tools.browser.base.TGBrowserFactorySettingsHandler
 import java.io.File
 
 class TGBrowserSettingsDialog : TGComposeDialog() {
+    private val viewModel by lazy {
+        editorViewModel { TGBrowserSettingsDialogViewModel(TGBrowserSettingsState(getMountPoint().label, getMountPoint().path)) }
+    }
 
     fun getMountPoint(): TGBrowserSettingsMountPoint =
         requireNotNull(
@@ -63,23 +66,15 @@ class TGBrowserSettingsDialog : TGComposeDialog() {
         return items
     }
 
-    fun createSettings(name: String, path: String?): Boolean {
-        if (name.isEmpty()) {
-            showErrorMessage(R.string.browser_settings_fs_error_empty_name)
-            return false
-        }
-        if (path.isNullOrEmpty()) {
-            showErrorMessage(R.string.browser_settings_fs_error_empty_path)
-            return false
-        }
-
-        val directory = File(path)
-        if (!directory.exists()) {
-            showErrorMessage(R.string.browser_settings_fs_error_nonexistent_path)
-            return false
-        }
-        if (!directory.isDirectory) {
-            showErrorMessage(R.string.browser_settings_fs_error_nonfolder_path)
+    fun createSettings(): Boolean {
+        val error = viewModel.validate()
+        if (error != null) {
+            showErrorMessage(when (error) {
+                TGBrowserSettingsError.EMPTY_NAME -> R.string.browser_settings_fs_error_empty_name
+                TGBrowserSettingsError.EMPTY_PATH -> R.string.browser_settings_fs_error_empty_path
+                TGBrowserSettingsError.NONEXISTENT_PATH -> R.string.browser_settings_fs_error_nonexistent_path
+                TGBrowserSettingsError.NONFOLDER_PATH -> R.string.browser_settings_fs_error_nonfolder_path
+            })
             return false
         }
 
@@ -88,7 +83,8 @@ class TGBrowserSettingsDialog : TGComposeDialog() {
                 TGBrowserSettingsDialogController.ATTRIBUTE_HANDLER
             )
         )
-        handler.onCreateSettings(TGFsBrowserSettings(name, path).toBrowserSettings())
+        val state = viewModel.state.value
+        handler.onCreateSettings(TGFsBrowserSettings(state.name, requireNotNull(state.path).absolutePath).toBrowserSettings())
         return true
     }
 
@@ -115,22 +111,20 @@ class TGBrowserSettingsDialog : TGComposeDialog() {
 
     @Composable
     override fun SheetContent(onDismiss: () -> Unit) {
-        val mountPoint = getMountPoint()
-        var currentPath by remember { mutableStateOf<File?>(mountPoint.path) }
-        var name by remember { mutableStateOf(mountPoint.label) }
-        val items = remember(currentPath) { currentPath?.let(::listFolders) ?: emptyList() }
+        val state by viewModel.state.collectAsStateWithLifecycle()
+        val items = remember(state.path) { state.path?.let(::listFolders) ?: emptyList() }
 
         TGBrowserSettingsDialogContent(
             title = stringResource(R.string.browser_settings_fs_dlg_title),
             nameLabel = stringResource(R.string.browser_settings_fs_name_label),
             pathLabel = stringResource(R.string.browser_settings_fs_path_label),
-            name = name,
-            onNameChange = { name = it },
-            pathPreview = currentPath?.absolutePath.orEmpty(),
+            name = state.name,
+            onNameChange = viewModel::setName,
+            pathPreview = state.path?.absolutePath.orEmpty(),
             folderLabels = items.map { it.label },
-            onFolderSelected = { index -> currentPath = items[index].file },
+            onFolderSelected = { index -> viewModel.selectFolder(items[index].file) },
             onConfirm = {
-                if (createSettings(name, currentPath?.absolutePath)) onDismiss()
+                if (createSettings()) onDismiss()
             },
             onCancel = onDismiss,
         )

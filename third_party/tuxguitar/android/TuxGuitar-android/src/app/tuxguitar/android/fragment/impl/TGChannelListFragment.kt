@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.tuxguitar.android.ui.state.editorViewModel
 import androidx.compose.ui.Modifier
 import app.tuxguitar.android.R
 import app.tuxguitar.android.fragment.TGComposeCachedFragment
@@ -25,7 +27,7 @@ import java.util.ArrayList
 class TGChannelListFragment : TGComposeCachedFragment() {
     val actionHandler: TGChannelActionHandler = TGChannelActionHandler(this)
     private val eventListener = TGChannelEventListener(this)
-    private val channels = mutableStateListOf<TGChannel>()
+    private val viewModel by lazy { editorViewModel { TGChannelListViewModel() } }
     private var updateItemsProcess: TGProcess? = null
 
     override fun onPostCreate() {
@@ -68,26 +70,27 @@ class TGChannelListFragment : TGComposeCachedFragment() {
                 newChannels.add(it.next())
             }
         }
-        channels.clear()
-        channels.addAll(newChannels)
+        viewModel.updateChannels(newChannels, actionHandler::isRemovableChannel)
     }
 
     fun updateVolume(channel: TGChannel, volume: Short) {
-        if (volume != channel.volume && volume in 0..127) {
+        viewModel.changeVolume(channel, volume) {
             actionHandler.createUpdateVolumeAction(channel, volume).process()
         }
     }
 
     @Composable
     override fun FragmentContent() {
+        val channels by viewModel.state.collectAsStateWithLifecycle()
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
-            items(channels, key = { it.channelId }) { channel ->
+            items(channels, key = { it.channel.channelId }) { row ->
+                val channel = row.channel
                 TGChannelListItemContent(
-                    name = channel.name,
-                    volume = channel.volume.toInt(),
+                    name = row.name,
+                    volume = row.volume.toInt(),
                     onVolumeChange = { volume -> updateVolume(channel, volume.toShort()) },
                     onClick = { actionHandler.createEditChannelAction(channel).process() },
-                    isRemovable = actionHandler.isRemovableChannel(channel),
+                    isRemovable = row.removable,
                     onRemove = { actionHandler.removeChannel(channel) },
                 )
             }

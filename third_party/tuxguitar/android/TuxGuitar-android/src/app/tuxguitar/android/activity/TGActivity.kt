@@ -83,6 +83,7 @@ open class TGActivity {
 
     var currentDialog: TGComposeDialog? = null
         private set
+    private val dialogStack = mutableListOf<TGComposeDialog>()
     var onUiStateChanged: (() -> Unit)? = null
 
     fun notifyUiStateChanged() {
@@ -206,6 +207,8 @@ open class TGActivity {
         onUiStateChanged = null
         currentDialog?.onHide()
         currentDialog = null
+        dialogStack.forEach { it.viewModelStore.clear() }
+        dialogStack.clear()
         navigationManager.dispose()
         setDisplayOn(false)
         val contentFrame = findViewById<FrameLayout>(R.id.content_frame)
@@ -391,6 +394,7 @@ open class TGActivity {
         hostActivity.runOnUiThread {
             if (!destroyed) {
                 currentDialog?.onHide()
+                dialogStack.add(dialog)
                 currentDialog = dialog
                 dialog.onShow()
                 notifyUiStateChanged()
@@ -400,9 +404,13 @@ open class TGActivity {
 
     fun dismissComposeDialog(dialog: TGComposeDialog) {
         hostActivity.runOnUiThread {
-            if (!destroyed && currentDialog === dialog) {
-                currentDialog = null
-                dialog.onHide()
+            if (!destroyed && dialogStack.remove(dialog)) {
+                if (currentDialog === dialog) {
+                    dialog.onHide()
+                    currentDialog = dialogStack.lastOrNull()
+                    currentDialog?.onShow()
+                }
+                dialog.viewModelStore.clear()
                 notifyUiStateChanged()
             }
         }

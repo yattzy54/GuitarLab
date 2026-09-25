@@ -11,6 +11,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -35,6 +36,7 @@ fun TGMessageDialogContent(
     message: String?,
     onDismiss: () -> Unit,
 ) {
+    val viewModel = scopedEditorViewModel { TGMessageDialogViewModel() }
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
         if (!title.isNullOrEmpty()) {
             Text(text = title, style = MaterialTheme.typography.titleLarge)
@@ -50,7 +52,7 @@ fun TGMessageDialogContent(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
         ) {
-            TextButton(onClick = onDismiss) {
+            TextButton(onClick = { viewModel.acknowledge(onDismiss) }) {
                 Text(stringResource(R.string.global_button_ok))
             }
         }

@@ -5,6 +5,8 @@ import android.os.Looper
 import android.view.Menu
 import android.view.MenuInflater
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
 import app.tuxguitar.action.TGActionException
 import app.tuxguitar.android.R
 import app.tuxguitar.android.activity.TGActivity
@@ -21,7 +23,8 @@ import app.tuxguitar.util.TGContext
  * inflation/lifecycle to bridge, just a single [Content] composable that is
  * created once and shown/hidden as navigation moves between screens.
  */
-abstract class TGScreen {
+abstract class TGScreen : ViewModelStoreOwner {
+    final override val viewModelStore = ViewModelStore()
     var hasOptionsMenu: Boolean = false
         private set
 
