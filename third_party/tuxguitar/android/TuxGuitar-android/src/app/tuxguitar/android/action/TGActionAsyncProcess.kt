@@ -5,7 +5,7 @@ import app.tuxguitar.action.TGActionException
 import app.tuxguitar.event.TGEventManager
 import app.tuxguitar.util.error.TGErrorHandler
 
-class TGActionAsyncProcess(
+open class TGActionAsyncProcess(
     private val action: TGActionBase,
     private val actionContext: TGActionContext,
 ) : TGErrorHandler {
