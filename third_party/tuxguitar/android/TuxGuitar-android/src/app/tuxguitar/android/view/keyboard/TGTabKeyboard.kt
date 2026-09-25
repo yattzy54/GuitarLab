@@ -16,6 +16,7 @@ import app.tuxguitar.android.action.impl.gui.TGOpenMenuAction
 import app.tuxguitar.android.action.impl.view.TGShowSmartMenuAction
 import app.tuxguitar.android.activity.TGActivity
 import app.tuxguitar.android.application.TGApplicationUtil
+import app.tuxguitar.android.fragment.impl.TGMainFragmentController
 import app.tuxguitar.android.menu.controller.TGMenuController
 import app.tuxguitar.android.menu.controller.impl.contextual.TGDurationMenu
 import app.tuxguitar.editor.action.duration.TGDecrementDurationAction
@@ -29,6 +30,7 @@ class TGTabKeyboard @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : FrameLayout(context, attrs) {
+    private var requestedVisibility = true
 
     override fun onFinishInflate() {
         attachView()
@@ -76,13 +78,24 @@ class TGTabKeyboard @JvmOverloads constructor(
     }
 
     fun toggleVisibility() {
+        TGMainFragmentController.getInstance(findContext()).getFragment().toggleKeyboard()
+    }
+
+    fun setKeyboardVisible(visible: Boolean, animateChange: Boolean = true) {
+        if (animateChange && requestedVisibility == visible) return
+        requestedVisibility = visible
+        animate().setListener(null)
+        animate().cancel()
         clearAnimation()
-        if (visibility == VISIBLE) {
+        if (!animateChange) {
+            visibility = if (visible) VISIBLE else GONE
+            translationY = 0f
+        } else if (!visible) {
             animate().setDuration(300).translationY(height.toFloat()).setListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
                     super.onAnimationEnd(animation)
                     clearAnimation()
-                    visibility = GONE
+                    if (!requestedVisibility) visibility = GONE
                 }
             })
         } else {

@@ -1,5 +1,8 @@
 package app.tuxguitar.android.view.dialog.trill
 
+import app.tuxguitar.android.ui.state.bind
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
+
 import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 import androidx.compose.foundation.layout.Arrangement
@@ -43,10 +46,7 @@ import app.tuxguitar.song.models.TGNote
 import app.tuxguitar.song.models.TGString
 import app.tuxguitar.song.models.effects.TGEffectTrill
 
-data class TGTrillDialogUiState(
-    val fret: Int,
-    val duration: Int?,
-)
+
 
 private data class TGTrillDurationOption(
     val value: Int,
@@ -134,8 +134,9 @@ private fun TGTrillDialogContent(
         TGTrillDurationOption(TGDuration.THIRTY_SECOND, R.string.trill_dlg_duration_32),
         TGTrillDurationOption(TGDuration.SIXTY_FOURTH, R.string.trill_dlg_duration_64),
     )
-    var fret by remember(initial.fret) { mutableStateOf(initial.fret) }
-    var duration by remember(initial.duration) { mutableStateOf(initial.duration) }
+    val viewModel = scopedEditorViewModel { TGTrillDialogViewModel(initial) }
+    var fret by viewModel.bind({ it.fret }, viewModel::onFretChanged)
+    var duration by viewModel.bind({ it.duration }, viewModel::onDurationChanged)
 
     Column(
         modifier = Modifier

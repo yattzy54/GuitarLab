@@ -3,6 +3,8 @@ package app.tuxguitar.android.view.dialog.compose
 import android.os.Handler
 import android.os.Looper
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
 import app.tuxguitar.android.activity.TGActivity
 import app.tuxguitar.android.application.TGApplicationUtil
 import app.tuxguitar.android.view.dialog.TGDialogContext
@@ -17,7 +19,8 @@ import app.tuxguitar.util.TGContext
  * fragment-manager persistence to worry about since a dialog is recreated
  * from its [TGDialogContext] every time it is shown.
  */
-abstract class TGComposeDialog {
+abstract class TGComposeDialog : ViewModelStoreOwner {
+    final override val viewModelStore = ViewModelStore()
     var dialogContext: TGDialogContext? = null
 
     @Composable

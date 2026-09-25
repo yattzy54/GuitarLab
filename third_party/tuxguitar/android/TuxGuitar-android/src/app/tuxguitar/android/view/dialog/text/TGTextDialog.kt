@@ -1,5 +1,8 @@
 package app.tuxguitar.android.view.dialog.text
 
+import app.tuxguitar.android.ui.state.bind
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
+
 import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 import androidx.compose.foundation.layout.Arrangement
@@ -13,8 +16,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -68,7 +69,8 @@ private fun TGTextDialogContent(
     onClean: () -> Unit,
     onCancel: () -> Unit,
 ) {
-    var text by remember(initialText) { mutableStateOf(initialText) }
+    val viewModel = scopedEditorViewModel { TGTextDialogViewModel(TGTextDialogState(initialText)) }
+    var text by viewModel.bind({ it.text }, viewModel::onTextChanged)
 
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
         Text(

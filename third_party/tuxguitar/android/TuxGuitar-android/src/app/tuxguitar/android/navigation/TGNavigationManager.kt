@@ -20,6 +20,7 @@ import app.tuxguitar.util.TGContext
  */
 class TGNavigationManager(private val activity: TGActivity) {
     private val navigationFragments = mutableListOf<TGNavigationFragment>()
+    private val screens = mutableSetOf<TGScreen>()
 
     var currentScreen: TGScreen? = null
         private set
@@ -31,6 +32,8 @@ class TGNavigationManager(private val activity: TGActivity) {
 
     fun dispose() {
         currentScreen?.onHideView()
+        screens.forEach { it.viewModelStore.clear() }
+        screens.clear()
         currentScreen = null
         navigationFragments.clear()
     }
@@ -58,6 +61,7 @@ class TGNavigationManager(private val activity: TGActivity) {
         if (activity.isFragmentDestroyed()) return
         val previousScreen = currentScreen
         val newScreen = fragment.controller!!.getFragment()
+        screens.add(newScreen)
         previousScreen?.onHideView()
         currentScreen = newScreen
         newScreen.ensureCreated()

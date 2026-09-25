@@ -16,12 +16,14 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import app.tuxguitar.android.data.editor.LegacyEditorRepository
 import app.tuxguitar.android.domain.model.EditorMode
 import app.tuxguitar.android.domain.model.EditorState
@@ -74,7 +76,9 @@ class LegacyEditorHost @Inject constructor(
                                                 sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                                                 modifier = Modifier.systemBarsPadding(),
                                             ) {
-                                                dialog.SheetContent { currentOnDismiss(dialogId) }
+                                                CompositionLocalProvider(LocalViewModelStoreOwner provides dialog) {
+                                                    dialog.SheetContent { currentOnDismiss(dialogId) }
+                                                }
                                             }
                                         }
                                     }

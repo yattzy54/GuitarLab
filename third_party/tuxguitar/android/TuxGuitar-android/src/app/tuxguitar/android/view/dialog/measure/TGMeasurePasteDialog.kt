@@ -1,5 +1,8 @@
 package app.tuxguitar.android.view.dialog.measure
 
+import app.tuxguitar.android.ui.state.bind
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
+
 import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 import androidx.compose.foundation.clickable
@@ -90,8 +93,9 @@ fun TGMeasurePasteDialogContent(
     onSave: (Int, Int) -> Unit,
     onCancel: () -> Unit,
 ) {
-    var count by remember { mutableStateOf(initialCount) }
-    var mode by remember { mutableStateOf(initialMode) }
+    val viewModel = scopedEditorViewModel { TGMeasurePasteDialogViewModel(TGMeasurePasteDialogState(initialCount, initialMode)) }
+    var count by viewModel.bind({ it.count }, viewModel::onCountChanged)
+    var mode by viewModel.bind({ it.mode }, viewModel::onModeChanged)
 
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
         Text(

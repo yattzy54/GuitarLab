@@ -1,5 +1,8 @@
 package app.tuxguitar.android.view.dialog.measure
 
+import app.tuxguitar.android.ui.state.bind
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
+
 import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 import androidx.compose.foundation.layout.Arrangement
@@ -71,8 +74,9 @@ fun TGMeasureRemoveDialogContent(
     onSave: (Int, Int) -> Unit,
     onCancel: () -> Unit,
 ) {
-    var fromMeasure by remember { mutableStateOf(initialFrom) }
-    var toMeasure by remember { mutableStateOf(initialTo) }
+    val viewModel = scopedEditorViewModel { TGMeasureRemoveDialogViewModel(TGMeasureRemoveDialogState(initialFrom, initialTo)) }
+    var fromMeasure by viewModel.bind({ it.fromMeasure }, viewModel::onFromMeasureChanged)
+    var toMeasure by viewModel.bind({ it.toMeasure }, viewModel::onToMeasureChanged)
 
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
         Text(

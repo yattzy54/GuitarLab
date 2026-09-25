@@ -21,10 +21,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.tuxguitar.android.ui.state.bind
+import app.tuxguitar.android.ui.state.editorViewModel
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -42,7 +44,7 @@ import app.tuxguitar.tools.browser.TGBrowserCollection
 class TGBrowserCollectionsDialog : TGComposeDialog() {
     private var eventListener: TGBrowserCollectionsEventListener? = null
     private var actionHandler: TGBrowserCollectionsActionHandler? = null
-    private val collections = mutableStateListOf<TGBrowserCollection>()
+    private val viewModel by lazy { editorViewModel { TGBrowserCollectionsDialogViewModel() } }
 
     fun getChannel(): TGChannel? = getAttribute(TGDocumentContextAttributes.ATTRIBUTE_CHANNEL)
 
@@ -83,11 +85,12 @@ class TGBrowserCollectionsDialog : TGComposeDialog() {
     }
 
     fun refreshListView() {
-        collections.clear()
+        val collections = mutableListOf<TGBrowserCollection>()
         val browserCollections = TGBrowserManager.getInstance(findContext()).getCollections()
         while (browserCollections.hasNext()) {
             collections.add(browserCollections.next())
         }
+        viewModel.setCollections(collections)
     }
 
     fun getActionHandler(): TGBrowserCollectionsActionHandler =
@@ -96,13 +99,14 @@ class TGBrowserCollectionsDialog : TGComposeDialog() {
     @Composable
     override fun SheetContent(onDismiss: () -> Unit) {
         val factories = remember { createFactoryValues() }
+        val state by viewModel.state.collectAsStateWithLifecycle()
 
         TGBrowserCollectionsDialogContent(
             title = stringResource(R.string.browser_collections_dlg_title),
             factoryLabels = factories.map { it.getName() },
-            collectionLabels = collections.map { it.settings.title },
+            collectionLabels = state.collections.map { it.settings.title },
             onAddCollection = { index -> createCollection(factories.getOrNull(index)) },
-            onRemoveCollection = { index -> collections.getOrNull(index)?.let(::removeCollection) },
+            onRemoveCollection = { index -> state.collections.getOrNull(index)?.let(::removeCollection) },
         )
     }
 }
@@ -115,7 +119,8 @@ fun TGBrowserCollectionsDialogContent(
     onAddCollection: (Int) -> Unit,
     onRemoveCollection: (Int) -> Unit,
 ) {
-    var selectedFactoryIndex by remember(factoryLabels) { mutableIntStateOf(0) }
+    val viewModel = scopedEditorViewModel { TGBrowserCollectionsDialogViewModel() }
+    var selectedFactoryIndex by viewModel.bind({ it.selectedFactoryIndex }, viewModel::selectFactory)
 
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
         Text(

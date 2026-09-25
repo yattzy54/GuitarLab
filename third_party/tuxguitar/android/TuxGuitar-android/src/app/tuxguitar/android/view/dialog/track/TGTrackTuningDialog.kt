@@ -25,10 +25,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.tuxguitar.android.ui.state.editorViewModel
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -50,26 +50,38 @@ import app.tuxguitar.song.models.TGTrack
 import app.tuxguitar.song.models.TGTuning
 
 class TGTrackTuningDialog : TGComposeDialog() {
-    val tuning = mutableStateListOf<TGTrackTuningModel>()
-    private val tuningPresets = mutableListOf<TGTrackTuningPresetModel>()
+    val tuning: List<TGTrackTuningModel> get() = viewModel.state.value.tuning
+    private val tuningPresets get() = viewModel.state.value.presets
     val actionHandler = TGTrackTuningActionHandler(this)
-
-    private var initialized = false
-    private var selectedOffset by mutableIntStateOf(0)
-    private var selectedPreset by mutableStateOf<TGTrackTuningPresetModel?>(null)
-    private var offsetEnabled by mutableStateOf(true)
+    private val viewModel by lazy {
+        editorViewModel {
+            val songManager = requireNotNull(getAttribute<TGSongManager>(TGDocumentContextAttributes.ATTRIBUTE_SONG_MANAGER))
+            val song = requireNotNull(getAttribute<TGSong>(TGDocumentContextAttributes.ATTRIBUTE_SONG))
+            val track = requireNotNull(getAttribute<TGTrack>(TGDocumentContextAttributes.ATTRIBUTE_TRACK))
+            TGTrackTuningDialogViewModel(
+                TGTrackTuningState(
+                    tuning = (0 until track.stringCount()).map { index ->
+                        TGTrackTuningModel().apply { value = track.getString(index + 1).getValue() }
+                    },
+                    presets = findActivity().getTuningManager().getTgTunings().map(::createTuningPreset),
+                    selectedOffset = track.getOffset(),
+                    offsetEnabled = !songManager.isPercussionChannel(song, track.getChannelId()),
+                )
+            )
+        }
+    }
 
     @Composable
     override fun SheetContent(onDismiss: () -> Unit) {
-        ensureInitialized()
+        val state by viewModel.state.collectAsStateWithLifecycle()
 
         val offsetOptions = createSelectableOffsets().toList()
         val presetOptions = createSelectablePresets().toList()
         val selectedOffsetIndex = offsetOptions.indexOfFirst {
-            (it.getItem() as? Int) == selectedOffset
+            (it.getItem() as? Int) == state.selectedOffset
         }.takeIf { it >= 0 } ?: 0
         val selectedPresetIndex = presetOptions.indexOfFirst {
-            (it.getItem() as? TGTrackTuningPresetModel) == selectedPreset
+            (it.getItem() as? TGTrackTuningPresetModel) == state.selectedPreset
         }.takeIf { it >= 0 } ?: 0
 
         TGTrackTuningDialogContent(
@@ -79,19 +91,18 @@ class TGTrackTuningDialog : TGComposeDialog() {
             presetLabel = stringResource(R.string.track_tuning_dlg_preset_label),
             offsetOptions = offsetOptions.map { it.getLabel().orEmpty() },
             selectedOffsetIndex = selectedOffsetIndex,
-            offsetEnabled = offsetEnabled,
+            offsetEnabled = state.offsetEnabled,
             presetOptions = presetOptions.map { it.getLabel().orEmpty() },
             selectedPresetIndex = selectedPresetIndex,
-            tuningLabels = tuning.map { it.getName() },
+            tuningLabels = state.tuning.map { it.getName() },
             editLabel = stringResource(R.string.action_track_tuning_list_item_edit),
             removeLabel = stringResource(R.string.action_track_tuning_list_item_remove),
             onAdd = actionHandler::openAddTuningModelDialog,
             onSelectOffset = { index ->
-                selectedOffset = offsetOptions[index].getItem() as Int
+                viewModel.selectOffset(offsetOptions[index].getItem() as Int)
             },
             onSelectPreset = { index ->
-                selectedPreset = presetOptions[index].getItem() as? TGTrackTuningPresetModel
-                onSelectPreset()
+                viewModel.selectPreset(presetOptions[index].getItem() as? TGTrackTuningPresetModel)
             },
             onEditTuning = { index ->
                 tuning.getOrNull(index)?.let(actionHandler::openEditTuningModelDialog)
@@ -106,24 +117,6 @@ class TGTrackTuningDialog : TGComposeDialog() {
             },
             onCancel = onDismiss,
         )
-    }
-
-    private fun ensureInitialized() {
-        if (initialized) {
-            return
-        }
-
-        val songManager = requireNotNull(
-            getAttribute<TGSongManager>(TGDocumentContextAttributes.ATTRIBUTE_SONG_MANAGER)
-        )
-        val song = requireNotNull(getAttribute<TGSong>(TGDocumentContextAttributes.ATTRIBUTE_SONG))
-        val track = requireNotNull(getAttribute<TGTrack>(TGDocumentContextAttributes.ATTRIBUTE_TRACK))
-
-        selectedOffset = track.getOffset()
-        createTuningPresets()
-        updateTuningFromTrack(track)
-        updateItems(songManager.isPercussionChannel(song, track.getChannelId()))
-        initialized = true
     }
 
     fun createSelectableIntegers(minimum: Int, maximum: Int): Array<TGSelectableItem> =
@@ -145,9 +138,9 @@ class TGTrackTuningDialog : TGComposeDialog() {
             )
         ) + tuningPresets.map { TGSelectableItem(it, createTuningPresetLabel(it)) }).toTypedArray()
 
-    fun findSelectedOffset(): Int = selectedOffset
+    fun findSelectedOffset(): Int = viewModel.state.value.selectedOffset
 
-    fun findSelectedPreset(): TGTrackTuningPresetModel? = selectedPreset
+    fun findSelectedPreset(): TGTrackTuningPresetModel? = viewModel.state.value.selectedPreset
 
     fun findSelectedTuning(): List<TGString> {
         val songManager = requireNotNull(
@@ -167,22 +160,7 @@ class TGTrackTuningDialog : TGComposeDialog() {
     }
 
     fun updateOffset(enabled: Boolean) {
-        offsetEnabled = enabled
-    }
-
-    private fun updateTuningPresetSelection() {
-        selectedPreset = tuningPresets.lastOrNull(::isUsingPreset)
-    }
-
-    private fun isUsingPreset(preset: TGTrackTuningPresetModel): Boolean {
-        val values = preset.values ?: return false
-        return tuning.size == values.size && tuning.indices.all { index ->
-            tuning[index].value == values[index].value
-        }
-    }
-
-    fun updateTuningControls() {
-        updateTuningPresetSelection()
+        viewModel.setOffsetEnabled(enabled)
     }
 
     fun updateTuningFromTrack(track: TGTrack) {
@@ -192,39 +170,20 @@ class TGTrackTuningDialog : TGComposeDialog() {
         updateTuningModels(models)
     }
 
-    private fun updateTuningFromPreset(preset: TGTrackTuningPresetModel) {
-        val models = preset.values.orEmpty().map { presetModel ->
-            TGTrackTuningModel().apply { value = presetModel.value }
-        }
-        updateTuningModels(models)
-    }
-
     fun modifyTuningModel(model: TGTrackTuningModel, value: Int?) {
-        val index = tuning.indexOf(model)
-        if (index >= 0) {
-            tuning[index] = TGTrackTuningModel().apply { this.value = value }
-            updateTuningControls()
-        }
+        viewModel.modify(model, value)
     }
 
     fun addTuningModel(model: TGTrackTuningModel) {
-        tuning.add(model)
-        updateTuningControls()
+        viewModel.add(model)
     }
 
     fun removeTuningModel(model: TGTrackTuningModel) {
-        tuning.remove(model)
-        updateTuningControls()
+        viewModel.remove(model)
     }
 
     fun updateTuningModels(models: List<TGTrackTuningModel>) {
-        tuning.clear()
-        tuning.addAll(models)
-        updateTuningControls()
-    }
-
-    private fun onSelectPreset() {
-        findSelectedPreset()?.let(::updateTuningFromPreset)
+        viewModel.setTuning(models)
     }
 
     fun createTuningPreset(tuning: TGTuning): TGTrackTuningPresetModel {
@@ -235,11 +194,6 @@ class TGTrackTuningDialog : TGComposeDialog() {
             name = tuning.getName()
             values = models
         }
-    }
-
-    fun createTuningPresets() {
-        tuningPresets.clear()
-        tuningPresets.addAll(findActivity().getTuningManager().getTgTunings().map(::createTuningPreset))
     }
 
     fun createTuningPresetLabel(tuningPreset: TGTrackTuningPresetModel): String =
@@ -280,7 +234,7 @@ class TGTrackTuningDialog : TGComposeDialog() {
     }
 
     private fun validateTrackTuning(strings: List<TGString>): Boolean {
-        if (strings.size < TGTrack.MIN_STRINGS || strings.size > TGTrack.MAX_STRINGS) {
+        if (!viewModel.isValidTuning) {
             showErrorMessage(
                 findActivity().getString(
                     R.string.track_tuning_dlg_range_error,

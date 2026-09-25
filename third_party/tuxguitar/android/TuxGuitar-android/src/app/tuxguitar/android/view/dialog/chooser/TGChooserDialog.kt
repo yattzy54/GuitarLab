@@ -14,6 +14,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -53,6 +54,7 @@ fun <T> TGChooserDialogContent(
     options: List<TGChooserDialogOption<T>>,
     onChoose: (TGChooserDialogOption<T>) -> Unit,
 ) {
+    val viewModel = scopedEditorViewModel { TGChooserDialogViewModel() }
     Column(modifier = Modifier.padding(vertical = 16.dp)) {
         if (!title.isNullOrEmpty()) {
             Text(
@@ -67,7 +69,7 @@ fun <T> TGChooserDialogContent(
                     headlineContent = { Text(option.label) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onChoose(option) }
+                        .clickable { viewModel.choose(index, options.size) { onChoose(option) } }
                         .padding(horizontal = 8.dp),
                 )
                 if (index < options.lastIndex) {

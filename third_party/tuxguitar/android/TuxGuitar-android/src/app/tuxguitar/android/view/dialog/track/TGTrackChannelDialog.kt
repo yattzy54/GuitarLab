@@ -1,5 +1,8 @@
 package app.tuxguitar.android.view.dialog.track
 
+import app.tuxguitar.android.ui.state.bind
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
+
 import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 import androidx.compose.foundation.layout.Arrangement
@@ -12,8 +15,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -103,9 +104,8 @@ fun TGTrackChannelDialogContent(
     onSave: (Int) -> Unit,
     onCancel: () -> Unit,
 ) {
-    var currentIndex by remember(selectedIndex, channelLabels) {
-        mutableIntStateOf(selectedIndex.coerceIn(0, channelLabels.lastIndex))
-    }
+    val viewModel = scopedEditorViewModel { TGTrackChannelDialogViewModel(TGTrackChannelDialogState(selectedIndex.coerceIn(0, channelLabels.lastIndex))) }
+    var currentIndex by viewModel.bind({ it.currentIndex }, viewModel::onCurrentIndexChanged)
 
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
         Text(

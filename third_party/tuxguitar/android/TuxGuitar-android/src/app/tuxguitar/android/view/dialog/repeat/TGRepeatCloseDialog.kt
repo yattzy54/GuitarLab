@@ -1,5 +1,8 @@
 package app.tuxguitar.android.view.dialog.repeat
 
+import app.tuxguitar.android.ui.state.bind
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
+
 import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 import androidx.compose.foundation.layout.Arrangement
@@ -69,7 +72,8 @@ fun TGRepeatCloseDialogContent(
     onSave: (Int) -> Unit,
     onCancel: () -> Unit,
 ) {
-    var repeatCount by remember { mutableStateOf(initialCount) }
+    val viewModel = scopedEditorViewModel { TGRepeatCloseDialogViewModel(TGRepeatCloseDialogState(initialCount)) }
+    var repeatCount by viewModel.bind({ it.repeatCount }, viewModel::onRepeatCountChanged)
 
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
         Text(

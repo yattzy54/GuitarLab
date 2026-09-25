@@ -1,5 +1,8 @@
 package app.tuxguitar.android.view.dialog.track
 
+import app.tuxguitar.android.ui.state.bind
+import app.tuxguitar.android.ui.state.scopedEditorViewModel
+
 import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 import androidx.compose.foundation.layout.Column
@@ -8,8 +11,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -64,7 +65,8 @@ fun TGTrackStringCountDialogContent(
     onCancel: () -> Unit,
 ) {
     val initialIndex = values.indexOf(selectedCount).takeIf { it >= 0 } ?: 0
-    var selectedIndex by remember(selectedCount, values) { mutableIntStateOf(initialIndex) }
+    val viewModel = scopedEditorViewModel { TGTrackStringCountDialogViewModel(TGTrackStringCountDialogState(initialIndex)) }
+    var selectedIndex by viewModel.bind({ it.selectedIndex }, viewModel::onSelectedIndexChanged)
 
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
         Text(
