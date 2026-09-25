@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.browser.filesystem
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -198,7 +200,7 @@ fun TGBrowserSettingsDialogContent(
 @Preview(showBackground = true)
 @Composable
 private fun TGBrowserSettingsDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGBrowserSettingsDialogContent(
             title = "New file system source",
             nameLabel = "Name",

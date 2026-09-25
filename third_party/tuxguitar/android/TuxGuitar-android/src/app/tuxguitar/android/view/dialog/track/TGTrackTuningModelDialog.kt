@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.track
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -109,7 +111,7 @@ fun TGTrackTuningModelDialogContent(
 @Preview(showBackground = true)
 @Composable
 private fun TGTrackTuningModelDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGTrackTuningModelDialogContent(
             tuningValues = listOf(48, 49, 50, 51),
             tuningLabels = listOf("C4", "C#4", "D4", "D#4"),

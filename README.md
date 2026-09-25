@@ -104,6 +104,36 @@ npm run build
 ```
 
 ### Android версия (Kotlin / Gradle):
+
+Android-часть использует одну `MainActivity` и три Gradle-модуля:
+`app` (экраны и навигация), `tuxguitar-android` (редактор и движок) и
+`core:ui` (общая `GuitarLabTheme`, палитра и XML-тема).
+Оба UI-модуля зависят от `core:ui`; общей теме не нужны зависимости на приложение
+или TuxGuitar. Корневые Compose-композиции и Preview используют `GuitarLabTheme`,
+а XML-компоненты наследуют `Theme.GuitarLab.Base` через темы приложения и редактора.
+Тема фиксированная тёмная, без системных динамических цветов.
+
+Android-интеграция редактора организована по слоям внутри `tuxguitar-android`:
+
+* `ui/editor` — `EditorScreen`, Hilt `EditorViewModel` и Android-контракт `EditorHost`.
+* `domain` — неизменяемое `EditorState`, режимы редактора и интерфейс `EditorRepository`,
+  без Android View/Context и типов движка.
+* `data/editor` — `LegacyEditorRepository`: владелец экземпляра движка, адаптация
+  событий в `StateFlow`, обработка команд Back, закрытия диалогов и выхода.
+* `di` — Hilt-привязки репозитория и хоста.
+
+`MainActivity` знает только `EditorHost`; приложение не создаёт `TGActivity`
+и не обращается к его глобальному экземпляру. Android View освобождается вместе
+с Compose-хостом, а ViewModel не хранит Activity/Context/View. Каждое назначение
+имеет свой идентификатор сессии, чтобы отложенные события старого экрана не
+управляли новым редактором.
+
+Командная система, undo/redo, музыкальные модели, Canvas и существующие
+внутренние экранные контроллеры сохранены как legacy-часть адаптера.
+Это MVVM-граница Android-интеграции, а не переписывание всех внутренних экранов
+и диалогов движка на отдельные ViewModel. Новые функции следует добавлять через
+`ui` → `domain` → `data`, не расширяя прямые обращения к legacy-контроллерам.
+
 ```bash
 ./gradlew :app:assembleDebug
 ```

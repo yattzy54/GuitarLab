@@ -3,7 +3,6 @@ package app.tuxguitar.android.activity
 import android.view.ContextMenu
 import android.view.KeyEvent
 import android.view.View
-import app.tuxguitar.android.R
 
 /**
  * Read-only TuxGuitar activity.
@@ -12,16 +11,7 @@ import app.tuxguitar.android.R
  * the legacy Java editor engine.
  */
 class TGReaderActivity : TGActivity() {
-
-    override fun onViewCreated(view: View) {
-        super.onViewCreated(view)
-        // TGMainFragment now hosts view_main.xml through a Compose AndroidView, whose
-        // content is inflated on the next layout pass rather than synchronously here.
-        // Posting the visibility change keeps this working regardless of that timing.
-        findViewById<View>(R.id.root_layout)?.post {
-            findViewById<View>(R.id.main_bottom)?.visibility = View.GONE
-        }
-    }
+    override val isReadOnly: Boolean = true
 
     override fun onCreateContextMenu(
         menu: ContextMenu,

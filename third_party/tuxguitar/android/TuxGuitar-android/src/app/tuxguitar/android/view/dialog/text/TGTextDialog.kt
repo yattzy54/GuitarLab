@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.text
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -101,7 +103,7 @@ private fun TGTextDialogContent(
 @Preview(showBackground = true)
 @Composable
 private fun TGTextDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGTextDialogContent(
             initialText = "let ring",
             onSave = {},

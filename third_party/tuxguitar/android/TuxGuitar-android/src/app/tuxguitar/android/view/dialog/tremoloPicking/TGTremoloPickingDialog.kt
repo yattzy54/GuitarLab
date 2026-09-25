@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.tremoloPicking
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -146,7 +148,7 @@ private fun TGTremoloPickingDialogContent(
 @Preview(showBackground = true)
 @Composable
 private fun TGTremoloPickingDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGTremoloPickingDialogContent(
             options = listOf(
                 TGTremoloPickingDurationOption(TGDuration.EIGHTH, "Eighth", R.drawable.duration_8),

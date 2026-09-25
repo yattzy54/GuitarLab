@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.repeat
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -157,7 +159,7 @@ fun TGRepeatAlternativeDialogContent(
 @Preview(showBackground = true)
 @Composable
 private fun TGRepeatAlternativeDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGRepeatAlternativeDialogContent(
             existentEndings = 0b00000100,
             initialSelectedEndings = 0b00000001,

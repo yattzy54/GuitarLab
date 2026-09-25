@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.measure
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -187,7 +189,7 @@ private fun IntDropdownField(
 @Preview(showBackground = true)
 @Composable
 private fun TGMeasureAddDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGMeasureAddDialogContent(
             countOptions = (1..5).toList(),
             initialCount = 1,

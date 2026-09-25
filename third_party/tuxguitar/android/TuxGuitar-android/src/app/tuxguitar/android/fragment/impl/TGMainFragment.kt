@@ -55,6 +55,9 @@ class TGMainFragment : TGComposeCachedFragment() {
             factory = { context ->
                 LayoutInflater.from(context).inflate(R.layout.view_main, null, false).also {
                     inflatedRoot = it
+                    if (findActivity().isReadOnly) {
+                        it.findViewById<View>(R.id.main_bottom).visibility = View.GONE
+                    }
                 }
             },
         )

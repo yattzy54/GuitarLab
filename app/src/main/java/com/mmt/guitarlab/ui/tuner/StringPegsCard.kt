@@ -19,8 +19,8 @@ import androidx.compose.ui.unit.sp
 import com.mmt.guitarlab.domain.model.Tuning
 import com.mmt.guitarlab.domain.model.TuningNote
 import com.mmt.guitarlab.ui.components.StudioCard
-import com.mmt.guitarlab.ui.theme.ElectricAmber
-import com.mmt.guitarlab.ui.theme.ElectricTeal
+import com.mmt.guitarlab.core.ui.theme.ElectricAmber
+import com.mmt.guitarlab.core.ui.theme.ElectricTeal
 
 @Composable
 fun StringPegsCard(

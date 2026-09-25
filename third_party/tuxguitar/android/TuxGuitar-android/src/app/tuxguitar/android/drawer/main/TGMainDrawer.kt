@@ -1,11 +1,12 @@
 package app.tuxguitar.android.drawer.main
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import android.content.Context
 import android.util.AttributeSet
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.RelativeLayout
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.platform.ComposeView
 import app.tuxguitar.android.R
@@ -54,7 +55,7 @@ class TGMainDrawer(context: Context, attrs: AttributeSet?) : RelativeLayout(cont
                     FrameLayout.LayoutParams.MATCH_PARENT,
                 )
                 setContent {
-                    MaterialTheme {
+                    GuitarLabTheme {
                         TGMainDrawerContent(
                             selectedTabId = selectedTab.intValue,
                             onTabSelected = ::selectTab,

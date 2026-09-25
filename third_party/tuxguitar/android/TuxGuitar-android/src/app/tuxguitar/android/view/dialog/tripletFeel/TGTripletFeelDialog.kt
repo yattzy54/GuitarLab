@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.tripletFeel
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -166,7 +168,7 @@ private fun TGTripletFeelDialogContent(
 @Preview(showBackground = true)
 @Composable
 private fun TGTripletFeelDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGTripletFeelDialogContent(
             initial = TGTripletFeelDialogUiState(
                 tripletFeel = TGMeasureHeader.TRIPLET_FEEL_EIGHTH,

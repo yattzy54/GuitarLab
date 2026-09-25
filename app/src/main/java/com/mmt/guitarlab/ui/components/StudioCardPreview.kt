@@ -2,7 +2,7 @@ package com.mmt.guitarlab.ui.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
-import com.mmt.guitarlab.ui.theme.GuitarLabTheme
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 @Preview(showBackground = true, widthDp = 320)
 @Composable

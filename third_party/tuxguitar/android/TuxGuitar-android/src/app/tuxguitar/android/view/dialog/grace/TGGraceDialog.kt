@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.grace
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -308,7 +310,7 @@ private fun GraceRadioOption(
 @Preview(showBackground = true)
 @Composable
 private fun TGGraceDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGGraceDialogContent(
             initial = TGGraceFields(
                 fret = 5,

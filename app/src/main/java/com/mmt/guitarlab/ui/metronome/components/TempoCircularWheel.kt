@@ -1,5 +1,7 @@
 package com.mmt.guitarlab.ui.metronome.components
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,8 +20,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mmt.guitarlab.ui.theme.ElectricAmber
-import com.mmt.guitarlab.ui.theme.ElectricTeal
+import com.mmt.guitarlab.core.ui.theme.ElectricAmber
+import com.mmt.guitarlab.core.ui.theme.ElectricTeal
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -87,7 +89,7 @@ import kotlin.math.sin
 @Preview(showBackground = true, backgroundColor = 0xFF0D1117)
 @Composable
 fun TempoCircularWheelPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         Row(
             modifier = Modifier.padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),

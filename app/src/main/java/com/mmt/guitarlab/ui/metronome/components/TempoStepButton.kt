@@ -1,5 +1,7 @@
 package com.mmt.guitarlab.ui.metronome.components
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,8 +22,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.mmt.guitarlab.ui.theme.StudioCardBorder
-import com.mmt.guitarlab.ui.theme.StudioTextPrimary
+import com.mmt.guitarlab.core.ui.theme.StudioCardBorder
+import com.mmt.guitarlab.core.ui.theme.StudioTextPrimary
 
 @Composable
  fun TempoStepButton(
@@ -53,7 +55,7 @@ import com.mmt.guitarlab.ui.theme.StudioTextPrimary
 @Preview(showBackground = true, backgroundColor = 0xFF0D1117)
 @Composable
 fun TempoStepButtonPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         Row(
             modifier = Modifier.padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)

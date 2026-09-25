@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.track
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -78,7 +80,7 @@ fun TGTrackNameDialogContent(
 @Preview(showBackground = true)
 @Composable
 private fun TGTrackNameDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGTrackNameDialogContent(
             initialName = "Lead Guitar",
             onSave = {},

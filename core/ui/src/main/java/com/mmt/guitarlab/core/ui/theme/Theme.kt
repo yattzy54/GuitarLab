@@ -1,4 +1,4 @@
-package com.mmt.guitarlab.ui.theme
+package com.mmt.guitarlab.core.ui.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -39,32 +39,58 @@ val Card3DGradient = Brush.verticalGradient(
     colors = listOf(Color(0xFF22293A), Color(0xFF151A24))
 )
 
-private val DarkColors = darkColorScheme(
+internal val DarkColors = darkColorScheme(
     primary = ElectricAmber,
     onPrimary = Color(0xFF120E00),
     primaryContainer = Color(0xFF382600),
     onPrimaryContainer = Color(0xFFFFE082),
+    primaryFixed = Color(0xFFFFE082),
+    primaryFixedDim = ElectricAmber,
+    onPrimaryFixed = Color(0xFF120E00),
+    onPrimaryFixedVariant = Color(0xFF382600),
     secondary = ElectricTeal,
     onSecondary = Color(0xFF003138),
     secondaryContainer = Color(0xFF004D58),
     onSecondaryContainer = Color(0xFFB2F5FF),
+    secondaryFixed = Color(0xFFB2F5FF),
+    secondaryFixedDim = ElectricTeal,
+    onSecondaryFixed = Color(0xFF003138),
+    onSecondaryFixedVariant = Color(0xFF004D58),
     tertiary = ElectricGreen,
     onTertiary = Color(0xFF003817),
+    tertiaryContainer = Color(0xFF004D26),
+    onTertiaryContainer = Color(0xFF9AFFBF),
+    tertiaryFixed = Color(0xFF9AFFBF),
+    tertiaryFixedDim = ElectricGreen,
+    onTertiaryFixed = Color(0xFF003817),
+    onTertiaryFixedVariant = Color(0xFF004D26),
     background = StudioDarkBg,
     onBackground = StudioTextPrimary,
     surface = StudioCardBg,
     onSurface = StudioTextPrimary,
     surfaceVariant = StudioCardElevated,
     onSurfaceVariant = StudioTextSecondary,
+    surfaceDim = StudioDarkBg,
+    surfaceBright = StudioCardBorderLight,
+    surfaceContainerLowest = StudioDarkBg,
+    surfaceContainerLow = StudioCardBg,
+    surfaceContainer = StudioCardBg,
     surfaceContainerHigh = StudioCardElevated,
+    surfaceContainerHighest = StudioCardBorder,
+    surfaceTint = ElectricAmber,
+    inverseSurface = StudioTextPrimary,
+    inverseOnSurface = StudioDarkBg,
+    inversePrimary = Color(0xFF795900),
     outline = StudioCardBorder,
+    outlineVariant = StudioCardBorderLight,
     error = ElectricRuby,
+    onError = Color(0xFF3B0012),
+    errorContainer = Color(0xFF650020),
+    onErrorContainer = Color(0xFFFFD9E2),
 )
 
 @Composable
 fun GuitarLabTheme(
-    darkTheme: Boolean = true, // Force premium dark studio theme for guitar app
-    dynamicColor: Boolean = false, // Keep consistent branding colors
     content: @Composable () -> Unit,
 ) {
     MaterialTheme(

@@ -1,7 +1,7 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
 
 	<!-- Overridable theme. -->
-	<style name="AppBaseTheme" parent="Theme.AppCompat.Light.DarkActionBar"/>
+	<style name="AppBaseTheme" parent="Theme.GuitarLab.Base"/>
 	<style name="AppBaseWidget.Spinner" parent="Widget.AppCompat.Spinner.Underlined"/>
 
 	<!-- Application theme. -->
@@ -104,6 +104,7 @@
 	<!-- ========================================================= -->
 
 	<style name="TGImageButton" >
+		<item name="android:tint">@color/guitarlab_text_primary</item>
 		<item name="android:layout_width">36dp</item>
 		<item name="android:layout_height">36dp</item>
 		<item name="android:padding">6dip</item>
@@ -295,6 +296,8 @@
 	</style>
 
 	<style name="mainDrawerToolbarStyle" >
+		<item name="titleTextColor">@color/guitarlab_text_primary</item>
+		<item name="subtitleTextColor">@color/guitarlab_text_secondary</item>
 		<item name="android:background">?attr/mediumColor</item>
 		<item name="android:textColor">?attr/textLightColorSelector</item>
 		<item name="android:padding">0dp</item>

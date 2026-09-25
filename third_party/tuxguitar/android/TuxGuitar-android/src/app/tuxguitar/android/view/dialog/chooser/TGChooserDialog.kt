@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.chooser
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -79,7 +81,7 @@ fun <T> TGChooserDialogContent(
 @Preview(showBackground = true)
 @Composable
 private fun TGChooserDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGChooserDialogContent(
             title = "Choose export format",
             options = listOf(

@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.confirm
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -81,7 +83,7 @@ fun TGConfirmDialogContent(
 @Preview(showBackground = true)
 @Composable
 private fun TGConfirmDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGConfirmDialogContent(
             message = "Are you sure you want to delete this track? This action cannot be undone.",
             onConfirm = {},

@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.channel
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
@@ -78,7 +80,7 @@ fun TGChannelListItemContent(
 @Preview(showBackground = true)
 @Composable
 private fun TGChannelListItemContentPreview() {
-    androidx.compose.material3.MaterialTheme {
+    GuitarLabTheme {
         Column {
             TGChannelListItemContent(
                 name = "Distortion Guitar",

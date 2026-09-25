@@ -19,8 +19,8 @@ import com.mmt.guitarlab.domain.model.InstrumentType
 import com.mmt.guitarlab.domain.model.TabMeasure
 import com.mmt.guitarlab.domain.model.TabScore
 import com.mmt.guitarlab.domain.model.TabTrack
-import com.mmt.guitarlab.ui.theme.GuitarLabTheme
-import com.mmt.guitarlab.ui.theme.StudioDarkBg
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+import com.mmt.guitarlab.core.ui.theme.StudioDarkBg
 import kotlin.collections.chunked
 
 /**
