@@ -23,7 +23,7 @@ class TGNavigationManager(private val activity: TGActivity) {
 
     fun processLoadFragment(fragment: TGNavigationFragment) {
         activity.supportFragmentManager.beginTransaction()
-            .replace(R.id.content_frame, fragment.controller!!.fragment)
+            .replace(R.id.content_frame, fragment.controller!!.getFragment())
             .commitAllowingStateLoss()
         var backFrom: TGNavigationFragment? = null
         val index = navigationFragments.indexOf(fragment)

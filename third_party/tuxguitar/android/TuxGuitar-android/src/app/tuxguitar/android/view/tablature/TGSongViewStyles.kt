@@ -1,0 +1,58 @@
+package app.tuxguitar.android.view.tablature
+
+import app.tuxguitar.graphics.control.TGLayoutStyles
+import app.tuxguitar.ui.resource.UIColorModel
+import app.tuxguitar.ui.resource.UIFontModel
+
+class TGSongViewStyles : TGLayoutStyles() {
+    init {
+        setBufferEnabled(false)
+        setTrackSpacing(5f)
+        setFirstTrackSpacing(15f)
+        setFirstMeasureSpacing(5f)
+        setStringSpacing(10f)
+        setScoreLineSpacing(8f)
+        setMinBufferSeparator(20f)
+        setMinTopSpacing(10f)
+        setMinScoreTabSpacing(5f)
+        setFirstNoteSpacing(10f)
+        setMeasureLeftSpacing(15f)
+        setMeasureRightSpacing(15f)
+        setClefSpacing(30f)
+        setKeySignatureSpacing(15f)
+        setTimeSignatureSpacing(15f)
+        setChordFretIndexSpacing(8f)
+        setChordStringSpacing(5f)
+        setChordFretSpacing(6f)
+        setChordNoteSize(4f)
+        setChordLineWidth(0f)
+        setRepeatEndingSpacing(20f)
+        setTextSpacing(15f)
+        setMarkerSpacing(15f)
+        setLoopMarkerSpacing(5f)
+        setDivisionTypeSpacing(10f)
+        setPickStrokeSpacing(8f)
+        setBendSpacing(8f)
+        setEffectSpacing(8f)
+        setLineWidths(floatArrayOf(0f, 1f, 2f, 3f, 4f, 5f))
+        setDurationWidths(floatArrayOf(30f, 25f, 21f, 20f, 19f, 18f))
+        setDefaultFont(UIFontModel("sans-serif", 8f, false, false))
+        setNoteFont(UIFontModel("sans-serif", 9f, true, false))
+        setLyricFont(UIFontModel("sans-serif", 8f, false, false))
+        setTextFont(UIFontModel("sans-serif", 8f, false, false))
+        setMarkerFont(UIFontModel("sans-serif", 8f, false, false))
+        setGraceFont(UIFontModel("sans-serif", 6f, false, false))
+        setChordFont(UIFontModel("sans-serif", 8f, false, false))
+        setChordFretFont(UIFontModel("sans-serif", 8f, false, false))
+        setForegroundColor(UIColorModel(0, 0, 0))
+        setBackgroundColor(UIColorModel(255, 255, 255))
+        setLineColor(UIColorModel(200, 200, 200))
+        setLineColorInvalid(UIColorModel(205, 0, 0))
+        setScoreNoteColor(UIColorModel(105, 105, 105))
+        setTabNoteColor(UIColorModel(105, 105, 105))
+        setPlayNoteColor(UIColorModel(255, 0, 0))
+        setLoopSMarkerColor(UIColorModel(0, 0, 0))
+        setLoopEMarkerColor(UIColorModel(0, 0, 0))
+        setMeasureNumberColor(UIColorModel(255, 0, 0))
+    }
+}
