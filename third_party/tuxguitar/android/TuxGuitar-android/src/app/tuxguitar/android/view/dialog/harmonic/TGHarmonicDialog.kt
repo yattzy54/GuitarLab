@@ -26,7 +26,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.tuxguitar.android.R
-import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
+import app.tuxguitar.android.view.dialog.compose.TGComposeDialog
 import app.tuxguitar.android.view.dialog.compose.TGDialogDropdownField
 import app.tuxguitar.android.view.dialog.compose.TGDropdownOption
 import app.tuxguitar.document.TGDocumentContextAttributes
@@ -51,7 +51,7 @@ private data class TGHarmonicTypeOption(
     val enabled: Boolean = true,
 )
 
-class TGHarmonicDialog : TGComposeBottomSheetDialogFragment() {
+class TGHarmonicDialog : TGComposeDialog() {
     @Composable
     override fun SheetContent(onDismiss: () -> Unit) {
         TGHarmonicDialogContent(

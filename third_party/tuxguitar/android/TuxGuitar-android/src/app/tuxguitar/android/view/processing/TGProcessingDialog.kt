@@ -24,7 +24,7 @@ import app.tuxguitar.android.activity.TGActivity
  * the surrounding polling/threading logic in [TGActionProcessingController]
  * did not need to change.
  */
-class TGProcessingDialog(activity: TGActivity) : Dialog(activity) {
+class TGProcessingDialog(activity: TGActivity) : Dialog(activity.requireContext()) {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setCancelable(false)

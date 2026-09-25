@@ -1,21 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
-<app.tuxguitar.android.view.layout.TGSingleFragmentLayout
+<!--
+    TGActivity now hosts its content as a Fragment inside the app's single
+    Activity, so its own theme (TGTheme, an AppCompat.DarkActionBar
+    descendant) can no longer provide a system-decor action bar: the host
+    Activity's theme is NoActionBar. A regular Toolbar takes its place and is
+    wired up via setSupportActionBar()/ActionBarDrawerToggle in code instead.
+-->
+<LinearLayout
 	xmlns:android="http://schemas.android.com/apk/res/android"
-	android:id="@+id/root_layout"
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
+	android:orientation="vertical"
 	android:fitsSystemWindows="true">
 
-	<FrameLayout
-		android:id="@+id/content_frame"
+	<androidx.appcompat.widget.Toolbar
+		android:id="@+id/tg_toolbar"
+		style="?attr/mainDrawerToolbarStyle"
 		android:layout_width="match_parent"
-		android:layout_height="match_parent" />
+		android:layout_height="?android:attr/actionBarSize" />
 
-	<FrameLayout
-		android:id="@+id/left_drawer"
-		android:layout_width="240dp"
-		android:layout_height="match_parent"
-		android:layout_gravity="start"
-		android:drawSelectorOnTop="false" />
+	<app.tuxguitar.android.view.layout.TGSingleFragmentLayout
+		android:id="@+id/root_layout"
+		android:layout_width="match_parent"
+		android:layout_height="0dp"
+		android:layout_weight="1">
 
-</app.tuxguitar.android.view.layout.TGSingleFragmentLayout>
+		<FrameLayout
+			android:id="@+id/content_frame"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent" />
+
+		<FrameLayout
+			android:id="@+id/left_drawer"
+			android:layout_width="240dp"
+			android:layout_height="match_parent"
+			android:layout_gravity="start"
+			android:drawSelectorOnTop="false" />
+
+	</app.tuxguitar.android.view.layout.TGSingleFragmentLayout>
+
+</LinearLayout>

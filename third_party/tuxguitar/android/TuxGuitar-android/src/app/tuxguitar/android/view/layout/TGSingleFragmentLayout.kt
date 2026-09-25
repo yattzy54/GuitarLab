@@ -27,7 +27,7 @@ class TGSingleFragmentLayout @JvmOverloads constructor(
     override fun onOpenFragment(controller: TGFragmentController<*>, drawerView: ViewGroup) {
         val layoutId = fragmentDrawerLayouts[controller]
         if (layoutId != null) {
-            findActivity().layoutInflater.inflate(layoutId, drawerView)
+            findActivity().getThemedLayoutInflater().inflate(layoutId, drawerView)
         }
     }
 
@@ -37,5 +37,5 @@ class TGSingleFragmentLayout @JvmOverloads constructor(
         fragmentDrawerLayouts[TGMainFragmentController.getInstance(context)] = R.layout.view_main_drawer
     }
 
-    fun findActivity(): TGActivity = context as TGActivity
+    fun findActivity(): TGActivity = TGActivity.requireCurrent()
 }

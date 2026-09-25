@@ -376,8 +376,8 @@ fun GuitarLabApp() {
                     )
                 }
                 composable(AppDest.GuitarTabEdit.route) { GuitarTabEditScreen() }
-                composable(AppDest.TuxGuitar.route) { TuxGuitarScreen() }
-                composable(AppDest.TuxGuitarReader.route) { TuxGuitarReaderScreen() }
+                composable(AppDest.TuxGuitar.route) { TuxGuitarScreen(onFinish = { navController.popBackStack() }) }
+                composable(AppDest.TuxGuitarReader.route) { TuxGuitarReaderScreen(onFinish = { navController.popBackStack() }) }
                 composable(AppDest.Drums.route) { DrumsScreen() }
                 composable(AppDest.Tuner.route) { TunerScreen() }
                 composable(AppDest.Metronome.route) { MetronomeScreen() }

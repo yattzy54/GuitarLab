@@ -1,15 +1,30 @@
 package app.tuxguitar.android.activity
 
+import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
-import android.os.Bundle
 import android.view.ContextMenu
+import android.view.ContextThemeWrapper
 import android.view.KeyEvent
+import android.view.LayoutInflater
+import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowManager
+import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
+import androidx.appcompat.widget.Toolbar
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
+import androidx.fragment.app.FragmentActivity
 import app.tuxguitar.android.R
 import app.tuxguitar.action.TGActionManager
 import app.tuxguitar.android.action.TGActionAdapterManager
@@ -29,6 +44,7 @@ import app.tuxguitar.android.resource.TGResourceLoaderImpl
 import app.tuxguitar.android.synchronizer.TGSynchronizerControllerImpl
 import app.tuxguitar.android.transport.TGTransportAdapter
 import app.tuxguitar.android.variables.TGVarAdapter
+import app.tuxguitar.android.view.dialog.compose.TGComposeDialog
 import app.tuxguitar.editor.TGEditorManager
 import app.tuxguitar.editor.action.TGActionProcessor
 import app.tuxguitar.editor.action.duration.*
@@ -45,7 +61,22 @@ import app.tuxguitar.util.error.TGErrorManager
 import app.tuxguitar.util.plugin.TGPluginManager
 import java.util.Locale
 
-open class TGActivity : AppCompatActivity(), ActivityCompat.OnRequestPermissionsResultCallback {
+/**
+ * Hosts the legacy TuxGuitar editor engine inside the app's single Activity
+ * ([app.tuxguitar.android.MainActivity]).
+ *
+ * This used to be an `AppCompatActivity` subclass, then a `Fragment`; it is
+ * now a plain class with no Android component base at all, created and
+ * destroyed directly by the Compose destination that hosts it (see
+ * `TuxGuitarScreen.kt`). Its root [View] (inflated once from
+ * `activity_tg.xml`) is embedded via a single `AndroidView`, and its actual
+ * screens/dialogs are rendered natively inside that same Compose tree by
+ * reading [getNavigationManager]'s current screen and [currentDialog].
+ * Android APIs that only exist on a real `Activity` (window flags, menu
+ * inflation, `startActivityForResult`, key events, `onNewIntent`, ...) are
+ * reached through [hostActivity], captured once at creation time.
+ */
+open class TGActivity {
     private var destroyed = false
     private var context: TGContext? = null
     private val navigationManager = TGNavigationManager(this)
@@ -54,8 +85,50 @@ open class TGActivity : AppCompatActivity(), ActivityCompat.OnRequestPermissions
     private val resultManager = TGActivityResultManager()
     private val permissionResultManager = TGActivityPermissionResultManager()
     private var maintainDisplayON = false
+    private var pendingIntent: Intent? = null
 
-    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+    private lateinit var hostActivity: FragmentActivity
+    private lateinit var themedContext: Context
+    private var rootView: View? = null
+
+    var currentDialog: TGComposeDialog? by mutableStateOf(null)
+        private set
+
+    val intent: Intent?
+        get() = pendingIntent
+
+    fun setIntent(intent: Intent) {
+        pendingIntent = intent
+    }
+
+    /**
+     * Creates (on first call) or returns the cached root [View] for this
+     * instance. [host] is captured for the lifetime of this [TGActivity].
+     */
+    fun getOrCreateRootView(host: FragmentActivity): View {
+        rootView?.let { return it }
+        hostActivity = host
+        themedContext = ContextThemeWrapper(host, R.style.TGTheme)
+        destroyed = false
+        currentInstance = this
+        clearContext()
+        attachInstance()
+        pendingIntent = host.intent
+        createModules()
+        TGMessagesManager.getInstance().setResources(
+            TGResourceBundle.getBundle(findContext(), LANGUAGE_RESOURCE, Locale.getDefault())
+        )
+        resultManager.initialize()
+        permissionResultManager.initialize()
+        navigationManager.initialize()
+
+        val view = getThemedLayoutInflater().inflate(R.layout.activity_tg, null, false)
+        rootView = view
+        onViewCreated(view)
+        return view
+    }
+
+    open fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         val manager = TGActionManager.getInstance(findContext())
         when (keyCode) {
             KeyEvent.KEYCODE_DPAD_UP -> manager.execute(if (event.isShiftPressed) TGShiftNoteUpAction.NAME else TGGoUpAction.NAME)
@@ -79,85 +152,132 @@ open class TGActivity : AppCompatActivity(), ActivityCompat.OnRequestPermissions
             KeyEvent.KEYCODE_M -> manager.execute(TGShowSmartMenuAction.NAME)
             KeyEvent.KEYCODE_P -> manager.execute(TGChangePalmMuteAction.NAME)
             KeyEvent.KEYCODE_V -> manager.execute(TGChangeVibratoNoteAction.NAME)
-            else -> return super.onKeyDown(keyCode, event)
+            else -> return false
         }
         return true
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        destroyed = false
-        clearContext()
-        attachInstance()
-        createModules()
-        setContentView(R.layout.activity_tg)
-        registerForContextMenu(findViewById(R.id.root_layout))
+    /** Layout inflater resolving TGTheme's custom attrs. */
+    fun getThemedLayoutInflater(): LayoutInflater = LayoutInflater.from(themedContext)
+
+    open fun onViewCreated(view: View) {
+        val rootLayout = view.findViewById<View>(R.id.root_layout)
+        rootLayout.isLongClickable = true
+        rootLayout.setOnCreateContextMenuListener { menu, v, menuInfo ->
+            onCreateContextMenu(menu, v, menuInfo)
+        }
+        (hostActivity as AppCompatActivity).setSupportActionBar(view.findViewById<Toolbar>(R.id.tg_toolbar))
         actionBar.setDisplayHomeAsUpEnabled(true)
         actionBar.setHomeButtonEnabled(true)
-        TGMessagesManager.getInstance().setResources(
-            TGResourceBundle.getBundle(findContext(), LANGUAGE_RESOURCE, Locale.getDefault())
-        )
-        resultManager.initialize()
-        permissionResultManager.initialize()
-        navigationManager.initialize()
+        installContentComposeView(view)
         drawerManager.initialize()
         loadDefaultFragment()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        detachInstance()
-        destroyModules()
-        clearContext()
-        destroyed = true
-    }
-
-    override fun onPostCreate(savedInstanceState: Bundle?) {
-        super.onPostCreate(savedInstanceState)
         connectPlugins()
         loadDefaultSong()
         drawerManager.syncState()
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.clear()
+    /**
+     * Installs a single [ComposeView] as `content_frame`'s content, rendering
+     * the currently navigated-to [app.tuxguitar.android.fragment.TGScreen]
+     * plus any active [TGComposeDialog] on top of it. Replaces the previous
+     * `FragmentManager` transaction into that same container.
+     */
+    @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+    private fun installContentComposeView(view: View) {
+        val contentFrame = view.findViewById<FrameLayout>(R.id.content_frame)
+        contentFrame.addView(
+            ComposeView(themedContext).apply {
+                setContent {
+                    MaterialTheme {
+                        navigationManager.currentScreen?.Content()
+                        currentDialog?.let { dialog ->
+                            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+                            ModalBottomSheet(
+                                onDismissRequest = { dismissComposeDialog(dialog) },
+                                sheetState = sheetState,
+                                modifier = Modifier.systemBarsPadding(),
+                            ) {
+                                dialog.SheetContent(onDismiss = { dismissComposeDialog(dialog) })
+                            }
+                        }
+                    }
+                }
+            }
+        )
     }
 
-    override fun onBackPressed() = callBackAction()
 
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
+    /** Called from [TuxGuitarScreen] when this instance is disposed. */
+    fun destroyRootView() {
+        (hostActivity as AppCompatActivity).setSupportActionBar(null)
+        detachInstance()
+        destroyModules()
+        clearContext()
+        destroyed = true
+        if (currentInstance === this) {
+            currentInstance = null
+        }
+        rootView = null
+    }
+
+    /** Called from MainActivity.onNewIntent when this is the current editor. */
+    fun onNewIntent(intent: Intent) {
         setIntent(intent)
         callProcessIntent()
     }
 
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
+    fun onConfigurationChanged(newConfig: Configuration) {
         drawerManager.onConfigurationChanged(newConfig)
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean =
-        if (drawerManager.onOptionsItemSelected(item)) true else super.onOptionsItemSelected(item)
+    fun onOptionsItemSelected(item: MenuItem): Boolean = drawerManager.onOptionsItemSelected(item)
 
-    override fun onCreateContextMenu(menu: ContextMenu, v: View, menuInfo: ContextMenu.ContextMenuInfo?) {
-        super.onCreateContextMenu(menu, v, menuInfo)
-        TGMenuContextualInflater.getInstance(findContext()).inflate(menu, menuInflater)
+    /** Rebuilds the toolbar's options menu from the currently shown screen. */
+    fun rebuildOptionsMenu() {
+        val toolbar = findViewById<Toolbar>(R.id.tg_toolbar) ?: return
+        toolbar.menu.clear()
+        val screen = navigationManager.currentScreen ?: return
+        if (screen.hasOptionsMenu) {
+            screen.onPostCreateOptionsMenu(toolbar.menu, hostActivity.menuInflater)
+        }
     }
 
-    fun openContextMenu() = openContextMenu(findViewById(R.id.root_layout))
+    open fun onCreateContextMenu(menu: ContextMenu, v: View, menuInfo: ContextMenu.ContextMenuInfo?) {
+        TGMenuContextualInflater.getInstance(findContext()).inflate(menu, hostActivity.menuInflater)
+    }
 
-    @Deprecated("Legacy activity result API")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
+    fun openContextMenu() = hostActivity.openContextMenu(requireNotNull(findViewById(R.id.root_layout)))
+
+    /** Replacement for `Activity.findViewById`/`Fragment.requireView().findViewById`. */
+    fun <T : View> findViewById(id: Int): T? = rootView?.findViewById(id)
+
+    fun requireActivity(): FragmentActivity = hostActivity
+
+    fun requireContext(): Context = themedContext
+
+    fun getString(resId: Int): String = themedContext.getString(resId)
+    fun getString(resId: Int, vararg formatArgs: Any?): String = themedContext.getString(resId, *formatArgs)
+
+    @Suppress("DEPRECATION")
+    fun startActivityForResult(intent: Intent, requestCode: Int) =
+        hostActivity.startActivityForResult(intent, requestCode)
+
+    @Suppress("DEPRECATION")
+    fun requestPermissions(permissions: Array<String>, requestCode: Int) =
+        hostActivity.requestPermissions(permissions, requestCode)
+
+    fun shouldShowRequestPermissionRationale(permission: String): Boolean =
+        hostActivity.shouldShowRequestPermissionRationale(permission)
+
+    /** Forwarded from `MainActivity.onActivityResult`. */
+    fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         resultManager.onActivityResult(requestCode, resultCode, data)
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        @Suppress("UNCHECKED_CAST")
-        val permissionNames = permissions as Array<String>
-        permissionResultManager.onRequestPermissionsResult(requestCode, permissionNames, grantResults)
+    /** Forwarded from `MainActivity.onRequestPermissionsResult`. */
+    fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        permissionResultManager.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
     fun attachInstance() { TGActivityController.getInstance(findContext()).activity = this }
@@ -172,7 +292,7 @@ open class TGActivity : AppCompatActivity(), ActivityCompat.OnRequestPermissions
         TGActionAdapterManager.getInstance(context).initialize(this)
         TGEditorManager.getInstance(context).setLockControl(TGLock(context))
         TGVarAdapter.initialize(context)
-        TGPropertiesAdapter.initialize(context, this)
+        TGPropertiesAdapter.initialize(context, requireContext())
         TGTransportAdapter.getInstance(context).initialize()
     }
 
@@ -227,19 +347,60 @@ open class TGActivity : AppCompatActivity(), ActivityCompat.OnRequestPermissions
             process()
         }
     }
-    override fun isDestroyed() = destroyed
+
+    /** Replacement for the removed `Activity.isDestroyed()` override. */
+    fun isFragmentDestroyed() = destroyed
+
+    /**
+     * Requests that the host navigate away from the editor destination. Set
+     * by whichever Composable hosts this instance (see `TuxGuitarScreen`).
+     */
+    var onFinishRequested: (() -> Unit)? = null
+    fun finish() {
+        onFinishRequested?.invoke()
+    }
 
     fun setDisplayOn(displayOn: Boolean) {
         if (maintainDisplayON != displayOn) {
-            runOnUiThread {
-                if (displayOn) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            hostActivity.runOnUiThread {
+                if (displayOn) hostActivity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                else hostActivity.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             }
         }
         maintainDisplayON = displayOn
     }
 
+    /** Shows [dialog] as a Compose `ModalBottomSheet` over this activity's content. */
+    fun showComposeDialog(dialog: TGComposeDialog) {
+        currentDialog = dialog
+        dialog.onShow()
+    }
+
+    fun dismissComposeDialog(dialog: TGComposeDialog) {
+        if (currentDialog === dialog) {
+            currentDialog = null
+            dialog.onHide()
+        }
+    }
+
     companion object {
         private const val LANGUAGE_RESOURCE = "lang/messages"
+
+        /**
+         * The currently attached [TGActivity] instance, if any. Bridges
+         * Android APIs that are only dispatched to the real host Activity
+         * (key events, `onNewIntent`, activity/permission results) and lets
+         * legacy code that used to reach the TGActivity through its own
+         * Context find it again now that it is not a Context itself. There
+         * is at most one such instance alive at a time.
+         */
+        @JvmStatic
+        @Volatile
+        var currentInstance: TGActivity? = null
+            private set
+
+        @JvmStatic
+        fun requireCurrent(): TGActivity =
+            requireNotNull(currentInstance) { "No TGActivity instance is currently attached" }
     }
 }

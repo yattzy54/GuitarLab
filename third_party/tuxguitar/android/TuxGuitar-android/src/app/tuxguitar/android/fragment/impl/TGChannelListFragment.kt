@@ -28,7 +28,7 @@ class TGChannelListFragment : TGComposeCachedFragment() {
     private val channels = mutableStateListOf<TGChannel>()
     private var updateItemsProcess: TGProcess? = null
 
-    override fun onPostCreate(savedInstanceState: Bundle?) {
+    override fun onPostCreate() {
         attachInstance()
         createActionBar(true, false, R.string.channel_list)
         createSyncProcesses()

@@ -1,18 +1,36 @@
 package app.tuxguitar.android.navigation
 
-import app.tuxguitar.android.R
+import android.os.Handler
+import android.os.Looper
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import app.tuxguitar.android.action.impl.gui.TGOpenFragmentAction
 import app.tuxguitar.android.activity.TGActivity
 import app.tuxguitar.android.fragment.TGFragmentController
+import app.tuxguitar.android.fragment.TGScreen
 import app.tuxguitar.editor.action.TGActionProcessor
 import app.tuxguitar.event.TGEventListener
 import app.tuxguitar.event.TGEventManager
 import app.tuxguitar.util.TGContext
 
+/**
+ * Drives which [TGScreen] is currently shown inside [TGActivity]'s content
+ * area. Previously this replaced a Fragment inside `content_frame` via a
+ * `FragmentManager` transaction; now it just swaps a Compose state holder
+ * that [TGActivity]'s own content composable reads to decide which screen's
+ * [TGScreen.Content] to render.
+ */
 class TGNavigationManager(private val activity: TGActivity) {
     private val navigationFragments = mutableListOf<TGNavigationFragment>()
 
-    fun initialize() = navigationFragments.clear()
+    var currentScreen: TGScreen? by mutableStateOf(null)
+        private set
+
+    fun initialize() {
+        navigationFragments.clear()
+        currentScreen = null
+    }
 
     fun processLoadFragment(controller: TGFragmentController<*>, tagId: String?) {
         processLoadFragment(TGNavigationFragment().apply {
@@ -21,10 +39,27 @@ class TGNavigationManager(private val activity: TGActivity) {
         })
     }
 
+    /**
+     * [app.tuxguitar.android.action.impl.gui.TGOpenFragmentAction] (like
+     * most actions in this codebase) runs off the main thread by default, so
+     * the actual screen swap - which touches Compose state and the Toolbar -
+     * is posted to the main thread here, matching how the previous
+     * `FragmentManager.commitAllowingStateLoss()` call tolerated being
+     * invoked from a background thread.
+     */
     fun processLoadFragment(fragment: TGNavigationFragment) {
-        activity.supportFragmentManager.beginTransaction()
-            .replace(R.id.content_frame, fragment.controller!!.getFragment())
-            .commitAllowingStateLoss()
+        Handler(Looper.getMainLooper()).post { doProcessLoadFragment(fragment) }
+    }
+
+    private fun doProcessLoadFragment(fragment: TGNavigationFragment) {
+        val previousScreen = currentScreen
+        val newScreen = fragment.controller!!.getFragment()
+        previousScreen?.onHideView()
+        currentScreen = newScreen
+        newScreen.ensureCreated()
+        newScreen.onShowView()
+        activity.rebuildOptionsMenu()
+
         var backFrom: TGNavigationFragment? = null
         val index = navigationFragments.indexOf(fragment)
         if (index >= 0) {

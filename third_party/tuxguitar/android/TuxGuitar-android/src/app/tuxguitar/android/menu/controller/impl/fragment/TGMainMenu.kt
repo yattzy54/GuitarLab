@@ -1,6 +1,5 @@
 package app.tuxguitar.android.menu.controller.impl.fragment
 
-import android.content.Intent
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
@@ -85,13 +84,6 @@ class TGMainMenu private constructor(private val context: TGContext) : TGMenuCon
             .setOnMenuItemClickListener(createContextMenuActionProcessor(TGTransportMenu(activity)))
         menu.findItem(R.id.action_menu_settings)!!
             .setOnMenuItemClickListener(createFragmentActionProcessor(TGPreferencesFragmentController.getInstance(context)))
-        menu.findItem(R.id.action_songsterr_import)!!
-            .setOnMenuItemClickListener(MenuItem.OnMenuItemClickListener {
-                activity.startActivity(
-                    Intent().setClassName(activity, "com.mmt.guitarlab.ui.tab.SongsterrImportActivity")
-                )
-                true
-            })
 
         tempoDisplayItem = menu.findItem(R.id.action_tempo_display)!!
             .actionView!!.findViewById(R.id.tempo_display_item)
@@ -122,9 +114,9 @@ class TGMainMenu private constructor(private val context: TGContext) : TGMenuCon
         var iconName = "duration_${tempo.base}"
         if (tempo.isDotted) iconName += "dotted"
         val activity = getActivity()
-        val iconId = activity.resources.getIdentifier(iconName, "drawable", activity.packageName)
+        val iconId = activity.requireContext().resources.getIdentifier(iconName, "drawable", activity.requireContext().packageName)
         display.setCompoundDrawablesWithIntrinsicBounds(
-            activity.resources.getDrawable(iconId),
+            activity.requireContext().resources.getDrawable(iconId),
             null,
             null,
             null

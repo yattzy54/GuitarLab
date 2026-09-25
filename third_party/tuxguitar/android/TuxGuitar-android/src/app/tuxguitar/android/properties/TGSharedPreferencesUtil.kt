@@ -1,22 +1,22 @@
 package app.tuxguitar.android.properties
 
-import android.app.Activity
+import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.content.pm.PackageInfoCompat
 
 class TGSharedPreferencesUtil private constructor() {
     companion object {
         @JvmStatic
-        fun getSharedPreferencesName(activity: Activity?, module: String, resource: String): String {
-            return getPreferencesPrefix(activity) + "." + module + "-" + resource
+        fun getSharedPreferencesName(context: Context?, module: String, resource: String): String {
+            return getPreferencesPrefix(context) + "." + module + "-" + resource
         }
 
         @JvmStatic
-        fun getPreferencesPrefix(activity: Activity?): String {
-            val targetActivity = activity!!
+        fun getPreferencesPrefix(context: Context?): String {
+            val targetContext = context!!
             val prefix = StringBuilder("tuxguitar")
             try {
-                val packageInfo = targetActivity.packageManager.getPackageInfo(targetActivity.packageName, 0)
+                val packageInfo = targetContext.packageManager.getPackageInfo(targetContext.packageName, 0)
                 if (packageInfo != null) {
                     prefix.append("-").append(PackageInfoCompat.getLongVersionCode(packageInfo))
                 }

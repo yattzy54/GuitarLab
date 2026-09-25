@@ -21,7 +21,7 @@ import app.tuxguitar.android.R
 import app.tuxguitar.android.action.TGActionProcessorListener
 import app.tuxguitar.android.action.impl.gui.TGOpenFragmentAction
 import app.tuxguitar.android.fragment.impl.TGChannelListFragmentController
-import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
+import app.tuxguitar.android.view.dialog.compose.TGComposeDialog
 import app.tuxguitar.android.view.dialog.compose.TGDialogActionButtons
 import app.tuxguitar.android.view.dialog.compose.TGDialogDropdownField
 import app.tuxguitar.android.view.util.TGSelectableItem
@@ -33,7 +33,7 @@ import app.tuxguitar.song.models.TGChannel
 import app.tuxguitar.song.models.TGSong
 import app.tuxguitar.song.models.TGTrack
 
-class TGTrackChannelDialog : TGComposeBottomSheetDialogFragment() {
+class TGTrackChannelDialog : TGComposeDialog() {
     @Composable
     override fun SheetContent(onDismiss: () -> Unit) {
         val songManager = requireNotNull(getSongManager())

@@ -88,6 +88,6 @@ class TGAssetBrowserElement(
 
     private fun findAssetManager(): AssetManager? {
         val controller = TGActivityController.getInstance(context)
-        return controller.activity?.assets
+        return controller.activity?.requireContext()?.assets
     }
 }

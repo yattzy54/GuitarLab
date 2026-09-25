@@ -31,21 +31,21 @@ import app.tuxguitar.action.TGActionManager
 import app.tuxguitar.android.R
 import app.tuxguitar.android.browser.TGBrowserManager
 import app.tuxguitar.android.browser.model.TGBrowserFactory
-import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
+import app.tuxguitar.android.view.dialog.compose.TGComposeDialog
 import app.tuxguitar.android.view.dialog.compose.TGDialogDropdownField
 import app.tuxguitar.document.TGDocumentContextAttributes
 import app.tuxguitar.song.models.TGChannel
 import app.tuxguitar.tools.browser.TGBrowserCollection
 
-class TGBrowserCollectionsDialog : TGComposeBottomSheetDialogFragment() {
+class TGBrowserCollectionsDialog : TGComposeDialog() {
     private var eventListener: TGBrowserCollectionsEventListener? = null
     private var actionHandler: TGBrowserCollectionsActionHandler? = null
     private val collections = mutableStateListOf<TGBrowserCollection>()
 
     fun getChannel(): TGChannel? = getAttribute(TGDocumentContextAttributes.ATTRIBUTE_CHANNEL)
 
-    override fun onResume() {
-        super.onResume()
+    override fun onShow() {
+        super.onShow()
         actionHandler = TGBrowserCollectionsActionHandler(this)
         eventListener = TGBrowserCollectionsEventListener(this).also {
             TGActionManager.getInstance(findContext()).addPostExecutionListener(it)
@@ -53,10 +53,10 @@ class TGBrowserCollectionsDialog : TGComposeBottomSheetDialogFragment() {
         refreshListView()
     }
 
-    override fun onPause() {
+    override fun onHide() {
         eventListener?.let { TGActionManager.getInstance(findContext()).removePostExecutionListener(it) }
         eventListener = null
-        super.onPause()
+        super.onHide()
     }
 
     fun createFactoryValues(): List<TGBrowserFactory> {

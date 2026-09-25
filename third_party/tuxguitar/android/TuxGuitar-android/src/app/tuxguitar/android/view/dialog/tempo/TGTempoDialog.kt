@@ -25,7 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.tuxguitar.android.R
-import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
+import app.tuxguitar.android.view.dialog.compose.TGComposeDialog
 import app.tuxguitar.android.view.dialog.compose.TGDialogActionButtons
 import app.tuxguitar.android.view.dialog.compose.TGDialogDropdownField
 import app.tuxguitar.document.TGDocumentContextAttributes
@@ -47,7 +47,7 @@ private data class TGTempoApplyOption(
     val label: String,
 )
 
-class TGTempoDialog : TGComposeBottomSheetDialogFragment() {
+class TGTempoDialog : TGComposeDialog() {
     private val tempoBase = TGTempoBase.getTempoBases().toList()
 
     @Composable
