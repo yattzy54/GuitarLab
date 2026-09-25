@@ -1,6 +1,6 @@
 package app.tuxguitar.android.action
 
-class TGActionMap<T> {
+open class TGActionMap<T> {
     private val map = HashMap<String, T>()
 
     fun set(actionId: String, value: T?) {
