@@ -5,7 +5,6 @@
 	android:layout_height="wrap_content"
     style="?attr/mainDrawerStyle">
 
-    <!-- Footer -->
     <RelativeLayout
         android:id="@+id/main_drawer_bottom"
         style="?attr/mainDrawerTransportPanelStyle"
@@ -30,68 +29,11 @@
             android:gravity="right"/>
     </RelativeLayout>
 
-    <!-- Body -->
-    <RelativeLayout
-        android:id="@+id/main_drawer_center"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+    <FrameLayout
+        android:id="@+id/main_drawer_compose_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:layout_above="@id/main_drawer_bottom"
-        android:layout_alignParentTop="true"
-        android:gravity="fill">
-
-        <com.google.android.material.tabs.TabLayout
-            android:id="@+id/main_drawer_tabHost"
-            style="?attr/mainDrawerToolbarStyle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:gravity="fill_horizontal"
-            android:orientation="horizontal">
-        </com.google.android.material.tabs.TabLayout>
-
-        <FrameLayout
-            android:id="@+id/main_drawer_tabContent"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentRight="true"
-            android:layout_below="@+id/main_drawer_tabHost">
-
-            <FrameLayout
-                android:id="@+id/main_drawer_file_tab"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_gravity="fill"
-                android:visibility="gone">
-
-                <ListView
-                    android:id="@+id/main_drawer_file_items"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"/>
-            </FrameLayout>
-
-            <FrameLayout
-                android:id="@+id/main_drawer_track_tab"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_gravity="fill"
-                android:visibility="gone">
-
-                <ListView
-                    android:id="@+id/main_drawer_track_items"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"/>
-
-                <com.google.android.material.floatingactionbutton.FloatingActionButton
-                    android:id="@+id/main_drawer_track_add_button"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="end|bottom"
-                    android:layout_margin="16dp"
-                    style="?attr/mainDrawerFloatingButtonAddTrackStyle"/>
-            </FrameLayout>
-        </FrameLayout>
-    </RelativeLayout>
+        android:layout_alignParentTop="true"/>
 
 </app.tuxguitar.android.drawer.main.TGMainDrawer>

@@ -1,21 +1,22 @@
 package app.tuxguitar.android.view.channel
 
-import android.view.View
 import app.tuxguitar.android.action.TGActionProcessorListener
-import app.tuxguitar.android.action.impl.gui.TGOpenCabMenuAction
 import app.tuxguitar.android.action.impl.gui.TGOpenDialogAction
-import app.tuxguitar.android.menu.controller.TGMenuController
+import app.tuxguitar.android.fragment.impl.TGChannelListFragment
 import app.tuxguitar.android.view.dialog.TGDialogController
 import app.tuxguitar.android.view.dialog.channel.TGChannelEditDialogController
 import app.tuxguitar.android.view.dialog.confirm.TGConfirmDialogController
 import app.tuxguitar.document.TGDocumentContextAttributes
+import app.tuxguitar.document.TGDocumentManager
 import app.tuxguitar.editor.action.TGActionProcessor
 import app.tuxguitar.editor.action.channel.TGAddNewChannelAction
 import app.tuxguitar.editor.action.channel.TGRemoveChannelAction
 import app.tuxguitar.editor.action.channel.TGUpdateChannelAction
+import app.tuxguitar.song.managers.TGSongManager
 import app.tuxguitar.song.models.TGChannel
+import app.tuxguitar.song.models.TGSong
 
-class TGChannelActionHandler(private val channelList: TGChannelListView) {
+class TGChannelActionHandler(private val channelList: TGChannelListFragment) {
 
     fun createAction(actionId: String): TGActionProcessorListener {
         return TGActionProcessorListener(this.channelList.findContext(), actionId)
@@ -23,12 +24,6 @@ class TGChannelActionHandler(private val channelList: TGChannelListView) {
 
     fun createAddChannelAction(): TGActionProcessorListener {
         return this.createAction(TGAddNewChannelAction.NAME)
-    }
-
-    fun createRemoveChannelAction(channel: TGChannel): TGActionProcessorListener {
-        val tgActionProcessor = this.createAction(TGRemoveChannelAction.NAME)
-        tgActionProcessor.setAttribute(TGDocumentContextAttributes.ATTRIBUTE_CHANNEL, channel)
-        return tgActionProcessor
     }
 
     fun createUpdateVolumeAction(channel: TGChannel, volume: Short): TGActionProcessorListener {
@@ -56,16 +51,22 @@ class TGChannelActionHandler(private val channelList: TGChannelListView) {
         return tgActionProcessor
     }
 
-    fun createOpenCabMenuAction(controller: TGMenuController, selectableView: View): TGActionProcessorListener {
-        val tgActionProcessor = this.createAction(TGOpenCabMenuAction.NAME)
-        tgActionProcessor.setAttribute(TGOpenCabMenuAction.ATTRIBUTE_MENU_ACTIVITY, this.channelList.findActivity())
-        tgActionProcessor.setAttribute(TGOpenCabMenuAction.ATTRIBUTE_MENU_CONTROLLER, controller)
-        tgActionProcessor.setAttribute(TGOpenCabMenuAction.ATTRIBUTE_MENU_SELECTABLE_VIEW, selectableView)
-        return tgActionProcessor
+    fun isRemovableChannel(channel: TGChannel): Boolean {
+        val documentManager = TGDocumentManager.getInstance(this.channelList.findContext())
+        val song: TGSong = documentManager.getSong()
+        val songManager: TGSongManager = documentManager.getSongManager()
+        return !songManager.isAnyTrackConnectedToChannel(song, channel.channelId)
     }
 
-    fun createChannelItemMenuAction(channel: TGChannel, selectableView: View): TGActionProcessorListener {
-        return this.createOpenCabMenuAction(TGChannelListItemMenu(this.channelList.findActivity(), channel), selectableView)
+    fun removeChannel(channel: TGChannel) {
+        val tgActionProcessor: TGActionProcessor = this.createAction(TGRemoveChannelAction.NAME)
+        tgActionProcessor.setAttribute(TGDocumentContextAttributes.ATTRIBUTE_CHANNEL, channel)
+        processConfirmableAction(
+            tgActionProcessor,
+            channelList.findActivity().getString(
+                app.tuxguitar.android.R.string.action_channel_list_item_remove_confirm_question
+            )
+        )
     }
 
     fun processConfirmableAction(actionProcessor: TGActionProcessor, confirmMessage: String) {
