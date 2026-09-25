@@ -19,14 +19,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.tuxguitar.android.R
-import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
+import app.tuxguitar.android.view.dialog.compose.TGComposeDialog
 import app.tuxguitar.document.TGDocumentContextAttributes
 import app.tuxguitar.editor.action.TGActionProcessor
 import app.tuxguitar.editor.action.composition.TGRepeatAlternativeAction
 import app.tuxguitar.song.models.TGMeasureHeader
 import app.tuxguitar.song.models.TGSong
 
-class TGRepeatAlternativeDialog : TGComposeBottomSheetDialogFragment() {
+class TGRepeatAlternativeDialog : TGComposeDialog() {
     @Composable
     override fun SheetContent(onDismiss: () -> Unit) {
         val song = getSong()

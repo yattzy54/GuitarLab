@@ -27,7 +27,7 @@ class TGPreferencesFragment : TGComposeCachedFragment() {
     private var selectedOutputPortKey by mutableStateOf<String?>(null)
     private var outputPortSummary by mutableStateOf("")
 
-    override fun onPostCreate(savedInstanceState: Bundle?) {
+    override fun onPostCreate() {
         attachInstance()
         createActionBar(true, false, R.string.action_menu_settings)
         sharedPreferences = findActivity().requireContext().getSharedPreferences(

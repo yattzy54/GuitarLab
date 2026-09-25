@@ -33,7 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.tuxguitar.android.R
 import app.tuxguitar.android.action.impl.gui.TGOpenDialogAction
-import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
+import app.tuxguitar.android.view.dialog.compose.TGComposeDialog
 import app.tuxguitar.android.view.dialog.compose.TGDialogActionButtons
 import app.tuxguitar.android.view.dialog.compose.TGDialogDropdownField
 import app.tuxguitar.android.view.dialog.message.TGMessageDialogController
@@ -47,7 +47,7 @@ import app.tuxguitar.song.models.TGString
 import app.tuxguitar.song.models.TGTrack
 import app.tuxguitar.song.models.TGTuning
 
-class TGTrackTuningDialog : TGComposeBottomSheetDialogFragment() {
+class TGTrackTuningDialog : TGComposeDialog() {
     val tuning = mutableStateListOf<TGTrackTuningModel>()
     private val tuningPresets = mutableListOf<TGTrackTuningPresetModel>()
     val actionHandler = TGTrackTuningActionHandler(this)

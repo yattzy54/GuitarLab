@@ -27,14 +27,14 @@ import androidx.compose.ui.unit.dp
 import app.tuxguitar.android.R
 import app.tuxguitar.android.action.impl.gui.TGOpenDialogAction
 import app.tuxguitar.android.browser.filesystem.TGFsBrowserSettings
-import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
+import app.tuxguitar.android.view.dialog.compose.TGComposeDialog
 import app.tuxguitar.android.view.dialog.compose.TGDialogActionButtons
 import app.tuxguitar.android.view.dialog.message.TGMessageDialogController
 import app.tuxguitar.editor.action.TGActionProcessor
 import app.tuxguitar.tools.browser.base.TGBrowserFactorySettingsHandler
 import java.io.File
 
-class TGBrowserSettingsDialog : TGComposeBottomSheetDialogFragment() {
+class TGBrowserSettingsDialog : TGComposeDialog() {
 
     fun getMountPoint(): TGBrowserSettingsMountPoint =
         requireNotNull(
@@ -100,7 +100,7 @@ class TGBrowserSettingsDialog : TGComposeBottomSheetDialogFragment() {
 
     fun showErrorMessage(title: String, message: String) {
         TGActionProcessor(findContext(), TGOpenDialogAction.NAME).apply {
-            setAttribute(TGOpenDialogAction.ATTRIBUTE_DIALOG_ACTIVITY, activity)
+            setAttribute(TGOpenDialogAction.ATTRIBUTE_DIALOG_ACTIVITY, findActivity())
             setAttribute(
                 TGOpenDialogAction.ATTRIBUTE_DIALOG_CONTROLLER,
                 TGMessageDialogController()

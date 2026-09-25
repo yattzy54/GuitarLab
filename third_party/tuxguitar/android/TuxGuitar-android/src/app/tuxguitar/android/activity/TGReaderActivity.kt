@@ -1,6 +1,5 @@
 package app.tuxguitar.android.activity
 
-import android.os.Bundle
 import android.view.ContextMenu
 import android.view.KeyEvent
 import android.view.View
@@ -14,8 +13,8 @@ import app.tuxguitar.android.R
  */
 class TGReaderActivity : TGActivity() {
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+    override fun onViewCreated(view: View) {
+        super.onViewCreated(view)
         // TGMainFragment now hosts view_main.xml through a Compose AndroidView, whose
         // content is inflated on the next layout pass rather than synchronously here.
         // Posting the visibility change keeps this working regardless of that timing.
@@ -26,7 +25,7 @@ class TGReaderActivity : TGActivity() {
 
     override fun onCreateContextMenu(
         menu: ContextMenu,
-        view: View,
+        v: View,
         menuInfo: ContextMenu.ContextMenuInfo?,
     ) {
         // The reader intentionally has no note or measure editing menu.

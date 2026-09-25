@@ -27,7 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import app.tuxguitar.android.R
-import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
+import app.tuxguitar.android.view.dialog.compose.TGComposeDialog
 import app.tuxguitar.android.view.dialog.compose.TGDialogDropdownField
 import app.tuxguitar.document.TGDocumentContextAttributes
 import app.tuxguitar.editor.action.TGActionProcessor
@@ -40,7 +40,7 @@ import app.tuxguitar.song.models.TGNote
 import app.tuxguitar.song.models.TGString
 import app.tuxguitar.song.models.effects.TGEffectBend
 
-class TGBendDialog : TGComposeBottomSheetDialogFragment() {
+class TGBendDialog : TGComposeDialog() {
     @Composable
     override fun SheetContent(onDismiss: () -> Unit) {
         val presets = createPresets()

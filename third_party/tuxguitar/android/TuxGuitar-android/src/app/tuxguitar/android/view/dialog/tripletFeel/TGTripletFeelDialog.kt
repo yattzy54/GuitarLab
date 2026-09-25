@@ -26,7 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.tuxguitar.android.R
-import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
+import app.tuxguitar.android.view.dialog.compose.TGComposeDialog
 import app.tuxguitar.document.TGDocumentContextAttributes
 import app.tuxguitar.editor.action.TGActionProcessor
 import app.tuxguitar.editor.action.composition.TGChangeTripletFeelAction
@@ -43,7 +43,7 @@ private data class TGTripletFeelOption(
     val labelRes: Int,
 )
 
-class TGTripletFeelDialog : TGComposeBottomSheetDialogFragment() {
+class TGTripletFeelDialog : TGComposeDialog() {
     @Composable
     override fun SheetContent(onDismiss: () -> Unit) {
         val header = getHeader()

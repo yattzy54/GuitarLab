@@ -29,7 +29,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.tuxguitar.android.R
-import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogFragment
+import app.tuxguitar.android.view.dialog.compose.TGComposeDialog
 import app.tuxguitar.android.view.dialog.compose.TGDialogDropdownField
 import app.tuxguitar.android.view.dialog.compose.TGDialogSliderField
 import app.tuxguitar.android.view.dialog.compose.TGDropdownOption
@@ -61,7 +61,7 @@ data class TGChannelEditFields(
     val tremolo: Int,
 )
 
-class TGChannelEditDialog : TGComposeBottomSheetDialogFragment() {
+class TGChannelEditDialog : TGComposeDialog() {
     @Composable
     override fun SheetContent(onDismiss: () -> Unit) {
         val instrumentPrograms = remember { createInstrumentProgramOptions() }
