@@ -6,69 +6,60 @@ import app.tuxguitar.ui.resource.UIPosition
 import app.tuxguitar.ui.resource.UIRectangle
 
 class TGSongViewLayoutPainter(private val controller: TGSongViewController) {
+
     private var buffer: UIImage? = null
     private var point: UIPosition? = null
     private var refreshBuffer = false
 
     fun dispose() {
-        val currentBuffer = buffer
-        if (currentBuffer != null && !currentBuffer.isDisposed) {
-            currentBuffer.dispose()
-            buffer = null
+        if (this.buffer != null && !this.buffer!!.isDisposed) {
+            this.buffer!!.dispose()
+            this.buffer = null
         }
     }
 
     fun refreshBuffer() {
-        refreshBuffer = true
+        this.refreshBuffer = true
     }
 
     fun paint(target: UIPainter, clientArea: UIRectangle, fromX: Float, fromY: Float) {
-        resizeBuffer(clientArea)
-        updatePoint(fromX, fromY)
-        if (refreshBuffer) {
-            refreshBuffer = false
-            val painter = buffer!!.createPainter()
-            paintArea(painter, clientArea)
-            paintLayout(painter, clientArea)
-            painter.dispose()
+        this.resizeBuffer(clientArea)
+        this.updatePoint(fromX, fromY)
+
+        if (this.refreshBuffer) {
+            this.refreshBuffer = false
+
+            val tgPainter = this.buffer!!.createPainter()
+            this.paintArea(tgPainter, clientArea)
+            this.paintLayout(tgPainter, clientArea)
+            tgPainter.dispose()
         }
-        target.drawImage(buffer!!, 0f, 0f)
+        target.drawImage(this.buffer, 0f, 0f)
     }
 
     private fun paintLayout(painter: UIPainter, area: UIRectangle) {
-        val position = point!!
-        controller.layout.paint(painter, area, position.x, position.y)
+        this.controller.layout.paint(painter, area, this.point!!.x, this.point!!.y)
     }
 
     private fun paintArea(painter: UIPainter, area: UIRectangle) {
-        painter.setBackground(controller.resourceFactory.createColor(255, 255, 255))
+        painter.setBackground(this.controller.resourceFactory.createColor(255, 255, 255))
         painter.initPath(UIPainter.PATH_FILL)
-        painter.addRectangle(
-            area.x.toFloat(),
-            area.y.toFloat(),
-            area.width.toFloat(),
-            area.height.toFloat()
-        )
+        painter.addRectangle(area.x, area.y, area.width, area.height)
         painter.closePath()
     }
 
     private fun updatePoint(x: Float, y: Float) {
-        val currentPoint = point
-        if (currentPoint == null || currentPoint.x != x || currentPoint.y != y) {
-            point = UIPosition(x, y)
-            refreshBuffer()
+        if (this.point == null || this.point!!.x != x || this.point!!.y != y) {
+            this.point = UIPosition(x, y)
+            this.refreshBuffer()
         }
     }
 
     private fun resizeBuffer(area: UIRectangle) {
-        val currentBuffer = buffer
-        if (currentBuffer == null || currentBuffer.isDisposed ||
-            currentBuffer.width != area.width || currentBuffer.height != area.height
-        ) {
-            dispose()
-            buffer = controller.resourceFactory
-                .createImage(area.width.toFloat(), area.height.toFloat())
-            refreshBuffer()
+        if (this.buffer == null || this.buffer!!.isDisposed || this.buffer!!.width != area.width || this.buffer!!.height != area.height) {
+            this.dispose()
+            this.buffer = this.controller.resourceFactory.createImage(area.width, area.height)
+            this.refreshBuffer()
         }
     }
 }

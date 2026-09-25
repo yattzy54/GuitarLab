@@ -10,132 +10,143 @@ import app.tuxguitar.graphics.control.TGTrackImpl
 import app.tuxguitar.graphics.control.TGTrackSpacing
 import app.tuxguitar.song.models.TGBeat
 import app.tuxguitar.song.models.TGString
-import kotlin.math.abs
-import kotlin.math.min
+import java.util.HashMap
 
 class TGSongViewAxisSelector(private val controller: TGSongViewController) {
+
     fun select(x: Float, y: Float, requestSmartMenu: Boolean): Boolean {
-        if (x < 0 || y < 0) return false
-        val track = findSelectedTrack(y) ?: return false
-        val measure = findSelectedMeasure(track, x, y) ?: return false
-        val beat = findSelectedBeat(measure, x) ?: return false
-        val string = findSelectedString(measure, y) ?: controller.caret.selectedString
-        val smartMenuProperties =
-            if (requestSmartMenu) findSmartMenuProperties(track, measure, beat, x) else null
-        callMoveTo(track, measure, beat, string, smartMenuProperties)
-        return true
+        if (x >= 0 && y >= 0) {
+            val track = findSelectedTrack(y)
+            if (track != null) {
+                val measure = findSelectedMeasure(track, x, y)
+                if (measure != null) {
+                    val beat = findSelectedBeat(measure, x)
+                    if (beat != null) {
+                        var string = findSelectedString(measure, y)
+                        if (string == null) {
+                            string = this.controller.caret.selectedString
+                        }
+                        if (string == null) {
+                            return false
+                        }
+
+                        var smartMenuProperties: Map<String, Any>? = null
+                        if (requestSmartMenu) {
+                            smartMenuProperties = this.findSmartMenuProperties(track, measure, beat, x)
+                        }
+
+                        this.callMoveTo(track, measure, beat, string, smartMenuProperties)
+                        return true
+                    }
+                }
+            }
+        }
+        return false
     }
 
     private fun findSelectedTrack(y: Float): TGTrackImpl? {
-        val layout = controller.layout
+        val layout: TGLayout = this.controller.layout
         val number = layout.getTrackNumberAt(y)
-        return if (number >= 0) {
-            layout.songManager.getTrack(controller.song, number) as? TGTrackImpl
-        } else {
-            null
+        if (number >= 0) {
+            return layout.songManager.getTrack(this.controller.song, number) as TGTrackImpl
         }
+        return null
     }
 
     private fun findSelectedMeasure(track: TGTrackImpl, x: Float, y: Float): TGMeasureImpl? {
-        var selectedMeasure: TGMeasureImpl? = null
+        var measure: TGMeasureImpl? = null
         var minorDistance = 0f
-        val measures = track.measures
-        while (measures.hasNext()) {
-            val measure = measures.next() as TGMeasureImpl
-            if (!measure.isOutOfBounds && measure.ts != null) {
-                val isAtX = x >= measure.posX &&
-                    x <= measure.posX + measure.getWidth(controller.layout) + measure.spacing
+
+        val iterator = track.measures
+        while (iterator.hasNext()) {
+            val m = iterator.next() as TGMeasureImpl
+            if (!m.isOutOfBounds && m.ts != null) {
+                val isAtX = x >= m.posX && x <= m.posX + m.getWidth(this.controller.layout) + m.spacing
                 if (isAtX) {
-                    val height = measure.ts.size
-                    val distanceY = min(
-                        abs(y - measure.posY),
-                        abs(y - (measure.posY + height - 10))
-                    )
-                    if (selectedMeasure == null || distanceY < minorDistance) {
-                        selectedMeasure = measure
+                    val measureHeight = m.ts.size
+                    val distanceY = Math.min(Math.abs(y - m.posY), Math.abs(y - (m.posY + measureHeight - 10)))
+                    if (measure == null || distanceY < minorDistance) {
+                        measure = m
                         minorDistance = distanceY
                     }
                 }
             }
         }
-        return selectedMeasure
+        return measure
     }
 
     private fun findSelectedBeat(measure: TGMeasureImpl, x: Float): TGBeatImpl? {
-        val layout = controller.layout
-        val voice = controller.caret.voice
-        val positionX = measure.headerImpl.getLeftSpacing(layout) + measure.posX
-        var bestDifference = -1f
+        val layout = this.controller.layout
+        val voice = this.controller.caret.getVoice()
+        val posX = measure.headerImpl.getLeftSpacing(layout) + measure.posX
+        var bestDiff = -1f
         var bestBeat: TGBeatImpl? = null
-        val beats = measure.beats.iterator()
-        while (beats.hasNext()) {
-            val beat = beats.next() as TGBeatImpl
+        val iterator = measure.beats.iterator()
+        while (iterator.hasNext()) {
+            val beat = iterator.next() as TGBeatImpl
             if (!beat.getVoice(voice).isEmpty) {
-                val difference = abs(x - (positionX + beat.posX + beat.getSpacing(layout)))
-                if (bestDifference == -1f || difference < bestDifference) {
+                val diff = Math.abs(x - (posX + (beat.posX + beat.getSpacing(layout))))
+                if (bestDiff == -1f || diff < bestDiff) {
                     bestBeat = beat
-                    bestDifference = difference
+                    bestDiff = diff
                 }
             }
         }
-        return bestBeat ?: (layout.songManager.measureManager.getFirstBeat(measure.beats) as? TGBeatImpl)
+        if (bestBeat == null) {
+            bestBeat = layout.songManager.measureManager.getFirstBeat(measure.beats) as TGBeatImpl?
+        }
+        return bestBeat
     }
 
     private fun findSelectedString(measure: TGMeasureImpl, y: Float): TGString? {
-        var selectedString: TGString? = null
+        var string: TGString? = null
+        val stringSpacing = this.controller.layout.stringSpacing
         var minorDistance = 0f
-        val stringSpacing = controller.layout.stringSpacing
-        val firstStringY = measure.posY + measure.ts!!.getPosition(TGTrackSpacing.POSITION_TABLATURE)
-        val strings = measure.track.strings.iterator()
-        while (strings.hasNext()) {
-            val currentString = strings.next()
-            val distance = abs(
-                y - (firstStringY + (currentString.number * stringSpacing) - stringSpacing)
-            )
-            if (selectedString == null || distance < minorDistance) {
-                selectedString = currentString
-                minorDistance = distance
+        val firstStringY = measure.posY + measure.ts.getPosition(TGTrackSpacing.POSITION_TABLATURE)
+
+        val iterator = measure.track.strings.iterator()
+        while (iterator.hasNext()) {
+            val currString = iterator.next() as TGString
+            val distanceX = Math.abs(y - (firstStringY + ((currString.number * stringSpacing) - stringSpacing)))
+            if (string == null || distanceX < minorDistance) {
+                string = currString
+                minorDistance = distanceX
             }
         }
-        return selectedString
+        return string
     }
 
-    private fun findSmartMenuProperties(
-        track: TGTrackImpl,
-        measure: TGMeasureImpl,
-        beat: TGBeat,
-        x: Float
-    ): Map<String, Any> {
-        val properties = mutableMapOf<String, Any>()
-        properties[TGSongViewSmartMenu.REQUEST_SMART_MENU] = true
-        val layout = controller.layout
+    private fun findSmartMenuProperties(track: TGTrackImpl, measure: TGMeasureImpl, beat: TGBeat, x: Float): Map<String, Any> {
+        val map = HashMap<String, Any>()
+        map[TGSongViewSmartMenu.REQUEST_SMART_MENU] = true
+
+        val layout = this.controller.layout
         val measureX1 = measure.posX
         val measureX2 = measureX1 + measure.getWidth(layout) + measure.spacing
-        val noteWidth = ((layout.stringSpacing - (2f * layout.scale)) * 2) / 2f
+        val noteWidth = (((layout.stringSpacing - (2.0f * layout.scale)) * 2) / 2f)
+
         val leftX1 = measureX1
-        val leftX2 = leftX1 + measure.headerImpl.getLeftSpacing(layout) +
-            measure.getFirstNoteSpacing(layout) - noteWidth
+        val leftX2 = leftX1 + measure.headerImpl.getLeftSpacing(layout) + measure.getFirstNoteSpacing(layout) - noteWidth
         val rightX1 = measureX2 - measure.headerImpl.getRightSpacing(layout) + noteWidth
         val rightX2 = measureX2
-        if ((x >= leftX1 && x <= leftX2) || (x >= rightX1 && x <= rightX2)) {
-            properties[TGSongViewSmartMenu.MEASURE_AREA_SELECTED] = true
+        if (x >= leftX1 && x <= leftX2 || x >= rightX1 && x <= rightX2) {
+            map[TGSongViewSmartMenu.MEASURE_AREA_SELECTED] = true
         }
-        return properties
+        return map
     }
 
-    private fun callMoveTo(
-        track: TGTrackImpl,
-        measure: TGMeasureImpl,
-        beat: TGBeatImpl,
-        string: TGString?,
-        smartMenuProperties: Map<String, Any>?
-    ) {
-        val processor = TGActionProcessor(controller.context, TGMoveToAction.NAME)
-        processor.setAttribute(TGDocumentContextAttributes.ATTRIBUTE_TRACK, track)
-        processor.setAttribute(TGDocumentContextAttributes.ATTRIBUTE_MEASURE, measure)
-        processor.setAttribute(TGDocumentContextAttributes.ATTRIBUTE_BEAT, beat)
-        processor.setAttribute(TGDocumentContextAttributes.ATTRIBUTE_STRING, string)
-        smartMenuProperties?.forEach { (key, value) -> processor.setAttribute(key, value) }
-        processor.processOnNewThread()
+    private fun callMoveTo(track: TGTrackImpl, measure: TGMeasureImpl, beat: TGBeat, string: TGString, smartMenuProperties: Map<String, Any>?) {
+        val tgActionProcessor = TGActionProcessor(this.controller.context, TGMoveToAction.NAME)
+        tgActionProcessor.setAttribute(TGDocumentContextAttributes.ATTRIBUTE_TRACK, track)
+        tgActionProcessor.setAttribute(TGDocumentContextAttributes.ATTRIBUTE_MEASURE, measure)
+        tgActionProcessor.setAttribute(TGDocumentContextAttributes.ATTRIBUTE_BEAT, beat)
+        tgActionProcessor.setAttribute(TGDocumentContextAttributes.ATTRIBUTE_STRING, string)
+
+        if (smartMenuProperties != null) {
+            for ((key, value) in smartMenuProperties) {
+                tgActionProcessor.setAttribute(key, value)
+            }
+        }
+        tgActionProcessor.processOnNewThread()
     }
 }

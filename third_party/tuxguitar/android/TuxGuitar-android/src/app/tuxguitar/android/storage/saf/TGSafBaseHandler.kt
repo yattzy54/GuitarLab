@@ -4,12 +4,16 @@ import android.content.Intent
 import app.tuxguitar.android.activity.TGActivityResultHandler
 import app.tuxguitar.android.activity.TGActivityResultManager
 
-abstract class TGSafBaseHandler(val provider: TGSafProvider) : TGActivityResultHandler {
-    val requestCode: Int = getResultManager().createRequestCode().also { getResultManager().addHandler(it, this) }
+abstract class TGSafBaseHandler(private val provider: TGSafProvider) : TGActivityResultHandler {
+    val requestCode: Int = provider.getActivity().getResultManager().createRequestCode()
 
-    override fun onActivityResult(resultCode: Int, data: Intent?) {
-        getResultManager().removeHandler(requestCode, this)
+    init {
+        provider.getActivity().getResultManager().addHandler(requestCode, this)
     }
 
-    fun getResultManager(): TGActivityResultManager = provider.getActivity().getResultManager()
+    override fun onActivityResult(resultCode: Int, data: Intent?) {
+        provider.getActivity().getResultManager().removeHandler(requestCode, this)
+    }
+
+    fun getProvider(): TGSafProvider = provider
 }

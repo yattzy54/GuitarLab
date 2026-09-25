@@ -14,25 +14,32 @@ import app.tuxguitar.song.models.TGNote
 import app.tuxguitar.util.TGAbstractContext
 
 class TGSongViewSmartMenu(private val controller: TGSongViewController) {
+
     fun openCabMenuAction(activity: TGActivity, menuController: TGMenuController) {
-        val processor = TGActionProcessor(controller.context, TGOpenCabMenuAction.NAME)
-        processor.setAttribute(TGOpenCabMenuAction.ATTRIBUTE_MENU_ACTIVITY, activity)
-        processor.setAttribute(TGOpenCabMenuAction.ATTRIBUTE_MENU_CONTROLLER, menuController)
-        processor.setAttribute(TGOpenCabMenuAction.ATTRIBUTE_MENU_SELECTABLE_VIEW, null)
-        processor.process()
+        val tgActionProcessor = TGActionProcessor(this.controller.context, TGOpenCabMenuAction.NAME)
+        tgActionProcessor.setAttribute(TGOpenCabMenuAction.ATTRIBUTE_MENU_ACTIVITY, activity)
+        tgActionProcessor.setAttribute(TGOpenCabMenuAction.ATTRIBUTE_MENU_CONTROLLER, menuController)
+        tgActionProcessor.setAttribute(TGOpenCabMenuAction.ATTRIBUTE_MENU_SELECTABLE_VIEW, null)
+        tgActionProcessor.process()
     }
 
     fun openSmartMenu(context: TGAbstractContext) {
-        if (MidiPlayer.getInstance(controller.context).isRunning) return
-        val activity = TGActivityController.getInstance(controller.context).activity ?: return
-        when {
-            context.getAttribute<Boolean>(TRACK_AREA_SELECTED) == true ->
-                openCabMenuAction(activity, TGSelectedTrackMenu(activity))
-            context.getAttribute<Boolean>(MEASURE_AREA_SELECTED) == true ->
-                openCabMenuAction(activity, TGSelectedMeasureMenu(activity))
-            controller.caret.getSelectedNote() != null ->
-                openCabMenuAction(activity, TGSelectedNoteMenu(activity))
-            else -> openCabMenuAction(activity, TGSelectedBeatMenu(activity))
+        if (!MidiPlayer.getInstance(this.controller.context).isRunning) {
+            val activity = TGActivityController.getInstance(this.controller.context).activity
+            if (activity != null) {
+                if (java.lang.Boolean.TRUE == context.getAttribute(TRACK_AREA_SELECTED)) {
+                    this.openCabMenuAction(activity, TGSelectedTrackMenu(activity))
+                } else if (java.lang.Boolean.TRUE == context.getAttribute(MEASURE_AREA_SELECTED)) {
+                    this.openCabMenuAction(activity, TGSelectedMeasureMenu(activity))
+                } else {
+                    val note = this.controller.caret.selectedNote
+                    if (note != null) {
+                        this.openCabMenuAction(activity, TGSelectedNoteMenu(activity))
+                    } else {
+                        this.openCabMenuAction(activity, TGSelectedBeatMenu(activity))
+                    }
+                }
+            }
         }
     }
 

@@ -11,12 +11,8 @@ class TGMainFragmentController : TGCachedFragmentController<TGMainFragment>() {
     companion object {
         @JvmStatic
         fun getInstance(context: TGContext): TGMainFragmentController =
-            TGSingletonUtil.getInstance(
-                context,
-                TGMainFragmentController::class.java.name,
-                object : TGSingletonFactory<TGMainFragmentController> {
-                    override fun createInstance(context: TGContext) = TGMainFragmentController()
-                }
-            )
+            TGSingletonUtil.getInstance(context, TGMainFragmentController::class.java.name, object : TGSingletonFactory<TGMainFragmentController> {
+                override fun createInstance(context: TGContext): TGMainFragmentController = TGMainFragmentController()
+            })
     }
 }

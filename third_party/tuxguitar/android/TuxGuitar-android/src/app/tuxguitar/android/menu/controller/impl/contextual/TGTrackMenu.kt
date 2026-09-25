@@ -20,12 +20,12 @@ class TGTrackMenu(activity: TGActivity) : TGMenuBase(activity) {
     fun initializeItems(menu: Menu) {
         val context = findContext()
         val caret = TGSongViewController.getInstance(context).caret
-        val track = caret.track
+        val track = requireNotNull(caret.track)
         val trackCount = track.song.countTracks()
         val isFirst = track.number == 1
         val isLast = track.number == trackCount
         val running = MidiPlayer.getInstance(context).isRunning
-        val percussion = caret.songManager.isPercussionChannel(caret.song, track.channelId)
+        val percussion = caret.getSongManager().isPercussionChannel(caret.getSong(), track.channelId)
         initializeItem(menu, R.id.action_track_first, createActionProcessor(TGGoFirstTrackAction.NAME), !isFirst)
         initializeItem(menu, R.id.action_track_previous, createActionProcessor(TGGoPreviousTrackAction.NAME), !isFirst)
         initializeItem(menu, R.id.action_track_next, createActionProcessor(TGGoNextTrackAction.NAME), !isLast)

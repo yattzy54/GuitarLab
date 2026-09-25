@@ -10,14 +10,18 @@ abstract class TGBrowserPlugin : TGPlugin {
     private var factory: TGBrowserFactory? = null
 
     @Throws(TGPluginException::class)
+    protected abstract fun getFactory(context: TGContext): TGBrowserFactory
+
+    @Throws(TGPluginException::class)
     override fun connect(context: TGContext) {
         try {
             if (factory == null) {
                 factory = getFactory(context)
-                TGBrowserManager.getInstance(context).addFactory(factory!!)
+                val tgBrowserManager = TGBrowserManager.getInstance(context)
+                tgBrowserManager.addFactory(factory!!)
             }
         } catch (throwable: Throwable) {
-            throw TGPluginException(throwable.message ?: "", throwable)
+            throw TGPluginException(throwable.message, throwable)
         }
     }
 
@@ -25,14 +29,12 @@ abstract class TGBrowserPlugin : TGPlugin {
     override fun disconnect(context: TGContext) {
         try {
             if (factory != null) {
-                TGBrowserManager.getInstance(context).removeFactory(factory!!)
+                val tgBrowserManager = TGBrowserManager.getInstance(context)
+                tgBrowserManager.removeFactory(factory!!)
                 factory = null
             }
         } catch (throwable: Throwable) {
-            throw TGPluginException(throwable.message ?: "", throwable)
+            throw TGPluginException(throwable.message, throwable)
         }
     }
-
-    @Throws(TGPluginException::class)
-    protected abstract fun getFactory(context: TGContext): TGBrowserFactory
 }

@@ -11,12 +11,8 @@ class TGChannelListFragmentController : TGCachedFragmentController<TGChannelList
     companion object {
         @JvmStatic
         fun getInstance(context: TGContext): TGChannelListFragmentController =
-            TGSingletonUtil.getInstance(
-                context,
-                TGChannelListFragmentController::class.java.name,
-                object : TGSingletonFactory<TGChannelListFragmentController> {
-                    override fun createInstance(context: TGContext) = TGChannelListFragmentController()
-                }
-            )
+            TGSingletonUtil.getInstance(context, TGChannelListFragmentController::class.java.name, object : TGSingletonFactory<TGChannelListFragmentController> {
+                override fun createInstance(context: TGContext): TGChannelListFragmentController = TGChannelListFragmentController()
+            })
     }
 }

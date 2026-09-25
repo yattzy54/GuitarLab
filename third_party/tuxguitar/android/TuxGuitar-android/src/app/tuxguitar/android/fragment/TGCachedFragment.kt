@@ -6,14 +6,12 @@ import android.view.View
 import android.view.ViewGroup
 
 abstract class TGCachedFragment(private val layout: Int) : TGBaseFragment() {
-    private var cachedView: View? = null
-
-    override fun getView(): View? = cachedView
+    private var view: View? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View? {
         val createdView = super.onCreateView(inflater, container, savedInstanceState)
         onShowView()
@@ -29,18 +27,21 @@ abstract class TGCachedFragment(private val layout: Int) : TGBaseFragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
-        createdView: View?
+        createdView: View?,
     ): View? {
-        if (cachedView == null) {
-            cachedView = inflater.inflate(layout, container, false)
+        if (view == null) {
+            view = inflater.inflate(layout, container, false)
             onPostInflateView()
         }
-        return cachedView
+        return view
     }
 
-    open fun onPostInflateView() = Unit
+    open fun onPostInflateView() {
+    }
 
-    open fun onShowView() = Unit
+    open fun onShowView() {
+    }
 
-    open fun onHideView() = Unit
+    open fun onHideView() {
+    }
 }

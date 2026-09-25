@@ -8,7 +8,8 @@ class TGSafSaveHandler(provider: TGSafProvider, private val fileFormat: TGFileFo
     override fun onActivityResult(resultCode: Int, data: Intent?) {
         super.onActivityResult(resultCode, data)
         if (resultCode == Activity.RESULT_OK && data != null) {
-            provider.getActionHandler().callWriteUri(data.data!!, fileFormat)
+            val uri = data.data ?: return
+            getProvider().getActionHandler().callWriteUri(uri, fileFormat)
         }
     }
 }

@@ -1,12 +1,18 @@
 package app.tuxguitar.android.fragment
 
 abstract class TGCachedFragmentController<T : TGCachedFragment> : TGFragmentController<T> {
+    @Volatile
     private var instance: T? = null
 
     abstract fun createNewInstance(): T
 
-    fun findOrCreateInstance(): T = synchronized(TGCachedFragmentController::class.java) {
-        instance ?: createNewInstance().also { instance = it }
+    fun findOrCreateInstance(): T {
+        synchronized(TGCachedFragmentController::class.java) {
+            if (instance == null) {
+                instance = createNewInstance()
+            }
+            return instance!!
+        }
     }
 
     fun attachInstance(instance: T) {

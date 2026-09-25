@@ -7,7 +7,8 @@ class TGSafOpenHandler(provider: TGSafProvider) : TGSafBaseHandler(provider) {
     override fun onActivityResult(resultCode: Int, data: Intent?) {
         super.onActivityResult(resultCode, data)
         if (resultCode == Activity.RESULT_OK && data != null) {
-            provider.getActionHandler().callReadUri(data.data!!)
+            val uri = data.data ?: return
+            getProvider().getActionHandler().callReadUri(uri)
         }
     }
 }

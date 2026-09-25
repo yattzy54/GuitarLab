@@ -10,36 +10,32 @@ import androidx.lifecycle.Lifecycle
 
 class TGFragmentTransaction(
     private val handle: FragmentTransaction,
-    private val forceAllowingStateLoss: Boolean
+    private val forceAllowingStateLoss: Boolean,
 ) : FragmentTransaction() {
-    constructor(fragmentManager: FragmentManager, forceAllowingStateLoss: Boolean) :
-        this(fragmentManager.beginTransaction(), forceAllowingStateLoss)
+    constructor(fragmentManager: FragmentManager, forceAllowingStateLoss: Boolean) : this(
+        fragmentManager.beginTransaction(),
+        forceAllowingStateLoss,
+    )
 
     @NonNull
     override fun add(@NonNull fragment: Fragment, @Nullable tag: String?): FragmentTransaction =
         handle.add(fragment, tag)
 
     @NonNull
-    override fun add(containerViewId: Int, @NonNull fragment: Fragment): FragmentTransaction =
+    override fun add(@NonNull containerViewId: Int, @NonNull fragment: Fragment): FragmentTransaction =
         handle.add(containerViewId, fragment)
 
     @NonNull
-    override fun add(
-        containerViewId: Int,
-        @NonNull fragment: Fragment,
-        @Nullable tag: String?
-    ): FragmentTransaction = handle.add(containerViewId, fragment, tag)
+    override fun add(@NonNull containerViewId: Int, @NonNull fragment: Fragment, @Nullable tag: String?): FragmentTransaction =
+        handle.add(containerViewId, fragment, tag)
 
     @NonNull
-    override fun replace(containerViewId: Int, @NonNull fragment: Fragment): FragmentTransaction =
+    override fun replace(@NonNull containerViewId: Int, @NonNull fragment: Fragment): FragmentTransaction =
         handle.replace(containerViewId, fragment)
 
     @NonNull
-    override fun replace(
-        containerViewId: Int,
-        @NonNull fragment: Fragment,
-        @Nullable tag: String?
-    ): FragmentTransaction = handle.replace(containerViewId, fragment, tag)
+    override fun replace(@NonNull containerViewId: Int, @NonNull fragment: Fragment, @Nullable tag: String?): FragmentTransaction =
+        handle.replace(containerViewId, fragment, tag)
 
     @NonNull
     override fun remove(@NonNull fragment: Fragment): FragmentTransaction = handle.remove(fragment)
@@ -61,72 +57,62 @@ class TGFragmentTransaction(
         handle.setPrimaryNavigationFragment(fragment)
 
     @NonNull
-    override fun setMaxLifecycle(
-        @NonNull fragment: Fragment,
-        @NonNull state: Lifecycle.State
-    ): FragmentTransaction = handle.setMaxLifecycle(fragment, state)
+    override fun setMaxLifecycle(@NonNull fragment: Fragment, @NonNull state: Lifecycle.State): FragmentTransaction =
+        handle.setMaxLifecycle(fragment, state)
 
-    override fun isEmpty(): Boolean = handle.isEmpty()
+    override fun isEmpty(): Boolean = handle.isEmpty
 
     @NonNull
-    override fun setCustomAnimations(enter: Int, exit: Int): FragmentTransaction =
+    override fun setCustomAnimations(@NonNull enter: Int, @NonNull exit: Int): FragmentTransaction =
         handle.setCustomAnimations(enter, exit)
 
     @NonNull
-    override fun setCustomAnimations(
-        enter: Int,
-        exit: Int,
-        popEnter: Int,
-        popExit: Int
-    ): FragmentTransaction = handle.setCustomAnimations(enter, exit, popEnter, popExit)
+    override fun setCustomAnimations(@NonNull enter: Int, @NonNull exit: Int, @NonNull popEnter: Int, @NonNull popExit: Int): FragmentTransaction =
+        handle.setCustomAnimations(enter, exit, popEnter, popExit)
 
     @NonNull
     override fun addSharedElement(@NonNull sharedElement: View, @NonNull name: String): FragmentTransaction =
         handle.addSharedElement(sharedElement, name)
 
     @NonNull
-    override fun setTransition(transition: Int): FragmentTransaction = handle.setTransition(transition)
+    override fun setTransition(@NonNull transition: Int): FragmentTransaction = handle.setTransition(transition)
 
     @NonNull
-    override fun setTransitionStyle(styleRes: Int): FragmentTransaction = handle.setTransitionStyle(styleRes)
+    override fun setTransitionStyle(@NonNull styleRes: Int): FragmentTransaction = handle.setTransitionStyle(styleRes)
 
     @NonNull
     override fun addToBackStack(@Nullable name: String?): FragmentTransaction = handle.addToBackStack(name)
 
-    override fun isAddToBackStackAllowed(): Boolean = handle.isAddToBackStackAllowed()
+    override fun isAddToBackStackAllowed(): Boolean = handle.isAddToBackStackAllowed
 
     @NonNull
     override fun disallowAddToBackStack(): FragmentTransaction = handle.disallowAddToBackStack()
 
     @NonNull
-    override fun setBreadCrumbTitle(res: Int): FragmentTransaction = handle.setBreadCrumbTitle(res)
+    override fun setBreadCrumbTitle(@NonNull res: Int): FragmentTransaction = handle.setBreadCrumbTitle(res)
 
     @NonNull
-    override fun setBreadCrumbTitle(@Nullable text: CharSequence?): FragmentTransaction =
-        handle.setBreadCrumbTitle(text)
+    override fun setBreadCrumbTitle(@Nullable text: CharSequence?): FragmentTransaction = handle.setBreadCrumbTitle(text)
 
     @NonNull
-    override fun setBreadCrumbShortTitle(res: Int): FragmentTransaction =
-        handle.setBreadCrumbShortTitle(res)
+    override fun setBreadCrumbShortTitle(@NonNull res: Int): FragmentTransaction = handle.setBreadCrumbShortTitle(res)
 
     @NonNull
-    override fun setBreadCrumbShortTitle(@Nullable text: CharSequence?): FragmentTransaction =
-        handle.setBreadCrumbShortTitle(text)
+    override fun setBreadCrumbShortTitle(@Nullable text: CharSequence?): FragmentTransaction = handle.setBreadCrumbShortTitle(text)
 
     @NonNull
-    override fun setReorderingAllowed(reorderingAllowed: Boolean): FragmentTransaction =
+    override fun setReorderingAllowed(@NonNull reorderingAllowed: Boolean): FragmentTransaction =
         handle.setReorderingAllowed(reorderingAllowed)
 
-    @Deprecated("Deprecated in FragmentTransaction")
+    @Deprecated("Use the underlying transaction")
     @NonNull
-    override fun setAllowOptimization(allowOptimization: Boolean): FragmentTransaction =
+    override fun setAllowOptimization(@NonNull allowOptimization: Boolean): FragmentTransaction =
         handle.setAllowOptimization(allowOptimization)
 
     @NonNull
     override fun runOnCommit(@NonNull runnable: Runnable): FragmentTransaction = handle.runOnCommit(runnable)
 
-    override fun commit(): Int =
-        if (forceAllowingStateLoss) commitAllowingStateLoss() else handle.commit()
+    override fun commit(): Int = if (forceAllowingStateLoss) commitAllowingStateLoss() else handle.commit()
 
     override fun commitAllowingStateLoss(): Int = handle.commitAllowingStateLoss()
 

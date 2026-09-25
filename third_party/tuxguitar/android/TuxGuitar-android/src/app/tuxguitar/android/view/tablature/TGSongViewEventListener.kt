@@ -1,5 +1,6 @@
 package app.tuxguitar.android.view.tablature
 
+import app.tuxguitar.android.activity.TGActivity
 import app.tuxguitar.android.activity.TGActivityController
 import app.tuxguitar.android.menu.controller.impl.fragment.TGMainMenu
 import app.tuxguitar.editor.event.TGDestroyEvent
@@ -11,59 +12,61 @@ import app.tuxguitar.event.TGEventListener
 import app.tuxguitar.util.TGAbstractContext
 
 class TGSongViewEventListener(private val songView: TGSongViewController) : TGEventListener {
+
+    override fun processEvent(event: TGEvent) {
+        when (event.eventType) {
+            TGRedrawEvent.EVENT_TYPE -> this.processRedrawEvent(event)
+            TGUpdateEvent.EVENT_TYPE -> this.processUpdateEvent(event)
+            TGDestroyEvent.EVENT_TYPE -> this.processDestroyEvent(event)
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
     fun processUpdateEvent(event: TGEvent) {
-        when (event.getAttribute<Int>(TGUpdateEvent.PROPERTY_UPDATE_MODE)) {
+        val type = (event.getAttribute(TGUpdateEvent.PROPERTY_UPDATE_MODE) as Int)
+        when (type) {
             TGUpdateEvent.SELECTION -> {
-                songView.updateSelection()
-                val sourceContext =
-                    event.getAttribute<TGAbstractContext?>(TGEvent.ATTRIBUTE_SOURCE_CONTEXT)
-                if (sourceContext?.getAttribute<Boolean>(TGSongViewSmartMenu.REQUEST_SMART_MENU) == true) {
-                    songView.smartMenu.openSmartMenu(sourceContext)
+                this.songView.updateSelection()
+
+                val sourceContext = event.getAttribute(TGEvent.ATTRIBUTE_SOURCE_CONTEXT) as? TGAbstractContext
+                if (sourceContext != null && java.lang.Boolean.TRUE == sourceContext.getAttribute(TGSongViewSmartMenu.REQUEST_SMART_MENU)) {
+                    this.songView.smartMenu.openSmartMenu(sourceContext)
                 }
             }
-            TGUpdateEvent.MEASURE_UPDATED -> {
-                val measureNumbers =
-                    event.getAttribute<List<Int>>(TGUpdateMeasuresEvent.PROPERTY_MEASURE_NUMBERS)
-                songView.updateMeasures(measureNumbers)
-            }
-            TGUpdateEvent.SONG_UPDATED -> songView.updateTablature()
+            TGUpdateEvent.MEASURE_UPDATED -> this.songView.updateMeasures(event.getAttribute(TGUpdateMeasuresEvent.PROPERTY_MEASURE_NUMBERS) as List<Int>)
+            TGUpdateEvent.SONG_UPDATED -> this.songView.updateTablature()
             TGUpdateEvent.SONG_LOADED -> {
-                songView.updateTablature()
-                songView.resetScroll()
-                songView.resetCaret()
+                this.songView.updateTablature()
+                this.songView.resetScroll()
+                this.songView.resetCaret()
             }
         }
     }
 
     fun processRedrawEvent(event: TGEvent) {
-        when (event.getAttribute<Int>(TGRedrawEvent.PROPERTY_REDRAW_MODE)) {
+        val type = (event.getAttribute(TGRedrawEvent.PROPERTY_REDRAW_MODE) as Int)
+        when (type) {
             TGRedrawEvent.NORMAL -> {
-                songView.redraw()
-                requestTempoDisplayUpdate()
+                this.songView.redraw()
+                this.requestTempoDisplayUpdate()
             }
             TGRedrawEvent.PLAYING_NEW_BEAT -> {
-                songView.redrawPlayingMode()
-                requestTempoDisplayUpdate()
+                this.songView.redrawPlayingMode()
+                this.requestTempoDisplayUpdate()
             }
         }
     }
 
     private fun requestTempoDisplayUpdate() {
-        val activity = TGActivityController.getInstance(songView.context).activity ?: return
-        activity.runOnUiThread {
-            TGMainMenu.getInstance(songView.context).updateTempoDisplay()
+        val activity: TGActivity? = TGActivityController.getInstance(this.songView.context).activity
+        if (activity != null) {
+            activity.runOnUiThread {
+                TGMainMenu.getInstance(this.songView.context).updateTempoDisplay()
+            }
         }
     }
 
     fun processDestroyEvent(event: TGEvent) {
-        songView.dispose()
-    }
-
-    override fun processEvent(event: TGEvent) {
-        when (event.eventType) {
-            TGRedrawEvent.EVENT_TYPE -> processRedrawEvent(event)
-            TGUpdateEvent.EVENT_TYPE -> processUpdateEvent(event)
-            TGDestroyEvent.EVENT_TYPE -> processDestroyEvent(event)
-        }
+        this.songView.dispose()
     }
 }

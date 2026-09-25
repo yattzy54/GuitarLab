@@ -17,9 +17,11 @@ import app.tuxguitar.util.TGException
 import app.tuxguitar.util.TGSynchronizer
 
 class TGBrowserUpdateFragmentListener(private val context: TGContext) : TGEventListener {
-    private val actionMap = mutableMapOf<String, TGFragmentController<*>>()
+    private val actionMap: MutableMap<String, TGFragmentController<*>> = HashMap()
 
-    init { fillActionMap() }
+    init {
+        fillActionMap()
+    }
 
     fun findActivity(): TGActivity? = TGActivityController.getInstance(context).activity
 
@@ -31,9 +33,10 @@ class TGBrowserUpdateFragmentListener(private val context: TGContext) : TGEventL
     }
 
     fun checkForFragmentToOpen(event: TGEvent) {
-        val actionId = event.getAttribute(TGActionPostExecutionEvent.ATTRIBUTE_ACTION_ID) as? String ?: return
+        val actionId = event.getAttribute<String>(TGActionPostExecutionEvent.ATTRIBUTE_ACTION_ID)
+        val activity = findActivity() ?: return
         val controller = actionMap[actionId] ?: return
-        findActivity()?.getNavigationManager()?.callOpenFragment(controller)
+        activity.getNavigationManager().callOpenFragment(controller)
     }
 
     override fun processEvent(event: TGEvent) {

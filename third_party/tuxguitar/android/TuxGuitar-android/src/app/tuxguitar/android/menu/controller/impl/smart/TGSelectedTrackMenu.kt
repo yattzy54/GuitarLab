@@ -17,8 +17,8 @@ class TGSelectedTrackMenu(activity: TGActivity) : TGMenuBase(activity) {
 
     fun initializeItems(menu: Menu) {
         val caret = TGSongViewController.getInstance(findContext()).caret
-        val song = caret.song
-        val track = caret.track
+        val song = caret.getSong()
+        val track = requireNotNull(caret.track)
         initializeItem(menu, R.id.action_track_clone, createActionProcessor(TGCloneTrackAction.NAME), true)
         initializeItem(menu, R.id.action_track_change_solo, createActionProcessor(TGChangeTrackSoloAction.NAME), true, track.isSolo)
         initializeItem(menu, R.id.action_track_change_mute, createActionProcessor(TGChangeTrackMuteAction.NAME), true, track.isMute)
@@ -29,7 +29,7 @@ class TGSelectedTrackMenu(activity: TGActivity) : TGMenuBase(activity) {
             initializeItem(menu, R.id.action_track_move_up, createActionProcessor(TGMoveTrackUpAction.NAME), true)
             initializeItem(menu, R.id.action_track_move_down, createActionProcessor(TGMoveTrackDownAction.NAME), true)
         }
-        if (caret.songManager.isPercussionChannel(song, track.channelId)) {
+        if (caret.getSongManager().isPercussionChannel(song, track.channelId)) {
             initializeItem(menu, R.id.action_track_change_string_count, TGTrackStringCountDialogController(), true)
         } else {
             initializeItem(menu, R.id.action_track_change_tuning, TGTrackTuningDialogController(), true)

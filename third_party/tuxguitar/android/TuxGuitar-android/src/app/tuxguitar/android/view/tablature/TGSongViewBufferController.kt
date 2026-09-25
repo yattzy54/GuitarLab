@@ -4,30 +4,30 @@ import app.tuxguitar.graphics.control.TGResourceBuffer
 import app.tuxguitar.util.TGSynchronizer
 
 class TGSongViewBufferController(private val songView: TGSongViewController) {
+
     private var selection = 0
     private var resourceBuffer: TGResourceBuffer? = null
 
     fun updateSelection() {
-        val currentSelection = songView.getTrackSelection()
-        if (currentSelection != selection) {
-            selection = currentSelection
-            if (selection != -1) {
-                disposeBufferLater(getResourceBuffer())
-                resourceBuffer = null
+        val selection = this.songView.trackSelection
+        if (selection != this.selection) {
+            this.selection = selection
+            if (this.selection != -1) {
+                this.disposeBufferLater(this.resourceBuffer)
+                this.resourceBuffer = null
             }
         }
     }
 
     fun getResourceBuffer(): TGResourceBuffer {
-        if (resourceBuffer == null) {
-            resourceBuffer = TGResourceBuffer()
+        if (this.resourceBuffer == null) {
+            this.resourceBuffer = TGResourceBuffer()
         }
-        return resourceBuffer!!
+        return this.resourceBuffer!!
     }
 
-    fun disposeBufferLater(buffer: TGResourceBuffer) {
-        TGSynchronizer.getInstance(songView.context).executeLater {
-            buffer.disposeAllResources()
-        }
+    fun disposeBufferLater(buffer: TGResourceBuffer?) {
+        if (buffer == null) return
+        TGSynchronizer.getInstance(this.songView.context).executeLater { buffer.disposeAllResources() }
     }
 }

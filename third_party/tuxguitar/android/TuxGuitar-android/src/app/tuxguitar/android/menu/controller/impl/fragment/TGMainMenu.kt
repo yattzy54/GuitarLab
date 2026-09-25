@@ -116,7 +116,7 @@ class TGMainMenu private constructor(private val context: TGContext) : TGMenuCon
             currentTempo = midiPlayer.currentTempo
             tempoPercent = midiPlayer.mode.currentPercent
         } else {
-            currentTempo = TGSongViewController.getInstance(context).caret.measure.tempo
+            currentTempo = requireNotNull(TGSongViewController.getInstance(context).caret.measure).tempo
         }
         val tempo = currentTempo ?: return
         var iconName = "duration_${tempo.base}"

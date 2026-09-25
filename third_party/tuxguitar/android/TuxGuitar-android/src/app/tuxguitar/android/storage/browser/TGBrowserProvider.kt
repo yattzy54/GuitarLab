@@ -16,20 +16,30 @@ import app.tuxguitar.util.TGAbstractContext
 import app.tuxguitar.util.TGContext
 
 class TGBrowserProvider(private val context: TGContext) : TGStorageProvider {
-    init { createListeners() }
+    init {
+        createListeners()
+    }
+
+    override fun openDocument() {
+        createOpenFileAction().process()
+    }
+
+    override fun saveDocument() {
+        createSaveFileAction().process()
+    }
+
+    override fun saveDocumentAs() {
+        createSaveFileAsAction().process()
+    }
+
+    override fun updateSession(source: TGAbstractContext) {
+        val tgBrowserSession = findBrowserSession()
+        tgBrowserSession.currentFormat = source.getAttribute<TGFileFormat>(TGFileFormat::class.java.name)
+        tgBrowserSession.currentElement = source.getAttribute<TGBrowserElement>(TGBrowserElement::class.java.name)
+    }
 
     fun createListeners() {
         TGActionManager.getInstance(context).addPostExecutionListener(TGBrowserUpdateFragmentListener(context))
-    }
-
-    override fun openDocument() { createOpenFileAction().process() }
-    override fun saveDocument() { createSaveFileAction().process() }
-    override fun saveDocumentAs() { createSaveFileAsAction().process() }
-
-    override fun updateSession(source: TGAbstractContext) {
-        val session = findBrowserSession()
-        session.currentFormat = source.getAttribute(TGFileFormat::class.java.name) as? TGFileFormat
-        session.currentElement = source.getAttribute(TGBrowserElement::class.java.name) as? TGBrowserElement
     }
 
     fun findBrowserSession(): TGBrowserSession = TGBrowserManager.getInstance(context).session
@@ -44,6 +54,8 @@ class TGBrowserProvider(private val context: TGContext) : TGStorageProvider {
     }
 
     fun createOpenFileAction(): TGActionProcessor = createBrowserAction(TGBrowserPrepareForReadAction.NAME)
+
     fun createSaveFileAsAction(): TGActionProcessor = createBrowserAction(TGBrowserPrepareForWriteAction.NAME)
+
     fun createSaveFileAction(): TGActionProcessor = createBrowserAction(TGBrowserSaveCurrentElementAction.NAME)
 }

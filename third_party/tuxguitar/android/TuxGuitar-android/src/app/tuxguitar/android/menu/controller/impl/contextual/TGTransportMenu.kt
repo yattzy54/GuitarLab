@@ -22,7 +22,7 @@ class TGTransportMenu(activity: TGActivity) : TGMenuBase(activity) {
 
     fun initializeItems(menu: Menu) {
         val context = findContext()
-        val measureNumber = TGSongViewController.getInstance(context).caret.measure.number
+        val measureNumber = requireNotNull(TGSongViewController.getInstance(context).caret.measure).number
         val midiPlayer = MidiPlayer.getInstance(context)
         val playerMode = midiPlayer.mode
         val layoutStyle = TGSongViewController.getInstance(context).layout.style

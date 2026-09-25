@@ -7,60 +7,49 @@ import androidx.core.view.GestureDetectorCompat
 import app.tuxguitar.android.action.impl.caret.TGMoveToAxisPositionAction
 import app.tuxguitar.android.application.TGApplicationUtil
 import app.tuxguitar.editor.action.TGActionProcessor
-import kotlin.math.max
-import kotlin.math.min
 
-class TGSongViewGestureDetector(
-    context: Context,
-    private val songView: TGSongView
-) : GestureDetector.SimpleOnGestureListener() {
-    private val gestureDetector = GestureDetectorCompat(context, this)
+class TGSongViewGestureDetector(context: Context, private val songView: TGSongView) : GestureDetector.SimpleOnGestureListener() {
+
+    private val gestureDetector: GestureDetectorCompat = GestureDetectorCompat(context, this)
     private val songViewScaleGestureDetector = TGSongViewScaleGestureDetector(context, songView)
 
     fun processTouchEvent(event: MotionEvent): Boolean {
-        songViewScaleGestureDetector.processTouchEvent(event)
-        if (!songViewScaleGestureDetector.isInProgress()) {
-            gestureDetector.onTouchEvent(event)
+        this.songViewScaleGestureDetector.processTouchEvent(event)
+        if (!this.songViewScaleGestureDetector.isInProgress()) {
+            this.gestureDetector.onTouchEvent(event)
         }
         return true
     }
 
-    override fun onLongPress(event: MotionEvent) {
-        moveToAxisPosition(event.x, event.y, true)
+    override fun onLongPress(e: MotionEvent) {
+        this.moveToAxisPosition(e.x, e.y, true)
     }
 
-    override fun onSingleTapUp(event: MotionEvent): Boolean {
-        moveToAxisPosition(event.x, event.y, false)
+    override fun onSingleTapUp(e: MotionEvent): Boolean {
+        this.moveToAxisPosition(e.x, e.y, false)
         return true
     }
 
-    override fun onScroll(
-        firstEvent: MotionEvent?,
-        secondEvent: MotionEvent,
-        distanceX: Float,
-        distanceY: Float
-    ): Boolean {
-        if (songView.controller.isScrollActionAvailable()) {
-            updateAxis(songView.controller.scroll.getX(), distanceX)
-            updateAxis(songView.controller.scroll.getY(), distanceY)
+    override fun onScroll(e1: MotionEvent?, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
+        val controller = this.songView.getController() ?: return true
+        if (controller.isScrollActionAvailable()) {
+            this.updateAxis(controller.scroll.x, distanceX)
+            this.updateAxis(controller.scroll.y, distanceY)
         }
         return true
     }
 
     fun updateAxis(axis: TGScrollAxis, distance: Float) {
-        if (axis.isEnabled()) {
-            axis.setValue(max(min(axis.getValue() + distance, axis.getMaximum()), axis.getMinimum()))
+        if (axis.isEnabled) {
+            axis.value = Math.max(Math.min(axis.value + distance, axis.maximum), axis.minimum)
         }
     }
 
     private fun moveToAxisPosition(x: Float, y: Float, requestSmartMenu: Boolean) {
-        val processor = TGActionProcessor(
-            TGApplicationUtil.findContext(songView),
-            TGMoveToAxisPositionAction.NAME
-        )
-        processor.setAttribute(TGMoveToAxisPositionAction.ATTRIBUTE_X, x)
-        processor.setAttribute(TGMoveToAxisPositionAction.ATTRIBUTE_Y, y)
-        processor.setAttribute(TGMoveToAxisPositionAction.ATTRIBUTE_REQUEST_SMART_MENU, requestSmartMenu)
-        processor.processOnNewThread()
+        val tgActionProcessor = TGActionProcessor(TGApplicationUtil.findContext(this.songView), TGMoveToAxisPositionAction.NAME)
+        tgActionProcessor.setAttribute(TGMoveToAxisPositionAction.ATTRIBUTE_X, x)
+        tgActionProcessor.setAttribute(TGMoveToAxisPositionAction.ATTRIBUTE_Y, y)
+        tgActionProcessor.setAttribute(TGMoveToAxisPositionAction.ATTRIBUTE_REQUEST_SMART_MENU, requestSmartMenu)
+        tgActionProcessor.processOnNewThread()
     }
 }

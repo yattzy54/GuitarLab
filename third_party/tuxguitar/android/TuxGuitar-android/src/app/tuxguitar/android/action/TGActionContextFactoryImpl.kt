@@ -32,7 +32,7 @@ class TGActionContextFactoryImpl(
             actionContext.setAttribute(TGDocumentContextAttributes.ATTRIBUTE_MEASURE, caret.measure)
             actionContext.setAttribute(
                 TGDocumentContextAttributes.ATTRIBUTE_HEADER,
-                caret.measure.header
+                caret.measure?.header
             )
             actionContext.setAttribute(
                 TGDocumentContextAttributes.ATTRIBUTE_BEAT,

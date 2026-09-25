@@ -24,31 +24,31 @@ class TGSafActionHandler(private val context: TGContext) {
     }
 
     fun callStartActivityForResult(intent: Intent, resultHandler: TGSafBaseHandler) {
-        val processor = createActionProcessor(TGStartActivityForResultAction.NAME)
-        processor.setAttribute(TGStartActivityForResultAction.ATTRIBUTE_INTENT, intent)
-        processor.setAttribute(TGStartActivityForResultAction.ATTRIBUTE_REQUEST_CODE, resultHandler.requestCode)
-        processor.process()
+        val tgActionProcessor = createActionProcessor(TGStartActivityForResultAction.NAME)
+        tgActionProcessor.setAttribute(TGStartActivityForResultAction.ATTRIBUTE_INTENT, intent)
+        tgActionProcessor.setAttribute(TGStartActivityForResultAction.ATTRIBUTE_REQUEST_CODE, resultHandler.requestCode)
+        tgActionProcessor.process()
     }
 
     fun callReadUri(uri: Uri) {
-        val processor = createActionProcessor(TGUriReadAction.NAME)
-        processor.setAttribute(TGUriReadAction.ATTRIBUTE_URI, uri)
-        processor.process()
+        val tgActionProcessor = createActionProcessor(TGUriReadAction.NAME)
+        tgActionProcessor.setAttribute(TGUriReadAction.ATTRIBUTE_URI, uri)
+        tgActionProcessor.process()
     }
 
     fun callWriteUri(uri: Uri, fileFormat: TGFileFormat) {
-        val processor = createActionProcessor(TGUriWriteAction.NAME)
-        processor.setAttribute(TGUriWriteAction.ATTRIBUTE_URI, uri)
-        processor.setAttribute(TGWriteSongAction.ATTRIBUTE_FORMAT, fileFormat)
-        processor.process()
+        val tgActionProcessor = createActionProcessor(TGUriWriteAction.NAME)
+        tgActionProcessor.setAttribute(TGUriWriteAction.ATTRIBUTE_URI, uri)
+        tgActionProcessor.setAttribute(TGWriteSongAction.ATTRIBUTE_FORMAT, fileFormat)
+        tgActionProcessor.process()
     }
 
     fun <T> callChooserDialog(title: String, options: List<TGChooserDialogOption<T>>, handler: TGChooserDialogHandler<T>) {
-        val processor = createActionProcessor(TGOpenDialogAction.NAME)
-        processor.setAttribute(TGOpenDialogAction.ATTRIBUTE_DIALOG_CONTROLLER, TGChooserDialogController<T>())
-        processor.setAttribute(TGChooserDialogController.ATTRIBUTE_TITLE, title)
-        processor.setAttribute(TGChooserDialogController.ATTRIBUTE_OPTIONS, options)
-        processor.setAttribute(TGChooserDialogController.ATTRIBUTE_HANDLER, handler)
-        processor.process()
+        val tgActionProcessor = createActionProcessor(TGOpenDialogAction.NAME)
+        tgActionProcessor.setAttribute(TGOpenDialogAction.ATTRIBUTE_DIALOG_CONTROLLER, TGChooserDialogController<T>())
+        tgActionProcessor.setAttribute(TGChooserDialogController.ATTRIBUTE_TITLE, title)
+        tgActionProcessor.setAttribute(TGChooserDialogController.ATTRIBUTE_OPTIONS, options)
+        tgActionProcessor.setAttribute(TGChooserDialogController.ATTRIBUTE_HANDLER, handler)
+        tgActionProcessor.process()
     }
 }

@@ -24,12 +24,13 @@ class TGMeasureMenu(activity: TGActivity) : TGMenuBase(activity) {
     fun initializeItems(menu: Menu) {
         val context = findContext()
         val running = MidiPlayer.getInstance(context).isRunning
-        val measure = TGSongViewController.getInstance(context).caret.measure
+        val caret = TGSongViewController.getInstance(context).caret
+        val measure = requireNotNull(caret.measure)
         val isFirst = measure.number == 1
         val isLast = measure.number == measure.track.countMeasures()
-        val errors: List<TGMeasureError> = TGSongViewController.getInstance(context)
-            .caret.songManager.measureManager.getMeasureErrors(measure)
-        val voiceIndex = TGSongViewController.getInstance(context).caret.voice
+        val errors: List<TGMeasureError> =
+            caret.getSongManager().measureManager.getMeasureErrors(measure)
+        val voiceIndex = caret.getVoice()
         var voiceCanBeFixed = errors.any { it.voiceIndex == voiceIndex }
         if (voiceCanBeFixed) {
             voiceCanBeFixed = errors.filter { it.voiceIndex == voiceIndex }.all { it.canBeFixed() }

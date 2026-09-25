@@ -11,12 +11,8 @@ class TGBrowserFragmentController : TGCachedFragmentController<TGBrowserFragment
     companion object {
         @JvmStatic
         fun getInstance(context: TGContext): TGBrowserFragmentController =
-            TGSingletonUtil.getInstance(
-                context,
-                TGBrowserFragmentController::class.java.name,
-                object : TGSingletonFactory<TGBrowserFragmentController> {
-                    override fun createInstance(context: TGContext) = TGBrowserFragmentController()
-                }
-            )
+            TGSingletonUtil.getInstance(context, TGBrowserFragmentController::class.java.name, object : TGSingletonFactory<TGBrowserFragmentController> {
+                override fun createInstance(context: TGContext): TGBrowserFragmentController = TGBrowserFragmentController()
+            })
     }
 }

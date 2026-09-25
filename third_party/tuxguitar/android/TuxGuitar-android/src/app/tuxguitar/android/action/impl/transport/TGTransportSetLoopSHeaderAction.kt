@@ -9,7 +9,8 @@ import app.tuxguitar.util.TGContext
 class TGTransportSetLoopSHeaderAction(context: TGContext) : TGActionBase(context, NAME) {
  override fun processAction(context: TGActionContext) {
   val mode = MidiPlayer.getInstance(getContext()).mode
-  val caretNumber = TGSongViewController.getInstance(getContext()).caret.measure.number
+  val caretMeasure = TGSongViewController.getInstance(getContext()).caret.measure
+  val caretNumber = caretMeasure?.number ?: -1
   val measureNumber = if (mode.loopSHeader != caretNumber) caretNumber else -1
   mode.loopSHeader = measureNumber
   if (mode.loopEHeader != -1 && mode.loopSHeader != -1 && mode.loopEHeader < measureNumber) mode.loopEHeader = measureNumber
