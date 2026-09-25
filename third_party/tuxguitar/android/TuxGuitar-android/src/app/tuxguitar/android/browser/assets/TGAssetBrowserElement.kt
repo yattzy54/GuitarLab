@@ -8,6 +8,7 @@ import app.tuxguitar.util.TGContext
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
+import java.io.OutputStream
 
 class TGAssetBrowserElement(
     private val context: TGContext,
@@ -17,6 +18,8 @@ class TGAssetBrowserElement(
     private var childreen: MutableList<TGBrowserElement>? = null
 
     override fun getName(): String = name
+
+    override fun getParent(): TGBrowserElement? = parent
 
     override fun isFolder(): Boolean = !name.contains('.')
 
@@ -50,18 +53,25 @@ class TGAssetBrowserElement(
     }
 
     @Throws(TGBrowserException::class)
-    fun getInputStream(): InputStream? {
-        if (!isFolder()) {
-            try {
-                val assetManager = findAssetManager()
-                if (assetManager != null) {
-                    return assetManager.open(fullPath)
-                }
-            } catch (e: IOException) {
-                throw TGBrowserException(e)
-            }
+    override fun getInputStream(): InputStream {
+        if (isFolder()) {
+            throw TGBrowserException("Folder cannot be opened as a file")
         }
-        return null
+        return try {
+            val assetManager = findAssetManager()
+            if (assetManager != null) {
+                assetManager.open(fullPath)
+            } else {
+                throw TGBrowserException("Asset manager is not available")
+            }
+        } catch (e: IOException) {
+            throw TGBrowserException(e)
+        }
+    }
+
+    @Throws(TGBrowserException::class)
+    override fun getOutputStream(): OutputStream {
+        throw TGBrowserException("Asset browser element is read-only")
     }
 
     private val fullPath: String

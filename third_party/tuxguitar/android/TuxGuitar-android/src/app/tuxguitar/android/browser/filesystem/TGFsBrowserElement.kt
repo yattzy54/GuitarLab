@@ -15,31 +15,33 @@ class TGFsBrowserElement(
 ) : TGBrowserElement {
     override fun getName(): String = file.name
 
+    override fun getParent(): TGBrowserElement? = parent
+
     override fun isFolder(): Boolean = file.isDirectory
 
     override fun isWritable(): Boolean = if (file.exists()) file.canWrite() else parent != null && parent.isWritable()
 
     @Throws(TGBrowserException::class)
-    fun getInputStream(): InputStream? {
-        if (!isFolder()) {
-            try {
-                return FileInputStream(file)
-            } catch (e: FileNotFoundException) {
-                throw TGBrowserException(e.message ?: "File not found", e)
-            }
+    override fun getInputStream(): InputStream {
+        if (isFolder()) {
+            throw TGBrowserException("Folder cannot be opened as a file")
         }
-        return null
+        return try {
+            FileInputStream(file)
+        } catch (e: FileNotFoundException) {
+            throw TGBrowserException(e.message ?: "File not found", e)
+        }
     }
 
     @Throws(TGBrowserException::class)
-    fun getOutputStream(): OutputStream? {
-        if (!isFolder()) {
-            try {
-                return FileOutputStream(file)
-            } catch (e: FileNotFoundException) {
-                throw TGBrowserException(e.message ?: "File not found", e)
-            }
+    override fun getOutputStream(): OutputStream {
+        if (isFolder()) {
+            throw TGBrowserException("Folder cannot be opened for writing")
         }
-        return null
+        return try {
+            FileOutputStream(file)
+        } catch (e: FileNotFoundException) {
+            throw TGBrowserException(e.message ?: "File not found", e)
+        }
     }
 }
