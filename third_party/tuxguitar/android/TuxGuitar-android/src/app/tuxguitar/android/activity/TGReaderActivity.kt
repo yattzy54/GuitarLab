@@ -16,7 +16,12 @@ class TGReaderActivity : TGActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        findViewById<View>(R.id.main_bottom)?.visibility = View.GONE
+        // TGMainFragment now hosts view_main.xml through a Compose AndroidView, whose
+        // content is inflated on the next layout pass rather than synchronously here.
+        // Posting the visibility change keeps this working regardless of that timing.
+        findViewById<View>(R.id.root_layout)?.post {
+            findViewById<View>(R.id.main_bottom)?.visibility = View.GONE
+        }
     }
 
     override fun onCreateContextMenu(
