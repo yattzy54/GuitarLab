@@ -333,6 +333,8 @@
 	<string name="track_tuning_dlg_title">Tuning</string>
 	<string name="track_tuning_dlg_value_label">Value:</string>
 	<string name="track_tuning_dlg_preview_label">Label:</string>
+	<string name="track_tuning_dlg_offset_label">Offset:</string>
+	<string name="track_tuning_dlg_preset_label">Preset:</string>
 	<string name="track_tuning_dlg_offset_select_value">Offset #%1$d</string>
 	<string name="track_tuning_dlg_preset_select_value">-- Presets --</string>
 	<string name="track_tuning_dlg_error_title">Error</string>

@@ -94,4 +94,22 @@ abstract class TGComposeBottomSheetDialogFragment : DialogFragment() {
     fun findActivity(): TGActivity = activity as TGActivity
 
     fun findContext(): TGContext = TGApplicationUtil.findContext(activity!!)
+
+    fun isReady(): Boolean = view != null && isVisible
+
+    /**
+     * Runs [runnable] on the UI thread once this dialog's view is attached and
+     * visible, matching [app.tuxguitar.android.fragment.TGBaseFragment.postWhenReady]
+     * for callers (settings/action handlers) invoked from background threads
+     * before the sheet has finished appearing.
+     */
+    fun postWhenReady(runnable: Runnable) {
+        Thread {
+            if (!isReady()) {
+                postWhenReady(runnable)
+            } else {
+                requireView().post(runnable)
+            }
+        }.start()
+    }
 }

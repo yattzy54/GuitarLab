@@ -1,8 +1,8 @@
 package app.tuxguitar.android.view.dialog.browser.filesystem
 
-import app.tuxguitar.android.view.dialog.fragment.TGModalFragmentController
+import app.tuxguitar.android.view.dialog.compose.TGComposeBottomSheetDialogController
 
-class TGBrowserSettingsDialogController : TGModalFragmentController<TGBrowserSettingsDialog>() {
+class TGBrowserSettingsDialogController : TGComposeBottomSheetDialogController<TGBrowserSettingsDialog>() {
     override fun createNewInstance(): TGBrowserSettingsDialog = TGBrowserSettingsDialog()
 
     companion object {
