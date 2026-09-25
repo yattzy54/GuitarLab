@@ -17,6 +17,6 @@ abstract class TGComposeBottomSheetDialogController<T : TGComposeBottomSheetDial
         val dialog = createNewInstance()
         val context = TGApplicationUtil.findContext(activity)
         context.setAttribute(dialog.getDialogContextKey(), dialogContext)
-        dialog.show(activity.supportFragmentManager, "NoticeDialogFragment")
+        dialog.show(activity.childFragmentManager, "NoticeDialogFragment")
     }
 }

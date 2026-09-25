@@ -54,5 +54,5 @@ class TGActionProcessingView(private val activity: TGActivity) {
 
     fun isUpdating(): Boolean = updating
 
-    fun isDestroyed(): Boolean = destroyed || activity.isDestroyed
+    fun isDestroyed(): Boolean = destroyed || activity.isFragmentDestroyed()
 }

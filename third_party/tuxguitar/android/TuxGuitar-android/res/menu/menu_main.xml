@@ -51,8 +51,5 @@
     <item
         android:id="@+id/action_menu_settings"
         android:title="@string/action_menu_settings"/>
-    <item
-        android:id="@+id/action_songsterr_import"
-        android:title="@string/action_songsterr_import"/>
 
 </menu>

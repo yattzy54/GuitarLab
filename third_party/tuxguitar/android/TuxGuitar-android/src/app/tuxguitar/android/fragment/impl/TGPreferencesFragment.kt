@@ -30,8 +30,8 @@ class TGPreferencesFragment : TGComposeCachedFragment() {
     override fun onPostCreate(savedInstanceState: Bundle?) {
         attachInstance()
         createActionBar(true, false, R.string.action_menu_settings)
-        sharedPreferences = findActivity().getSharedPreferences(
-            TGSharedPreferencesUtil.getSharedPreferencesName(findActivity(), MODULE, RESOURCE),
+        sharedPreferences = findActivity().requireContext().getSharedPreferences(
+            TGSharedPreferencesUtil.getSharedPreferencesName(findActivity().requireContext(), MODULE, RESOURCE),
             0,
         )
         loadCollectionBrowserPreference()

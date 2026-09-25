@@ -86,7 +86,7 @@ class TGChannelEditDialog : TGComposeBottomSheetDialogFragment() {
                     if (TGUpdateEvent.EVENT_TYPE == event.eventType) {
                         val type = event.getAttribute<Int>(TGUpdateEvent.PROPERTY_UPDATE_MODE)
                         if (type == TGUpdateEvent.SELECTION) {
-                            findActivity().runOnUiThread { refresh() }
+                            findActivity().requireActivity().runOnUiThread { refresh() }
                         }
                     }
                 }

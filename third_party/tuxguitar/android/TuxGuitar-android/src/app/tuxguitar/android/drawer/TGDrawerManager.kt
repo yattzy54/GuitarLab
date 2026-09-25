@@ -23,7 +23,7 @@ class TGDrawerManager(private val activity: TGActivity) {
         drawerView = activity.findViewById(R.id.left_drawer)
         drawerLayout = activity.findViewById(R.id.root_layout)
         drawerToggle = object : ActionBarDrawerToggle(
-            activity,
+            activity.requireActivity(),
             drawerLayout!!,
             R.string.app_name,
             R.string.app_name

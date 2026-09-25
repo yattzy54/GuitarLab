@@ -1,6 +1,5 @@
 package app.tuxguitar.android.action.impl.storage.uri
 
-import android.app.Activity
 import android.net.Uri
 import app.tuxguitar.action.TGActionContext
 import app.tuxguitar.action.TGActionException
@@ -16,8 +15,8 @@ class TGUriReadAction(context: TGContext) : TGActionBase(context, NAME) {
  override fun processAction(context: TGActionContext) {
   try {
    val uri = context.getAttribute<Uri>(ATTRIBUTE_URI)
-   val activity = context.getAttribute<Activity>(ATTRIBUTE_ACTIVITY)
-   val inputStream = activity.contentResolver.openInputStream(uri)
+   val activity = context.getAttribute<TGActivity>(ATTRIBUTE_ACTIVITY)
+   val inputStream = activity.requireContext().contentResolver.openInputStream(uri)
    val bufferedStream = inputStream?.let { stream -> TGStreamUtil.getInputStream(stream).also { stream.close() } }
    if (bufferedStream != null) {
     context.setAttribute(TGReadSongAction.ATTRIBUTE_INPUT_STREAM, bufferedStream)

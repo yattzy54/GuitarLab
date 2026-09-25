@@ -1,5 +1,11 @@
 <resources>
-    <style name="Theme.GuitarLab" parent="android:Theme.Material.NoActionBar">
+    <!--
+        AppCompat/MaterialComponents-based so MainActivity can host the
+        legacy TuxGuitar editor screen (Toolbar + ActionBarDrawerToggle)
+        as a Fragment under the single-Activity architecture, in addition
+        to the mostly-Compose screens which do not use a system action bar.
+    -->
+    <style name="Theme.GuitarLab" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowBackground">#FF121212</item>

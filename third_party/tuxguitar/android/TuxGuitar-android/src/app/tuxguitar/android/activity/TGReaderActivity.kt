@@ -14,8 +14,8 @@ import app.tuxguitar.android.R
  */
 class TGReaderActivity : TGActivity() {
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         // TGMainFragment now hosts view_main.xml through a Compose AndroidView, whose
         // content is inflated on the next layout pass rather than synchronously here.
         // Posting the visibility change keeps this working regardless of that timing.

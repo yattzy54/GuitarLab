@@ -2,7 +2,6 @@ package app.tuxguitar.android.activity
 
 import android.content.pm.PackageManager
 import android.os.AsyncTask
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import app.tuxguitar.android.action.impl.gui.TGOpenDialogAction
 import app.tuxguitar.android.action.impl.gui.TGRequestPermissionsAction
@@ -43,7 +42,7 @@ class TGActivityPermissionRequest(
 
     private fun checkPermissions(ignoreRationale: Boolean) {
         val missingPermissions = permissions.filter {
-            ContextCompat.checkSelfPermission(activity, it) != PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(activity.requireContext(), it) != PackageManager.PERMISSION_GRANTED
         }
         if (missingPermissions.isEmpty()) {
             onPermissionGranted()
@@ -66,7 +65,7 @@ class TGActivityPermissionRequest(
     private fun isShowingRequestPermissionRationale(permissions: Array<String>): Boolean {
         if (permissionRationale != null) {
             for (permission in permissions) {
-                if (ActivityCompat.shouldShowRequestPermissionRationale(activity, permission)) {
+                if (activity.shouldShowRequestPermissionRationale(permission)) {
                     showRequestPermissionRationale()
                     return true
                 }

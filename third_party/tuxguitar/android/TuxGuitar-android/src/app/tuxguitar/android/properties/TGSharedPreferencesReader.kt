@@ -1,16 +1,16 @@
 package app.tuxguitar.android.properties
 
-import android.app.Activity
+import android.content.Context
 import app.tuxguitar.util.properties.TGProperties
 import app.tuxguitar.util.properties.TGPropertiesException
 import app.tuxguitar.util.properties.TGPropertiesReader
 
 class TGSharedPreferencesReader(
-    activity: Activity,
+    context: Context,
     module: String,
     resource: String,
     private val defaultReader: TGPropertiesReader?,
-) : TGSharedPreferencesHandler(activity, module, resource), TGPropertiesReader {
+) : TGSharedPreferencesHandler(context, module, resource), TGPropertiesReader {
     @Throws(TGPropertiesException::class)
     override fun readProperties(properties: TGProperties, module: String) {
         readDefaultProperties(properties, module)

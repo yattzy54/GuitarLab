@@ -1,12 +1,12 @@
 package app.tuxguitar.android.properties
 
-import android.app.Activity
+import android.content.Context
 import app.tuxguitar.util.properties.TGProperties
 import app.tuxguitar.util.properties.TGPropertiesException
 import app.tuxguitar.util.properties.TGPropertiesWriter
 
-class TGSharedPreferencesWriter(activity: Activity, module: String, resource: String) :
-    TGSharedPreferencesHandler(activity, module, resource),
+class TGSharedPreferencesWriter(context: Context, module: String, resource: String) :
+    TGSharedPreferencesHandler(context, module, resource),
     TGPropertiesWriter {
     @Throws(TGPropertiesException::class)
     override fun writeProperties(properties: TGProperties, module: String) {

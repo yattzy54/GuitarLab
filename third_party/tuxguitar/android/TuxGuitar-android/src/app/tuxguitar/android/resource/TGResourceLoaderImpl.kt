@@ -61,7 +61,7 @@ class TGResourceLoaderImpl(private val activity: TGActivity) : TGResourceLoader 
     fun getClassLoader(): ClassLoader = classLoader!!
 
     fun createClassLoader(): ClassLoader {
-        val context = activity.applicationContext
+        val context = activity.requireContext().applicationContext
         val optimizedDirectory = context.getDir("dex", Context.MODE_PRIVATE).absolutePath
         val fileNames = unpackPlugins(optimizedDirectory)
         return if (fileNames.isNotEmpty()) {
@@ -74,7 +74,7 @@ class TGResourceLoaderImpl(private val activity: TGActivity) : TGResourceLoader 
     fun unpackPlugins(path: String): List<String> {
         try {
             val fileNames = ArrayList<String>()
-            val assetManager: AssetManager = activity.assets
+            val assetManager: AssetManager = activity.requireContext().assets
             val assets = assetManager.list(ASSET_PLUGINS)
             if (assets != null) {
                 for (asset in assets) {
@@ -102,7 +102,10 @@ class TGResourceLoaderImpl(private val activity: TGActivity) : TGResourceLoader 
 
     fun createPath(fileNames: List<String>): String = fileNames.joinToString(File.pathSeparator)
 
-    fun createLibraryPath(): String = activity.applicationInfo.nativeLibraryDir
+    fun createLibraryPath(): String {
+        val ctx = activity.requireContext()
+        return ctx.packageManager.getApplicationInfo(ctx.packageName, 0).nativeLibraryDir
+    }
 
     companion object {
         private const val ASSET_PLUGINS = "plugins"
