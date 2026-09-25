@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.tremoloBar
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -211,7 +213,7 @@ private fun TGTremoloBarDialogContent(
 @Preview(showBackground = true)
 @Composable
 private fun TGTremoloBarDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGTremoloBarDialogContent(
             presets = listOf(
                 TGTremoloBarPreset("Dip", previewTremoloBarEffect(listOf(0 to 0, 6 to -2, 12 to 0))),

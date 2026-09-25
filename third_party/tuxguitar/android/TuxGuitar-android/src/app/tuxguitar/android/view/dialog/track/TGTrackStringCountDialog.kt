@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.track
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -87,7 +89,7 @@ fun TGTrackStringCountDialogContent(
 @Preview(showBackground = true)
 @Composable
 private fun TGTrackStringCountDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGTrackStringCountDialogContent(
             values = (4..8).toList(),
             selectedCount = 6,

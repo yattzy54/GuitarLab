@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.message
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -58,7 +60,7 @@ fun TGMessageDialogContent(
 @Preview(showBackground = true)
 @Composable
 private fun TGMessageDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGMessageDialogContent(
             title = "Import complete",
             message = "The song was imported successfully and is ready to edit.",

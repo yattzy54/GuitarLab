@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.browser
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import android.content.Context
 import android.content.res.TypedArray
 import androidx.compose.foundation.Image
@@ -97,7 +99,7 @@ private fun Context.findStyledDrawableResource(styleResId: Int): Int {
 @Preview(showBackground = true)
 @Composable
 private fun TGBrowserListItemContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         Column {
             TGBrowserListItemContent(
                 name = "Demo",

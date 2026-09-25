@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.keySignature
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -210,7 +212,7 @@ private fun TGKeySignatureDropdownField(
 @Preview(showBackground = true)
 @Composable
 private fun TGKeySignatureDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGKeySignatureDialogContent(
             initial = TGKeySignatureDialogUiState(
                 keySignature = 2,

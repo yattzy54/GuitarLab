@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.browser.collection
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -167,7 +169,7 @@ fun TGBrowserCollectionsDialogContent(
 @Preview(showBackground = true)
 @Composable
 private fun TGBrowserCollectionsDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGBrowserCollectionsDialogContent(
             title = "Collection Browser",
             factoryLabels = listOf("File system", "Cloud storage"),

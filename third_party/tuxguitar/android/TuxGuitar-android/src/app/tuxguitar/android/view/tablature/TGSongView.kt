@@ -77,7 +77,8 @@ class TGSongView @JvmOverloads constructor(
     }
 
     fun paintArea(painter: UIPainter, area: UIRectangle) {
-        painter.setBackground(controller!!.resourceFactory.createColor(255, 255, 255))
+        val layout = controller!!.layout
+        painter.setBackground(layout.getLightColor(layout.resources.backgroundColor))
         painter.initPath(UIPainter.PATH_FILL)
         painter.addRectangle(area.x, area.y, area.width, area.height)
         painter.closePath()

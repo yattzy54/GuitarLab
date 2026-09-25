@@ -24,9 +24,9 @@ import com.mmt.guitarlab.domain.model.FretboardMode
 import com.mmt.guitarlab.domain.model.MusicTheory
 import com.mmt.guitarlab.ui.components.Studio3DAccent
 import com.mmt.guitarlab.ui.components.Studio3DIconBadge
-import com.mmt.guitarlab.ui.theme.ElectricAmber
-import com.mmt.guitarlab.ui.theme.ElectricTeal
-import com.mmt.guitarlab.ui.theme.GuitarLabTheme
+import com.mmt.guitarlab.core.ui.theme.ElectricAmber
+import com.mmt.guitarlab.core.ui.theme.ElectricTeal
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
 
 @Composable
 public fun RealisticFretboardCanvas(

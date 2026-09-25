@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.tempo
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -218,7 +220,7 @@ private fun TGTempoDialogContent(
 @Preview(showBackground = true)
 @Composable
 private fun TGTempoDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGTempoDialogContent(
             tempoBaseOptions = listOf(
                 TGTempoBaseOption(4, false, "1/4", R.drawable.duration_4),

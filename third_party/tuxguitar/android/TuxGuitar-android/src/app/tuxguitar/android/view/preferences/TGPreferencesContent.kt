@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.preferences
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -155,7 +157,7 @@ private fun TGPreferencesDropdownItem(
 @Preview(showBackground = true)
 @Composable
 private fun TGPreferencesScreenPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGPreferencesScreen(
             useCollectionBrowser = true,
             onUseCollectionBrowserChange = {},

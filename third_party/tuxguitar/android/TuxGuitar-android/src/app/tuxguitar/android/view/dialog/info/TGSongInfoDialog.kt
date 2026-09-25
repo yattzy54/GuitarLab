@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.info
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -163,7 +165,7 @@ fun TGSongInfoDialogContent(
 @Preview(showBackground = true)
 @Composable
 private fun TGSongInfoDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGSongInfoDialogContent(
             initial = TGSongInfoFields(
                 name = "Sample Song",

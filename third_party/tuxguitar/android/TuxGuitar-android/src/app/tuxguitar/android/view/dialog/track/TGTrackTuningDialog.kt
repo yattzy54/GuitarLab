@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.track
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -445,7 +447,7 @@ private fun TGTrackTuningListItem(
 @Preview(showBackground = true)
 @Composable
 private fun TGTrackTuningDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGTrackTuningDialogContent(
             title = "Tuning",
             addLabel = "Add",

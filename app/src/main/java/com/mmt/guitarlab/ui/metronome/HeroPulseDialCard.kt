@@ -28,12 +28,12 @@ import com.mmt.guitarlab.ui.components.StudioCard
 import com.mmt.guitarlab.ui.metronome.components.BeatDots
 import com.mmt.guitarlab.ui.metronome.components.TempoCircularWheel
 import com.mmt.guitarlab.ui.metronome.components.TempoStepButton
-import com.mmt.guitarlab.ui.theme.ElectricAmber
-import com.mmt.guitarlab.ui.theme.ElectricTeal
-import com.mmt.guitarlab.ui.theme.GuitarLabTheme
-import com.mmt.guitarlab.ui.theme.StudioDarkBg
-import com.mmt.guitarlab.ui.theme.StudioTextPrimary
-import com.mmt.guitarlab.ui.theme.StudioTextSecondary
+import com.mmt.guitarlab.core.ui.theme.ElectricAmber
+import com.mmt.guitarlab.core.ui.theme.ElectricTeal
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+import com.mmt.guitarlab.core.ui.theme.StudioDarkBg
+import com.mmt.guitarlab.core.ui.theme.StudioTextPrimary
+import com.mmt.guitarlab.core.ui.theme.StudioTextSecondary
 
 @Composable
 fun HeroPulseDialCard(

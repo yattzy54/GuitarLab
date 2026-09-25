@@ -31,12 +31,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mmt.guitarlab.ui.theme.ElectricAmber
-import com.mmt.guitarlab.ui.theme.StudioCardBorder
-import com.mmt.guitarlab.ui.theme.StudioDarkBg
-import com.mmt.guitarlab.ui.theme.StudioTextMuted
-import com.mmt.guitarlab.ui.theme.StudioTextPrimary
-import com.mmt.guitarlab.ui.theme.StudioTextSecondary
+import com.mmt.guitarlab.core.ui.theme.ElectricAmber
+import com.mmt.guitarlab.core.ui.theme.StudioCardBorder
+import com.mmt.guitarlab.core.ui.theme.StudioDarkBg
+import com.mmt.guitarlab.core.ui.theme.StudioTextMuted
+import com.mmt.guitarlab.core.ui.theme.StudioTextPrimary
+import com.mmt.guitarlab.core.ui.theme.StudioTextSecondary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

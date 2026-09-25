@@ -1,0 +1,26 @@
+<resources>
+    <style name="Theme.GuitarLab.Base" parent="Theme.MaterialComponents.NoActionBar">
+        <item name="colorPrimary">@color/guitarlab_primary</item>
+        <item name="colorPrimaryVariant">@color/guitarlab_primary_variant</item>
+        <item name="colorOnPrimary">@color/guitarlab_on_primary</item>
+        <item name="colorSecondary">@color/guitarlab_secondary</item>
+        <item name="colorSecondaryVariant">@color/guitarlab_secondary_variant</item>
+        <item name="colorOnSecondary">@color/guitarlab_on_secondary</item>
+        <item name="colorAccent">@color/guitarlab_primary</item>
+        <item name="colorSurface">@color/guitarlab_surface</item>
+        <item name="colorOnSurface">@color/guitarlab_text_primary</item>
+        <item name="colorOnBackground">@color/guitarlab_text_primary</item>
+        <item name="colorError">@color/guitarlab_error</item>
+        <item name="colorOnError">@color/guitarlab_on_error</item>
+        <item name="colorControlNormal">@color/guitarlab_text_secondary</item>
+        <item name="colorControlActivated">@color/guitarlab_primary</item>
+        <item name="android:colorBackground">@color/guitarlab_background</item>
+        <item name="android:windowBackground">@color/guitarlab_background</item>
+        <item name="android:textColorPrimary">@color/guitarlab_text_primary</item>
+        <item name="android:textColorSecondary">@color/guitarlab_text_secondary</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+</resources>

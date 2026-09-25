@@ -1,8 +1,17 @@
 package app.tuxguitar.android.view.tablature
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import app.tuxguitar.graphics.control.TGLayoutStyles
 import app.tuxguitar.ui.resource.UIColorModel
 import app.tuxguitar.ui.resource.UIFontModel
+import com.mmt.guitarlab.core.ui.theme.ElectricAmber
+import com.mmt.guitarlab.core.ui.theme.ElectricRuby
+import com.mmt.guitarlab.core.ui.theme.ElectricTeal
+import com.mmt.guitarlab.core.ui.theme.StudioCardElevated
+import com.mmt.guitarlab.core.ui.theme.StudioDarkBg
+import com.mmt.guitarlab.core.ui.theme.StudioTextPrimary
+import com.mmt.guitarlab.core.ui.theme.StudioTextSecondary
 
 class TGSongViewStyles : TGLayoutStyles() {
 
@@ -52,15 +61,21 @@ class TGSongViewStyles : TGLayoutStyles() {
         this.setGraceFont(UIFontModel("sans-serif", 6f, false, false))
         this.setChordFont(UIFontModel("sans-serif", 8f, false, false))
         this.setChordFretFont(UIFontModel("sans-serif", 8f, false, false))
-        this.setForegroundColor(UIColorModel(0, 0, 0))
-        this.setBackgroundColor(UIColorModel(255, 255, 255))
-        this.setLineColor(UIColorModel(200, 200, 200))
-        this.setLineColorInvalid(UIColorModel(205, 0, 0))
-        this.setScoreNoteColor(UIColorModel(105, 105, 105))
-        this.setTabNoteColor(UIColorModel(105, 105, 105))
-        this.setPlayNoteColor(UIColorModel(255, 0, 0))
-        this.setLoopSMarkerColor(UIColorModel(0, 0, 0))
-        this.setLoopEMarkerColor(UIColorModel(0, 0, 0))
-        this.setMeasureNumberColor(UIColorModel(255, 0, 0))
+        this.setForegroundColor(StudioTextPrimary.toUIColorModel())
+        this.setBackgroundColor(StudioDarkBg.toUIColorModel())
+        this.setBackgroundColorPlaying(StudioCardElevated.toUIColorModel())
+        this.setLineColor(StudioTextSecondary.toUIColorModel())
+        this.setLineColorInvalid(ElectricRuby.toUIColorModel())
+        this.setScoreNoteColor(StudioTextPrimary.toUIColorModel())
+        this.setTabNoteColor(StudioTextPrimary.toUIColorModel())
+        this.setPlayNoteColor(ElectricAmber.toUIColorModel())
+        this.setLoopSMarkerColor(ElectricTeal.toUIColorModel())
+        this.setLoopEMarkerColor(ElectricTeal.toUIColorModel())
+        this.setMeasureNumberColor(ElectricAmber.toUIColorModel())
     }
+}
+
+private fun Color.toUIColorModel(): UIColorModel {
+    val argb = toArgb()
+    return UIColorModel((argb shr 16) and 0xff, (argb shr 8) and 0xff, argb and 0xff)
 }

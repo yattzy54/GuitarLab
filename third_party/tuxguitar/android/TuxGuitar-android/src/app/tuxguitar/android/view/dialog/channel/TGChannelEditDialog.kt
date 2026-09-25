@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.channel
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -373,7 +375,7 @@ fun TGChannelEditDialogContent(
 @Preview(showBackground = true)
 @Composable
 private fun TGChannelEditDialogPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGChannelEditDialogContent(
             state = TGChannelEditFields(
                 name = "Clean Guitar",
@@ -416,7 +418,7 @@ private fun TGChannelEditDialogPreview() {
 @Preview(showBackground = true)
 @Composable
 private fun TGChannelEditDialogPercussionPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGChannelEditDialogContent(
             state = TGChannelEditFields(
                 name = "Percussion",

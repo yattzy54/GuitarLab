@@ -1,5 +1,7 @@
 package com.mmt.guitarlab.ui.metronome.components
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,8 +22,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.mmt.guitarlab.ui.theme.ElectricAmber
-import com.mmt.guitarlab.ui.theme.StudioTextSecondary
+import com.mmt.guitarlab.core.ui.theme.ElectricAmber
+import com.mmt.guitarlab.core.ui.theme.StudioTextSecondary
 
 @Composable
  fun LabeledSliderRow(
@@ -65,7 +67,7 @@ import com.mmt.guitarlab.ui.theme.StudioTextSecondary
 @Preview(showBackground = true, backgroundColor = 0xFF0D1117)
 @Composable
 fun LabeledSliderRowPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         // Используем remember, чтобы слайдер был интерактивным в Android Studio (Interactive Mode)
         var sliderValue by remember { mutableStateOf(120f) }
 

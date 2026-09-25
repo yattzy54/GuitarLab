@@ -1,5 +1,7 @@
 package app.tuxguitar.android.view.dialog.bend
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -223,7 +225,7 @@ private fun TGBendDialogContent(
 @Preview(showBackground = true)
 @Composable
 private fun TGBendDialogContentPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         TGBendDialogContent(
             presets = listOf(
                 TGBendPreset("Bend", previewBendEffect(listOf(0 to 0, 6 to 4, 12 to 4))),

@@ -1,5 +1,7 @@
 package com.mmt.guitarlab.ui.metronome.components
 
+import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -21,8 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mmt.guitarlab.ui.theme.ElectricAmber
-import com.mmt.guitarlab.ui.theme.ElectricTeal
+import com.mmt.guitarlab.core.ui.theme.ElectricAmber
+import com.mmt.guitarlab.core.ui.theme.ElectricTeal
 
 @Composable
  fun BeatDots(beats: Int, accents: Set<Int>, current: Int?, pulse: Float) {
@@ -72,7 +74,7 @@ import com.mmt.guitarlab.ui.theme.ElectricTeal
 @Preview(showBackground = true, backgroundColor = 0xFF0D1117)
 @Composable
 fun BeatDotsPreview() {
-    MaterialTheme {
+    GuitarLabTheme {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),

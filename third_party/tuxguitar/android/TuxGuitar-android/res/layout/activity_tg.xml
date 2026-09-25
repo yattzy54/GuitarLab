@@ -1,17 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    TGActivity now hosts its content as a Fragment inside the app's single
-    Activity, so its own theme (TGTheme, an AppCompat.DarkActionBar
-    descendant) can no longer provide a system-decor action bar: the host
-    Activity's theme is NoActionBar. A regular Toolbar takes its place and is
-    wired up via setSupportActionBar()/ActionBarDrawerToggle in code instead.
+    The embedded editor shares GuitarLab's NoActionBar theme and uses a
+    Toolbar wired up via setSupportActionBar()/ActionBarDrawerToggle.
 -->
 <LinearLayout
 	xmlns:android="http://schemas.android.com/apk/res/android"
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
 	android:orientation="vertical"
-	android:fitsSystemWindows="true">
+	android:background="?android:attr/colorBackground">
 
 	<androidx.appcompat.widget.Toolbar
 		android:id="@+id/tg_toolbar"
