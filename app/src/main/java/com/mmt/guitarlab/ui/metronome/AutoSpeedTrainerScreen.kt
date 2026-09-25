@@ -38,10 +38,12 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.mmt.guitarlab.domain.model.MetronomeBeat
 import com.mmt.guitarlab.domain.model.MetronomeConfig
 import com.mmt.guitarlab.domain.model.MetronomeSound
 import com.mmt.guitarlab.domain.model.TrainerIntervalKind
@@ -53,6 +55,7 @@ import com.mmt.guitarlab.ui.theme.ElectricAmber
 import com.mmt.guitarlab.ui.theme.ElectricGreen
 import com.mmt.guitarlab.ui.theme.ElectricRuby
 import com.mmt.guitarlab.ui.theme.ElectricTeal
+import com.mmt.guitarlab.ui.theme.GuitarLabTheme
 import com.mmt.guitarlab.ui.theme.StudioCardBorder
 import com.mmt.guitarlab.ui.theme.StudioDarkBg
 import com.mmt.guitarlab.ui.theme.StudioTextMuted
@@ -64,8 +67,38 @@ fun AutoSpeedTrainerScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
     val config by viewModel.config.collectAsStateWithLifecycle()
     val beat by viewModel.beat.collectAsStateWithLifecycle()
     val running by viewModel.running.collectAsStateWithLifecycle()
-    val trainer = config.trainer
 
+    AutoSpeedTrainerContent(
+        config = config,
+        beat = beat,
+        running = running,
+        onTogglePlay = {
+            if (!config.trainer.enabled) viewModel.setTrainerEnabled(true)
+            viewModel.toggle()
+        },
+        onSetSound = viewModel::setSound,
+        onSetTrainerStart = viewModel::setTrainerStart,
+        onSetTrainerTarget = viewModel::setTrainerTarget,
+        onSetTrainerIncrement = viewModel::setTrainerIncrement,
+        onSetTrainerIntervalKind = viewModel::setTrainerIntervalKind,
+        onSetTrainerIntervalValue = viewModel::setTrainerIntervalValue,
+    )
+}
+
+@Composable
+fun AutoSpeedTrainerContent(
+    config: MetronomeConfig,
+    beat: MetronomeBeat? = null,
+    running: Boolean = false,
+    onTogglePlay: () -> Unit = {},
+    onSetSound: (MetronomeSound) -> Unit = {},
+    onSetTrainerStart: (Int) -> Unit = {},
+    onSetTrainerTarget: (Int) -> Unit = {},
+    onSetTrainerIncrement: (Int) -> Unit = {},
+    onSetTrainerIntervalKind: (TrainerIntervalKind) -> Unit = {},
+    onSetTrainerIntervalValue: (Int) -> Unit = {},
+) {
+    val trainer = config.trainer
     val liveBpm = beat?.bpm ?: config.bpm
 
     Column(
@@ -133,10 +166,7 @@ fun AutoSpeedTrainerScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
                                 ),
                             )
                             .border(1.dp, Color.White.copy(alpha = 0.4f), CircleShape)
-                            .clickable {
-                                if (!trainer.enabled) viewModel.setTrainerEnabled(true)
-                                viewModel.toggle()
-                            },
+                            .clickable { onTogglePlay() },
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
@@ -230,12 +260,12 @@ fun AutoSpeedTrainerScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
                 val eta = when {
                     beat?.beatsUntilJump != null -> {
                         val beatsPerBar = config.timeSignature.beatsPerBar
-                        val remainingBeats = beat!!.beatsUntilJump!!
+                        val remainingBeats = beat.beatsUntilJump
                         val remainingBars = ((remainingBeats + beatsPerBar - 1) / beatsPerBar).coerceAtLeast(1)
                         val barText = if (remainingBars == 1) "1 bar" else "$remainingBars bars"
                         "$barText until next +${trainer.incrementBpm} BPM step"
                     }
-                    beat?.millisUntilJump != null -> "${(beat!!.millisUntilJump!! / 1000)}s until next +${trainer.incrementBpm} BPM step"
+                    beat?.millisUntilJump != null -> "${(beat.millisUntilJump / 1000)}s until next +${trainer.incrementBpm} BPM step"
                     else -> "Press Play to begin auto-speed training"
                 }
 
@@ -281,7 +311,7 @@ fun AutoSpeedTrainerScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
                         StudioPill(
                             text = sound.label,
                             selected = isSelected,
-                            onClick = { viewModel.setSound(sound) },
+                            onClick = { onSetSound(sound) },
                             accentColor = ElectricAmber,
                         )
                     }
@@ -311,7 +341,7 @@ fun AutoSpeedTrainerScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
                     valueLabel = "${trainer.startBpm} BPM",
                     value = trainer.startBpm.toFloat(),
                     range = MetronomeConfig.MIN_BPM.toFloat()..MetronomeConfig.MAX_BPM.toFloat(),
-                    onChange = { viewModel.setTrainerStart(it.toInt()) },
+                    onChange = { onSetTrainerStart(it.toInt()) },
                     accentColor = ElectricTeal,
                 )
 
@@ -322,7 +352,7 @@ fun AutoSpeedTrainerScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
                     valueLabel = "${trainer.targetBpm} BPM",
                     value = trainer.targetBpm.toFloat(),
                     range = MetronomeConfig.MIN_BPM.toFloat()..MetronomeConfig.MAX_BPM.toFloat(),
-                    onChange = { viewModel.setTrainerTarget(it.toInt()) },
+                    onChange = { onSetTrainerTarget(it.toInt()) },
                     accentColor = ElectricAmber,
                 )
 
@@ -333,7 +363,7 @@ fun AutoSpeedTrainerScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
                     valueLabel = "+${trainer.incrementBpm} BPM",
                     value = trainer.incrementBpm.toFloat(),
                     range = 1f..12f,
-                    onChange = { viewModel.setTrainerIncrement(it.toInt()) },
+                    onChange = { onSetTrainerIncrement(it.toInt()) },
                     accentColor = ElectricGreen,
                 )
 
@@ -359,13 +389,13 @@ fun AutoSpeedTrainerScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
                         StudioPill(
                             text = "Bars",
                             selected = trainer.intervalKind == TrainerIntervalKind.BARS,
-                            onClick = { viewModel.setTrainerIntervalKind(TrainerIntervalKind.BARS) },
+                            onClick = { onSetTrainerIntervalKind(TrainerIntervalKind.BARS) },
                             accentColor = ElectricTeal,
                         )
                         StudioPill(
                             text = "Seconds",
                             selected = isSeconds,
-                            onClick = { viewModel.setTrainerIntervalKind(TrainerIntervalKind.SECONDS) },
+                            onClick = { onSetTrainerIntervalKind(TrainerIntervalKind.SECONDS) },
                             accentColor = ElectricTeal,
                         )
                     }
@@ -382,7 +412,7 @@ fun AutoSpeedTrainerScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
                     valueLabel = intervalLabel,
                     value = trainer.intervalValue.toFloat().coerceIn(1f, maxInterval),
                     range = 1f..maxInterval,
-                    onChange = { viewModel.setTrainerIntervalValue(it.toInt()) },
+                    onChange = { onSetTrainerIntervalValue(it.toInt()) },
                     accentColor = ElectricTeal,
                 )
             }
@@ -429,4 +459,17 @@ private fun LabeledSliderRow(
             inactiveTrackColor = Color(0xFF22293B),
         ),
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AutoSpeedTrainerScreenPreview() {
+    GuitarLabTheme {
+        AutoSpeedTrainerContent(
+            config = MetronomeConfig(
+                bpm = 100,
+            ),
+            running = false,
+        )
+    }
 }

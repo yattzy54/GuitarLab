@@ -1,7 +1,5 @@
 package com.mmt.guitarlab.ui.drums
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -62,6 +60,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -76,6 +75,7 @@ import com.mmt.guitarlab.ui.theme.ElectricAmber
 import com.mmt.guitarlab.ui.theme.ElectricGreen
 import com.mmt.guitarlab.ui.theme.ElectricRuby
 import com.mmt.guitarlab.ui.theme.ElectricTeal
+import com.mmt.guitarlab.ui.theme.GuitarLabTheme
 import com.mmt.guitarlab.ui.theme.StudioCardBg
 import com.mmt.guitarlab.ui.theme.StudioCardBorder
 import com.mmt.guitarlab.ui.theme.StudioCardElevated
@@ -84,7 +84,6 @@ import com.mmt.guitarlab.ui.theme.StudioTextMuted
 import com.mmt.guitarlab.ui.theme.StudioTextPrimary
 import com.mmt.guitarlab.ui.theme.StudioTextSecondary
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DrumsScreen(
     viewModel: DrumsViewModel = hiltViewModel(),
@@ -98,6 +97,56 @@ fun DrumsScreen(
     val currentKit by viewModel.drumKit.collectAsStateWithLifecycle()
     val patterns = viewModel.availablePatterns
 
+    DrumsContent(
+        isPlaying = isPlaying,
+        currentStep = currentStep,
+        bpm = bpm,
+        volume = volume,
+        swing = swing,
+        pattern = pattern,
+        currentKit = currentKit,
+        patterns = patterns,
+        onTogglePlay = viewModel::togglePlay,
+        onAdjustBpm = viewModel::adjustBpm,
+        onSetBpm = viewModel::setBpm,
+        onTapTempo = viewModel::onTapTempo,
+        onPreviewSound = viewModel::previewSound,
+        onToggleStep = viewModel::toggleStep,
+        onClearPattern = viewModel::clearPattern,
+        onRandomizePattern = viewModel::randomizePattern,
+        onResetPattern = viewModel::resetPattern,
+        onSetSwing = viewModel::setSwing,
+        onSetVolume = viewModel::setVolume,
+        onSetDrumKit = viewModel::setDrumKit,
+        onSelectPattern = viewModel::selectPattern,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DrumsContent(
+    isPlaying: Boolean,
+    currentStep: Int,
+    bpm: Int,
+    volume: Float,
+    swing: Float,
+    pattern: DrumPattern,
+    currentKit: DrumKit,
+    patterns: List<DrumPattern>,
+    onTogglePlay: () -> Unit = {},
+    onAdjustBpm: (Int) -> Unit = {},
+    onSetBpm: (Int) -> Unit = {},
+    onTapTempo: () -> Unit = {},
+    onPreviewSound: (DrumSound) -> Unit = {},
+    onToggleStep: (DrumSound, Int) -> Unit = { _, _ -> },
+    onClearPattern: () -> Unit = {},
+    onRandomizePattern: () -> Unit = {},
+    onResetPattern: () -> Unit = {},
+    onSetSwing: (Float) -> Unit = {},
+    onSetVolume: (Float) -> Unit = {},
+    onSetDrumKit: (DrumKit) -> Unit = {},
+    onSelectPattern: (DrumPattern) -> Unit = {},
+) {
     var showKitBottomSheet by remember { mutableStateOf(false) }
     var showPresetBottomSheet by remember { mutableStateOf(false) }
 
@@ -287,8 +336,8 @@ fun DrumsScreen(
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(6.dp))
-                                    .background(ElectricTeal.copy(alpha = 0.2f))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                                        .background(ElectricTeal.copy(alpha = 0.2f))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp),
                                 ) {
                                     Text(
                                         text = "SWING ${(swing * 100).toInt()}%",
@@ -319,7 +368,7 @@ fun DrumsScreen(
                             .clip(CircleShape)
                             .background(playBg)
                             .border(2.dp, if (isPlaying) ElectricAmber else StudioCardBorder, CircleShape)
-                            .clickable { viewModel.togglePlay() },
+                            .clickable { onTogglePlay() },
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
@@ -340,7 +389,7 @@ fun DrumsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     IconButton(
-                        onClick = { viewModel.adjustBpm(-5) },
+                        onClick = { onAdjustBpm(-5) },
                         modifier = Modifier
                             .clip(CircleShape)
                             .background(StudioCardElevated),
@@ -350,7 +399,7 @@ fun DrumsScreen(
 
                     Slider(
                         value = bpm.toFloat(),
-                        onValueChange = { viewModel.setBpm(it.toInt()) },
+                        onValueChange = { onSetBpm(it.toInt()) },
                         valueRange = 30f..280f,
                         modifier = Modifier
                             .weight(1f)
@@ -363,7 +412,7 @@ fun DrumsScreen(
                     )
 
                     IconButton(
-                        onClick = { viewModel.adjustBpm(5) },
+                        onClick = { onAdjustBpm(5) },
                         modifier = Modifier
                             .clip(CircleShape)
                             .background(StudioCardElevated),
@@ -379,7 +428,7 @@ fun DrumsScreen(
                             .clip(RoundedCornerShape(12.dp))
                             .background(StudioCardElevated)
                             .border(1.dp, StudioCardBorder, RoundedCornerShape(12.dp))
-                            .clickable { viewModel.onTapTempo() }
+                            .clickable { onTapTempo() }
                             .padding(horizontal = 12.dp, vertical = 10.dp),
                         contentAlignment = Alignment.Center,
                     ) {
@@ -416,7 +465,7 @@ fun DrumsScreen(
                                     if (isSelected) ElectricAmber else StudioCardBorder,
                                     RoundedCornerShape(8.dp)
                                 )
-                                .clickable { viewModel.setBpm(quickBpm) }
+                                .clickable { onSetBpm(quickBpm) }
                                 .padding(horizontal = 10.dp, vertical = 5.dp),
                         ) {
                             Text(
@@ -522,7 +571,7 @@ fun DrumsScreen(
                             color = soundColor,
                             modifier = Modifier
                                 .width(48.dp)
-                                .clickable { viewModel.previewSound(sound) },
+                                .clickable { onPreviewSound(sound) },
                         )
 
                         // 16 step boxes
@@ -554,7 +603,7 @@ fun DrumsScreen(
                                             color = if (isCur) soundColor else StudioCardBorder,
                                             shape = RoundedCornerShape(4.dp)
                                         )
-                                        .clickable { viewModel.toggleStep(sound, step) },
+                                        .clickable { onToggleStep(sound, step) },
                                 )
                             }
                         }
@@ -575,7 +624,7 @@ fun DrumsScreen(
                             .clip(RoundedCornerShape(10.dp))
                             .background(StudioCardElevated)
                             .border(1.dp, StudioCardBorder, RoundedCornerShape(10.dp))
-                            .clickable { viewModel.clearPattern() }
+                            .clickable { onClearPattern() }
                             .padding(vertical = 8.dp),
                         contentAlignment = Alignment.Center,
                     ) {
@@ -598,7 +647,7 @@ fun DrumsScreen(
                             .clip(RoundedCornerShape(10.dp))
                             .background(StudioCardElevated)
                             .border(1.dp, StudioCardBorder, RoundedCornerShape(10.dp))
-                            .clickable { viewModel.randomizePattern() }
+                            .clickable { onRandomizePattern() }
                             .padding(vertical = 8.dp),
                         contentAlignment = Alignment.Center,
                     ) {
@@ -621,7 +670,7 @@ fun DrumsScreen(
                             .clip(RoundedCornerShape(10.dp))
                             .background(StudioCardElevated)
                             .border(1.dp, StudioCardBorder, RoundedCornerShape(10.dp))
-                            .clickable { viewModel.resetPattern() }
+                            .clickable { onResetPattern() }
                             .padding(vertical = 8.dp),
                         contentAlignment = Alignment.Center,
                     ) {
@@ -673,7 +722,7 @@ fun DrumsScreen(
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(StudioCardElevated)
                                 .border(1.dp, color.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
-                                .clickable { viewModel.previewSound(sound) },
+                                .clickable { onPreviewSound(sound) },
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
@@ -724,7 +773,7 @@ fun DrumsScreen(
 
                 Slider(
                     value = swing,
-                    onValueChange = { viewModel.setSwing(it) },
+                    onValueChange = { onSetSwing(it) },
                     valueRange = -0.3f..0.5f,
                     colors = SliderDefaults.colors(
                         thumbColor = ElectricTeal,
@@ -756,7 +805,7 @@ fun DrumsScreen(
                                     if (isSel) ElectricTeal else StudioCardBorder,
                                     RoundedCornerShape(8.dp)
                                 )
-                                .clickable { viewModel.setSwing(swVal) }
+                                .clickable { onSetSwing(swVal) }
                                 .padding(vertical = 6.dp),
                             contentAlignment = Alignment.Center,
                         ) {
@@ -799,7 +848,7 @@ fun DrumsScreen(
 
                 Slider(
                     value = volume,
-                    onValueChange = { viewModel.setVolume(it) },
+                    onValueChange = { onSetVolume(it) },
                     valueRange = 0f..1f,
                     colors = SliderDefaults.colors(
                         thumbColor = ElectricAmber,
@@ -866,7 +915,7 @@ fun DrumsScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    viewModel.setDrumKit(kit)
+                                    onSetDrumKit(kit)
                                     showKitBottomSheet = false
                                 },
                             accentBorder = borderCol,
@@ -920,9 +969,9 @@ fun DrumsScreen(
                                 // Audition sample button
                                 IconButton(
                                     onClick = {
-                                        viewModel.setDrumKit(kit)
-                                        viewModel.previewSound(DrumSound.KICK)
-                                        viewModel.previewSound(DrumSound.SNARE)
+                                        onSetDrumKit(kit)
+                                        onPreviewSound(DrumSound.KICK)
+                                        onPreviewSound(DrumSound.SNARE)
                                     },
                                     modifier = Modifier
                                         .size(36.dp)
@@ -1050,7 +1099,7 @@ fun DrumsScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    viewModel.selectPattern(pat)
+                                    onSelectPattern(pat)
                                     showPresetBottomSheet = false
                                 },
                             accentBorder = borderCol,
@@ -1120,5 +1169,22 @@ fun DrumsScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun DrumsScreenPreview() {
+    GuitarLabTheme {
+        DrumsContent(
+            isPlaying = false,
+            currentStep = 0,
+            bpm = 120,
+            volume = 0.85f,
+            swing = 0.15f,
+            pattern = DrumPattern.DEFAULT_PATTERNS.first(),
+            currentKit = DrumKit.ROCK,
+            patterns = DrumPattern.DEFAULT_PATTERNS,
+        )
     }
 }

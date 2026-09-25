@@ -31,11 +31,14 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.TouchApp
+import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -50,18 +53,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.mmt.guitarlab.domain.model.MetronomeBeat
 import com.mmt.guitarlab.domain.model.MetronomeConfig
-import com.mmt.guitarlab.domain.model.TimeSignature
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Vibration
-import androidx.compose.material.icons.filled.VolumeUp
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import com.mmt.guitarlab.domain.model.MetronomeSound
+import com.mmt.guitarlab.domain.model.TimeSignature
 import com.mmt.guitarlab.ui.components.Studio3DAccent
 import com.mmt.guitarlab.ui.components.Studio3DIconBadge
 import com.mmt.guitarlab.ui.components.StudioCard
@@ -70,6 +70,7 @@ import com.mmt.guitarlab.ui.theme.ElectricAmber
 import com.mmt.guitarlab.ui.theme.ElectricGreen
 import com.mmt.guitarlab.ui.theme.ElectricRuby
 import com.mmt.guitarlab.ui.theme.ElectricTeal
+import com.mmt.guitarlab.ui.theme.GuitarLabTheme
 import com.mmt.guitarlab.ui.theme.StudioCardBg
 import com.mmt.guitarlab.ui.theme.StudioCardBorder
 import com.mmt.guitarlab.ui.theme.StudioCardElevated
@@ -86,6 +87,33 @@ fun MetronomeScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
     val beat by viewModel.beat.collectAsStateWithLifecycle()
     val running by viewModel.running.collectAsStateWithLifecycle()
 
+    MetronomeContent(
+        config = config,
+        beat = beat,
+        running = running,
+        onSetBpm = viewModel::setBpm,
+        onTapTempo = viewModel::onTapTempo,
+        onToggle = viewModel::toggle,
+        onSetTimeSignature = viewModel::setTimeSignature,
+        onSetVibrateOnly = viewModel::setVibrateOnly,
+        onSetSound = viewModel::setSound,
+        onSetVolume = viewModel::setVolume,
+    )
+}
+
+@Composable
+fun MetronomeContent(
+    config: MetronomeConfig,
+    beat: MetronomeBeat? = null,
+    running: Boolean = false,
+    onSetBpm: (Int) -> Unit = {},
+    onTapTempo: () -> Unit = {},
+    onToggle: () -> Unit = {},
+    onSetTimeSignature: (TimeSignature) -> Unit = {},
+    onSetVibrateOnly: (Boolean) -> Unit = {},
+    onSetSound: (MetronomeSound) -> Unit = {},
+    onSetVolume: (Float) -> Unit = {},
+) {
     val pulse by animateFloatAsState(
         targetValue = if (beat?.accent == true) 1.28f else if (beat != null) 1.12f else 1f,
         animationSpec = tween(80),
@@ -175,10 +203,10 @@ fun MetronomeScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    TempoStepButton(label = "-5", onClick = { viewModel.setBpm(config.bpm - 5) })
-                    TempoStepButton(label = "-1", onClick = { viewModel.setBpm(config.bpm - 1) })
-                    TempoStepButton(label = "+1", onClick = { viewModel.setBpm(config.bpm + 1) })
-                    TempoStepButton(label = "+5", onClick = { viewModel.setBpm(config.bpm + 5) })
+                    TempoStepButton(label = "-5", onClick = { onSetBpm(config.bpm - 5) })
+                    TempoStepButton(label = "-1", onClick = { onSetBpm(config.bpm - 1) })
+                    TempoStepButton(label = "+1", onClick = { onSetBpm(config.bpm + 1) })
+                    TempoStepButton(label = "+5", onClick = { onSetBpm(config.bpm + 5) })
                 }
             }
         }
@@ -203,7 +231,7 @@ fun MetronomeScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
                         ),
                     )
                     .border(1.dp, StudioCardBorder, RoundedCornerShape(18.dp))
-                    .clickable { viewModel.onTapTempo() }
+                    .clickable { onTapTempo() }
                     .padding(horizontal = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
@@ -255,7 +283,7 @@ fun MetronomeScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
                         Color.White.copy(alpha = 0.4f),
                         CircleShape,
                     )
-                    .clickable { viewModel.toggle() },
+                    .clickable { onToggle() },
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -297,7 +325,7 @@ fun MetronomeScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
                         StudioPill(
                             text = ts.label,
                             selected = isSelected,
-                            onClick = { viewModel.setTimeSignature(ts) },
+                            onClick = { onSetTimeSignature(ts) },
                             accentColor = ElectricAmber,
                         )
                     }
@@ -349,7 +377,7 @@ fun MetronomeScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
 
                     Switch(
                         checked = config.vibrateOnly,
-                        onCheckedChange = { viewModel.setVibrateOnly(it) },
+                        onCheckedChange = { onSetVibrateOnly(it) },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = ElectricTeal,
                             checkedTrackColor = Color(0xFF134E4A),
@@ -380,7 +408,7 @@ fun MetronomeScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
                             StudioPill(
                                 text = sound.label,
                                 selected = isSelected,
-                                onClick = { viewModel.setSound(sound) },
+                                onClick = { onSetSound(sound) },
                                 accentColor = ElectricAmber,
                             )
                         }
@@ -432,7 +460,7 @@ fun MetronomeScreen(viewModel: MetronomeViewModel = hiltViewModel()) {
                     )
                     Slider(
                         value = config.volume,
-                        onValueChange = viewModel::setVolume,
+                        onValueChange = onSetVolume,
                         valueRange = 0.1f..1f,
                         modifier = Modifier
                             .weight(1f)
@@ -587,5 +615,20 @@ private fun TempoCircularWheel(
                 cap = StrokeCap.Round,
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun MetronomeScreenPreview() {
+    GuitarLabTheme {
+        MetronomeContent(
+            config = MetronomeConfig(
+                bpm = 120,
+                timeSignature = TimeSignature.FOUR_FOUR,
+                volume = 0.8f,
+            ),
+            running = false,
+        )
     }
 }
