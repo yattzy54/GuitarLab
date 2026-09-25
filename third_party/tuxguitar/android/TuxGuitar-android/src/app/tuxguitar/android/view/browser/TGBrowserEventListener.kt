@@ -15,15 +15,16 @@ import app.tuxguitar.android.action.impl.browser.TGBrowserRefreshAction
 import app.tuxguitar.android.action.impl.browser.TGBrowserRemoveCollectionAction
 import app.tuxguitar.android.action.impl.browser.TGBrowserSaveElementAction
 import app.tuxguitar.android.browser.model.TGBrowserException
+import app.tuxguitar.android.fragment.impl.TGBrowserFragment
 import app.tuxguitar.event.TGEvent
 import app.tuxguitar.event.TGEventListener
 import app.tuxguitar.util.TGException
 import app.tuxguitar.util.TGSynchronizer
 
-class TGBrowserEventListener(private val browser: TGBrowserView) : TGEventListener {
+class TGBrowserEventListener(private val browser: TGBrowserFragment) : TGEventListener {
 
     override fun processEvent(event: TGEvent) {
-        TGSynchronizer.getInstance(this.browser.findContext()).executeLater {
+        TGSynchronizer.getInstance(browser.findContext()).executeLater {
             try {
                 val actionId = event.getAttribute(TGActionEvent.ATTRIBUTE_ACTION_ID) as String
                 when (event.eventType) {
@@ -50,15 +51,15 @@ class TGBrowserEventListener(private val browser: TGBrowserView) : TGEventListen
     @Throws(TGBrowserException::class)
     fun processPostExecution(id: String, refreshableActionIds: Array<String>) {
         when {
-            TGBrowserRefreshAction.NAME == id -> this.browser.refresh()
-            isRefreshableAction(id, refreshableActionIds) -> this.browser.requestRefresh()
+            TGBrowserRefreshAction.NAME == id -> browser.refresh()
+            isRefreshableAction(id, refreshableActionIds) -> browser.requestRefresh()
         }
     }
 
     @Throws(TGBrowserException::class)
     fun processError(id: String, refreshableActionIds: Array<String>) {
         if (TGBrowserRefreshAction.NAME == id || isRefreshableAction(id, refreshableActionIds)) {
-            this.browser.refresh()
+            browser.refresh()
         }
     }
 
@@ -66,7 +67,7 @@ class TGBrowserEventListener(private val browser: TGBrowserView) : TGEventListen
         private val REFRESHABLE_ACTIONS = arrayOf(
             TGBrowserCloseSessionAction.NAME,
             TGBrowserAddCollectionAction.NAME,
-            TGBrowserRemoveCollectionAction.NAME
+            TGBrowserRemoveCollectionAction.NAME,
         )
 
         private val REFRESHABLE_ASYNC_ACTIONS = arrayOf(
@@ -74,7 +75,7 @@ class TGBrowserEventListener(private val browser: TGBrowserView) : TGEventListen
             TGBrowserCdUpAction.NAME,
             TGBrowserCdElementAction.NAME,
             TGBrowserSaveElementAction.NAME,
-            TGBrowserLoadSessionAction.NAME
+            TGBrowserLoadSessionAction.NAME,
         )
     }
 }

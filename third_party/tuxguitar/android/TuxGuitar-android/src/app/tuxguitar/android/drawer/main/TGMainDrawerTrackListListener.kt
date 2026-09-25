@@ -5,12 +5,12 @@ import app.tuxguitar.event.TGEvent
 import app.tuxguitar.event.TGEventListener
 
 class TGMainDrawerTrackListListener(
-    private val adapter: TGMainDrawerTrackListAdapter
+    private val trackListState: TGMainDrawerTrackListState,
 ) : TGEventListener {
     fun processUpdateEvent(event: TGEvent) {
         when (event.getAttribute(TGUpdateEvent.PROPERTY_UPDATE_MODE) as Int) {
-            TGUpdateEvent.SELECTION -> adapter.processUpdateSelection()
-            TGUpdateEvent.SONG_UPDATED, TGUpdateEvent.SONG_LOADED -> adapter.processUpdateTracks()
+            TGUpdateEvent.SELECTION -> trackListState.processUpdateSelection()
+            TGUpdateEvent.SONG_UPDATED, TGUpdateEvent.SONG_LOADED -> trackListState.processUpdateTracks()
         }
     }
 

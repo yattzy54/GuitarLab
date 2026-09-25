@@ -1,21 +1,17 @@
 package app.tuxguitar.android.view.processing
 
-import android.app.ProgressDialog
 import app.tuxguitar.android.activity.TGActivity
 import app.tuxguitar.util.TGException
 import app.tuxguitar.util.TGSynchronizer
 
 class TGActionProcessingView(private val activity: TGActivity) {
-    private var dialog: ProgressDialog? = null
+    private var dialog: TGProcessingDialog? = null
     private var updating = false
     private var destroyed = false
 
     private fun createProgressDialog() {
         if (!isDestroyed() && !isVisible()) {
-            dialog = ProgressDialog(activity).apply {
-                setMessage("Processing")
-                isIndeterminate = true
-                setCancelable(false)
+            dialog = TGProcessingDialog(activity).apply {
                 show()
             }
         }

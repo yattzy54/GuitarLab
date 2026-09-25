@@ -1,6 +1,6 @@
 package app.tuxguitar.android.fragment
 
-abstract class TGCachedFragmentController<T : TGCachedFragment> : TGFragmentController<T> {
+abstract class TGCachedFragmentController<T : TGBaseFragment> : TGFragmentController<T> {
     @Volatile
     private var instance: T? = null
 
