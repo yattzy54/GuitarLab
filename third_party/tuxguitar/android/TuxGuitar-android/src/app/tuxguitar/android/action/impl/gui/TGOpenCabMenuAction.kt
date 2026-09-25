@@ -14,7 +14,7 @@ class TGOpenCabMenuAction(context: TGContext) : TGActionBase(context, NAME) {
         val selectableView = actionContext.getAttribute<View>(ATTRIBUTE_MENU_SELECTABLE_VIEW)
         val controller = actionContext.getAttribute<TGMenuController>(ATTRIBUTE_MENU_CONTROLLER)
         val activity = actionContext.getAttribute<TGActivity>(ATTRIBUTE_MENU_ACTIVITY)
-        activity.startActionMode(TGMenuCabCallBack(getContext(), controller, selectableView))
+        activity.requireActivity().startActionMode(TGMenuCabCallBack(getContext(), controller, selectableView))
     }
 
     companion object {

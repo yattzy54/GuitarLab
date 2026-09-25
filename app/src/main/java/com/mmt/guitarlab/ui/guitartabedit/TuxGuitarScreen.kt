@@ -1,109 +1,76 @@
 package com.mmt.guitarlab.ui.guitartabedit
 
-import android.content.ComponentName
-import android.content.Intent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import android.view.View
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
-import com.mmt.guitarlab.R
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.FragmentContainerView
 import app.tuxguitar.android.activity.TGActivity
 import app.tuxguitar.android.activity.TGReaderActivity
 
+/**
+ * Editor destination in the app's single-Activity NavHost. The legacy
+ * TuxGuitar editor engine (previously its own `TGActivity`) is embedded
+ * in-place as a Fragment hosted by [MainActivity]'s own
+ * `supportFragmentManager`, rather than launched as a separate Activity.
+ */
 @Composable
-fun TuxGuitarScreen() {
-    TuxGuitarLaunchScreen(
-        activityClass = TGActivity::class.java,
-        autoLaunch = true,
-    )
+fun TuxGuitarScreen(onFinish: () -> Unit = {}) {
+    TuxGuitarFragmentHost(activityClass = TGActivity::class.java, onFinish = onFinish)
 }
 
 @Composable
-fun TuxGuitarReaderScreen() {
-    TuxGuitarLaunchScreen(
-        activityClass = TGReaderActivity::class.java,
-        autoLaunch = false,
-    )
+fun TuxGuitarReaderScreen(onFinish: () -> Unit = {}) {
+    TuxGuitarFragmentHost(activityClass = TGReaderActivity::class.java, onFinish = onFinish)
 }
 
 @Preview(showBackground = true, backgroundColor = 0xFF0F141C)
 @Composable
-private fun TuxGuitarReaderScreenPreview() {
-    TuxGuitarReaderScreen()
+private fun TuxGuitarScreenPreview() {
+    // The real fragment needs a live FragmentActivity/TGContext graph that
+    // isn't available in layout preview, so the preview only verifies that
+    // this file's Composables declare and compile correctly.
 }
 
 @Composable
-private fun TuxGuitarLaunchScreen(
+private fun TuxGuitarFragmentHost(
     activityClass: Class<out TGActivity>,
-    autoLaunch: Boolean,
+    onFinish: () -> Unit,
 ) {
-    val context = LocalContext.current
+    val fragmentActivity = LocalContext.current as FragmentActivity
+    val fragmentTag = remember(activityClass) { "tuxguitar-editor-" + activityClass.name }
 
-    fun launchTuxGuitar() {
-        context.startActivity(
-            Intent().setComponent(
-                ComponentName(context, activityClass)
-            )
-        )
-    }
+    AndroidView(
+        modifier = Modifier.fillMaxSize(),
+        factory = { context ->
+            FragmentContainerView(context).apply {
+                id = View.generateViewId()
+            }
+        },
+        update = { containerView ->
+            val fragmentManager = fragmentActivity.supportFragmentManager
+            val existing = fragmentManager.findFragmentByTag(fragmentTag) as? TGActivity
+            val fragment = existing ?: activityClass.getDeclaredConstructor().newInstance().also {
+                fragmentManager.beginTransaction()
+                    .replace(containerView.id, it, fragmentTag)
+                    .commitNowAllowingStateLoss()
+            }
+            fragment.onFinishRequested = onFinish
+        },
+    )
 
-    if (autoLaunch) {
-        LaunchedEffect(Unit) {
-            launchTuxGuitar()
-        }
-    }
-
-    if (autoLaunch) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFF0F141C)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = stringResource(R.string.tab_tuxguitar),
-                color = Color.White,
-            )
-        }
-    } else {
-        Scaffold(
-            containerColor = Color(0xFF0F141C),
-        ) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(24.dp),
-                verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    text = stringResource(R.string.tab_tuxguitar_reader),
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = Color.White,
-                )
-                Text(
-                    text = stringResource(R.string.tuxguitar_reader_description),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF94A3B8),
-                    modifier = Modifier.padding(top = 8.dp, bottom = 20.dp),
-                )
-                Button(onClick = ::launchTuxGuitar) {
-                    Text(stringResource(R.string.open_tuxguitar_reader))
+    DisposableEffect(fragmentTag) {
+        onDispose {
+            val fragmentManager = fragmentActivity.supportFragmentManager
+            fragmentManager.findFragmentByTag(fragmentTag)?.let { fragment ->
+                if (!fragmentManager.isStateSaved) {
+                    fragmentManager.beginTransaction().remove(fragment).commitNowAllowingStateLoss()
                 }
             }
         }

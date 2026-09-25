@@ -1,10 +1,11 @@
 package app.tuxguitar.android.activity
 
 import androidx.appcompat.app.ActionBar
+import androidx.appcompat.app.AppCompatActivity
 
 class TGActivityActionBarController(private val activity: TGActivity) {
     private val actionBarInternal: ActionBar?
-        get() = activity.supportActionBar
+        get() = (activity.requireActivity() as AppCompatActivity).supportActionBar
 
     fun getActionBar(): ActionBar? = actionBarInternal
     fun setHomeButtonEnabled(enabled: Boolean) { actionBarInternal?.setHomeButtonEnabled(enabled) }

@@ -26,7 +26,7 @@ class TGMainDrawer(context: Context, attrs: AttributeSet?) : RelativeLayout(cont
 
     fun findContext(): TGContext = TGApplicationUtil.findContext(this)
 
-    fun findActivity(): TGActivity = context as TGActivity
+    fun findActivity(): TGActivity = TGActivity.requireCurrent()
 
     override fun onFinishInflate() {
         super.onFinishInflate()

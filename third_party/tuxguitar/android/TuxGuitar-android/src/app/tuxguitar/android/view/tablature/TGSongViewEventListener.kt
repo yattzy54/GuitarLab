@@ -60,7 +60,7 @@ class TGSongViewEventListener(private val songView: TGSongViewController) : TGEv
     private fun requestTempoDisplayUpdate() {
         val activity: TGActivity? = TGActivityController.getInstance(this.songView.context).activity
         if (activity != null) {
-            activity.runOnUiThread {
+            activity.requireActivity().runOnUiThread {
                 TGMainMenu.getInstance(this.songView.context).updateTempoDisplay()
             }
         }

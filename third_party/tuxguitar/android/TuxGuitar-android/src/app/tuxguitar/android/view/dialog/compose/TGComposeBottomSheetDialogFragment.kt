@@ -91,7 +91,7 @@ abstract class TGComposeBottomSheetDialogFragment : DialogFragment() {
 
     fun <T> getAttribute(key: String): T? = getDialogContext()?.getAttribute(key)
 
-    fun findActivity(): TGActivity = activity as TGActivity
+    fun findActivity(): TGActivity = TGActivity.requireCurrent()
 
     fun findContext(): TGContext = TGApplicationUtil.findContext(activity!!)
 

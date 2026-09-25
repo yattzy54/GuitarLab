@@ -44,7 +44,7 @@ class TGToggleStyledIconHelper(private val context: TGContext) : TGEventListener
             return styledIcons[style]
         }
         val currentActivity = activity ?: return null
-        val typedArray: TypedArray = currentActivity.obtainStyledAttributes(
+        val typedArray: TypedArray = currentActivity.requireContext().obtainStyledAttributes(
             style,
             intArrayOf(android.R.attr.src)
         )

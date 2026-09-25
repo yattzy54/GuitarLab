@@ -22,7 +22,7 @@ class TGNavigationManager(private val activity: TGActivity) {
     }
 
     fun processLoadFragment(fragment: TGNavigationFragment) {
-        activity.supportFragmentManager.beginTransaction()
+        activity.childFragmentManager.beginTransaction()
             .replace(R.id.content_frame, fragment.controller!!.getFragment())
             .commitAllowingStateLoss()
         var backFrom: TGNavigationFragment? = null

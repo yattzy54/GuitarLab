@@ -51,9 +51,9 @@ abstract class TGBaseFragment : Fragment() {
         createdView: View?,
     ): View? = createdView
 
-    fun findContext(): TGContext = requireActivity().let { it as TGActivity }.findContext()
+    fun findContext(): TGContext = findActivity().findContext()
 
-    fun findActivity(): TGActivity = requireActivity() as TGActivity
+    fun findActivity(): TGActivity = TGActivity.requireCurrent()
 
     fun findActionBar(): TGActivityActionBarController = findActivity().getActionBarController()
 

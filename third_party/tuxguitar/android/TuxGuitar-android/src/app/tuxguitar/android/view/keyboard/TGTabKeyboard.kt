@@ -96,7 +96,7 @@ class TGTabKeyboard @JvmOverloads constructor(
         }
     }
 
-    private fun findActivity(): TGActivity = context as TGActivity
+    private fun findActivity(): TGActivity = TGActivity.requireCurrent()
 
     private fun findContext(): TGContext = TGApplicationUtil.findContext(this)
 }
