@@ -77,7 +77,6 @@ dependencies {
     implementation("androidx.core:core-ktx:1.19.1")
     implementation("androidx.multidex:multidex:2.0.1")
     implementation("androidx.appcompat:appcompat:1.0.0")
-    implementation("androidx.preference:preference:1.1.0")
     implementation("com.google.android.material:material:1.1.0")
     implementation("org.apache.commons:commons-compress:1.26.0")
 }

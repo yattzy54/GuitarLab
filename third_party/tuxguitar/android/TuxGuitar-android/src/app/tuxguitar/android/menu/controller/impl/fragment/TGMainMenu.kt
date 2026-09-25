@@ -84,7 +84,7 @@ class TGMainMenu private constructor(private val context: TGContext) : TGMenuCon
         menu.findItem(R.id.action_menu_transport)!!
             .setOnMenuItemClickListener(createContextMenuActionProcessor(TGTransportMenu(activity)))
         menu.findItem(R.id.action_menu_settings)!!
-            .setOnMenuItemClickListener(createFragmentActionProcessor(TGPreferencesFragmentController()))
+            .setOnMenuItemClickListener(createFragmentActionProcessor(TGPreferencesFragmentController.getInstance(context)))
         menu.findItem(R.id.action_songsterr_import)!!
             .setOnMenuItemClickListener(MenuItem.OnMenuItemClickListener {
                 activity.startActivity(

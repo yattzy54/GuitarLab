@@ -2,101 +2,106 @@ package app.tuxguitar.android.fragment.impl
 
 import android.content.SharedPreferences
 import android.os.Bundle
-import androidx.preference.CheckBoxPreference
-import androidx.preference.ListPreference
-import androidx.preference.Preference
-import androidx.preference.PreferenceFragmentCompat
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import app.tuxguitar.android.R
 import app.tuxguitar.android.action.impl.storage.TGStorageLoadSettingsAction
 import app.tuxguitar.android.action.impl.transport.TGTransportLoadSettingsAction
-import app.tuxguitar.android.activity.TGActivity
+import app.tuxguitar.android.fragment.TGComposeCachedFragment
 import app.tuxguitar.android.properties.TGSharedPreferencesUtil
 import app.tuxguitar.android.storage.TGStorageProperties
 import app.tuxguitar.android.transport.TGTransportProperties
+import app.tuxguitar.android.view.preferences.TGPreferencesOutputPortOption
+import app.tuxguitar.android.view.preferences.TGPreferencesScreen
 import app.tuxguitar.editor.action.TGActionProcessor
-import app.tuxguitar.player.base.MidiOutputPort
 import app.tuxguitar.player.base.MidiPlayer
-import app.tuxguitar.util.TGContext
 
-class TGPreferencesFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedPreferenceChangeListener {
-    private var updateActionsMap: MutableMap<String, String>? = null
+class TGPreferencesFragment : TGComposeCachedFragment() {
+    private lateinit var sharedPreferences: SharedPreferences
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-    }
+    private var useCollectionBrowser by mutableStateOf(false)
+    private val outputPortOptions = mutableStateListOf<TGPreferencesOutputPortOption>()
+    private var selectedOutputPortKey by mutableStateOf<String?>(null)
+    private var outputPortSummary by mutableStateOf("")
 
-    override fun onDestroy() {
-        preferenceScreen.sharedPreferences?.unregisterOnSharedPreferenceChangeListener(this)
-        super.onDestroy()
-    }
-
-    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        preferenceManager.sharedPreferencesName = TGSharedPreferencesUtil.getSharedPreferencesName(activity, MODULE, RESOURCE)
-        addPreferencesFromResource(R.xml.preferences_main)
-        preferenceScreen.sharedPreferences?.registerOnSharedPreferenceChangeListener(this)
-        createUpdateActionsMap()
-        createSafPreferences()
-        createOutputPortPreferences()
-    }
-
-    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences, key: String?) {
-        val action = updateActionsMap?.get(key ?: return) ?: return
-        TGActionProcessor(findContext(), action).process()
-    }
-
-    fun createUpdateActionsMap() {
-        updateActionsMap = hashMapOf(
-            TGTransportProperties.PROPERTY_MIDI_OUTPUT_PORT to TGTransportLoadSettingsAction.NAME,
-            TGStorageProperties.PROPERTY_COLLECTION_BROWSER to TGStorageLoadSettingsAction.NAME,
+    override fun onPostCreate(savedInstanceState: Bundle?) {
+        attachInstance()
+        createActionBar(true, false, R.string.action_menu_settings)
+        sharedPreferences = findActivity().getSharedPreferences(
+            TGSharedPreferencesUtil.getSharedPreferencesName(findActivity(), MODULE, RESOURCE),
+            0,
         )
+        loadCollectionBrowserPreference()
+        loadOutputPortPreferences()
     }
 
-    fun createSafPreferences() {
-        val checkBoxPreference = findPreference<CheckBoxPreference>(TGStorageProperties.PROPERTY_COLLECTION_BROWSER)
-        checkBoxPreference?.isChecked = TGStorageProperties(findContext()).isUseCollectionBrowser()
+    fun attachInstance() {
+        TGPreferencesFragmentController.getInstance(findContext()).attachInstance(this)
     }
 
-    fun createOutputPortPreferences() {
+    fun loadCollectionBrowserPreference() {
+        useCollectionBrowser = TGStorageProperties(findContext()).isUseCollectionBrowser()
+    }
+
+    fun loadOutputPortPreferences() {
         var currentValue: String? = null
         var currentLabel: String? = null
-        val entryNames = ArrayList<String>()
-        val entryValues = ArrayList<String>()
+        val options = mutableListOf<TGPreferencesOutputPortOption>()
 
         val midiPlayer = MidiPlayer.getInstance(findContext())
-        val outputPorts = midiPlayer.listOutputPorts()
-        for (outputPort in outputPorts) {
-            entryNames.add(outputPort.name)
-            entryValues.add(outputPort.key)
+        for (outputPort in midiPlayer.listOutputPorts()) {
+            options.add(TGPreferencesOutputPortOption(outputPort.key, outputPort.name))
             if (midiPlayer.isOutputPortOpen(outputPort.key)) {
                 currentValue = outputPort.key
                 currentLabel = outputPort.name
             }
         }
 
-        val listPreference = findPreference<ListPreference>(TGTransportProperties.PROPERTY_MIDI_OUTPUT_PORT)
-        listPreference?.entries = entryNames.toTypedArray<CharSequence>()
-        listPreference?.entryValues = entryValues.toTypedArray<CharSequence>()
-        if (currentValue != null) {
-            listPreference?.value = currentValue
-        }
-        listPreference?.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { preference, value ->
-            val index = if (value != null) entryValues.indexOf(value.toString()) else -1
-            val selectedLabel = if (index >= 0) entryNames[index] else null
-            updatePreferenceSummary(preference, selectedLabel, R.string.preferences_midi_output_port_summary, R.string.preferences_midi_output_port_summary_empty)
-            true
-        }
-        updatePreferenceSummary(listPreference, currentLabel, R.string.preferences_midi_output_port_summary, R.string.preferences_midi_output_port_summary_empty)
+        outputPortOptions.clear()
+        outputPortOptions.addAll(options)
+        selectedOutputPortKey = currentValue
+        outputPortSummary = createOutputPortSummary(currentLabel)
     }
 
-    fun updatePreferenceSummary(preference: Preference?, label: String?, summaryId: Int, emptySummaryId: Int?) {
-        if (label != null && label.isNotEmpty()) {
-            preference?.summary = requireActivity().getString(summaryId, label)
-        } else if (emptySummaryId != null) {
-            preference?.summary = requireActivity().getString(emptySummaryId)
+    fun createOutputPortSummary(label: String?): String =
+        if (!label.isNullOrEmpty()) {
+            findActivity().getString(R.string.preferences_midi_output_port_summary, label)
+        } else {
+            findActivity().getString(R.string.preferences_midi_output_port_summary_empty)
         }
+
+    fun onUseCollectionBrowserChange(checked: Boolean) {
+        useCollectionBrowser = checked
+        sharedPreferences.edit().putBoolean(TGStorageProperties.PROPERTY_COLLECTION_BROWSER, checked).apply()
+        TGActionProcessor(findContext(), TGStorageLoadSettingsAction.NAME).process()
     }
 
-    fun findContext(): TGContext = (activity as TGActivity).findContext()
+    fun onOutputPortSelected(option: TGPreferencesOutputPortOption) {
+        selectedOutputPortKey = option.key
+        outputPortSummary = createOutputPortSummary(option.label)
+        sharedPreferences.edit().putString(TGTransportProperties.PROPERTY_MIDI_OUTPUT_PORT, option.key).apply()
+        TGActionProcessor(findContext(), TGTransportLoadSettingsAction.NAME).process()
+    }
+
+    @Composable
+    override fun FragmentContent() {
+        TGPreferencesScreen(
+            useCollectionBrowser = useCollectionBrowser,
+            onUseCollectionBrowserChange = ::onUseCollectionBrowserChange,
+            outputPortOptions = outputPortOptions,
+            selectedOutputPortKey = selectedOutputPortKey,
+            onOutputPortSelected = ::onOutputPortSelected,
+            generalCategoryTitle = getString(R.string.preferences_general_title),
+            collectionBrowserTitle = getString(R.string.preferences_general_use_collection_browser_title),
+            collectionBrowserSummary = getString(R.string.preferences_general_use_collection_browser_summary),
+            soundCategoryTitle = getString(R.string.preferences_sound_category_title),
+            outputPortTitle = getString(R.string.preferences_midi_output_port_title),
+            outputPortSummary = outputPortSummary,
+        )
+    }
 
     companion object {
         const val MODULE = "tuxguitar"
