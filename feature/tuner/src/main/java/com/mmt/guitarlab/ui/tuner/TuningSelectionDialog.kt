@@ -21,14 +21,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarBorder
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,6 +55,7 @@ import com.mmt.guitarlab.core.ui.theme.StudioTextMuted
 import com.mmt.guitarlab.core.ui.theme.StudioTextPrimary
 import com.mmt.guitarlab.core.ui.theme.StudioTextSecondary
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TuningSelectionDialog(
     tunings: List<Tuning>,
@@ -75,165 +78,178 @@ fun TuningSelectionDialog(
         }
     }
 
-    AlertDialog(
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = sheetState,
         containerColor = StudioCardBg,
-        title = {
-            Text(
-                "Guitar Tuning Presets",
-                fontWeight = FontWeight.Bold,
-                color = StudioTextPrimary,
-            )
-        },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                // Chromatic Mode Button inside Guitar tuning presets
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "Guitar Tuning Presets",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = StudioTextPrimary,
+                )
+                TextButton(onClick = onDismiss) {
+                    Text("Close", color = ElectricAmber, fontWeight = FontWeight.Bold)
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // Chromatic Mode Button inside Guitar tuning presets
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(
+                        if (isChromatic) Color(0xFF382600) else StudioCardElevated
+                    )
+                    .border(
+                        1.dp,
+                        if (isChromatic) ElectricAmber else StudioCardBorder,
+                        RoundedCornerShape(12.dp),
+                    )
+                    .clickable { onToggleChromatic() }
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(
-                            if (isChromatic) Color(0xFF382600) else StudioCardElevated
-                        )
-                        .border(
-                            1.dp,
-                            if (isChromatic) ElectricAmber else StudioCardBorder,
-                            RoundedCornerShape(12.dp),
-                        )
-                        .clickable { onToggleChromatic() }
-                        .padding(horizontal = 14.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.weight(1f),
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MusicNote,
-                            contentDescription = "Chromatic Tuner",
-                            tint = if (isChromatic) ElectricAmber else StudioTextSecondary,
-                            modifier = Modifier.size(24.dp),
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = "Хроматический режим",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = if (isChromatic) ElectricAmber else StudioTextPrimary,
-                            )
-                            Text(
-                                text = "Определение любой ноты без струн",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = StudioTextSecondary,
-                            )
-                        }
-                    }
-                    if (isChromatic) {
+                    Icon(
+                        imageVector = Icons.Default.MusicNote,
+                        contentDescription = "Chromatic Tuner",
+                        tint = if (isChromatic) ElectricAmber else StudioTextSecondary,
+                        modifier = Modifier.size(24.dp),
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Column {
                         Text(
-                            text = "АКТИВЕН",
-                            style = MaterialTheme.typography.labelSmall,
+                            text = "Хроматический режим",
+                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
-                            color = ElectricAmber,
+                            color = if (isChromatic) ElectricAmber else StudioTextPrimary,
                         )
-                    }
-                }
-
-                Spacer(Modifier.height(14.dp))
-
-                ScrollableTabRow(
-                    selectedTabIndex = categories.indexOf(selectedCategory).coerceAtLeast(0),
-                    edgePadding = 0.dp,
-                    containerColor = StudioDarkBg,
-                    contentColor = ElectricAmber,
-                ) {
-                    categories.forEach { cat ->
-                        Tab(
-                            selected = cat == selectedCategory,
-                            onClick = { selectedCategory = cat },
-                            text = { Text(cat, fontWeight = FontWeight.SemiBold) },
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(12.dp))
-
-                if (filteredTunings.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
                         Text(
-                            "No presets found in this category.",
+                            text = "Определение любой ноты без струн",
+                            style = MaterialTheme.typography.bodySmall,
                             color = StudioTextSecondary,
                         )
                     }
-                } else {
-                    LazyColumn(modifier = Modifier.height(300.dp)) {
-                        items(filteredTunings) { tuning ->
-                            val isSelected = tuning.id == selectedId
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(
-                                        if (isSelected) Color(0xFF382600) else StudioCardElevated,
-                                    )
-                                    .border(
-                                        1.dp,
-                                        if (isSelected) ElectricAmber else StudioCardBorder,
-                                        RoundedCornerShape(12.dp),
-                                    )
-                                    .clickable { onSelect(tuning) }
-                                    .padding(horizontal = 14.dp, vertical = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween,
+                }
+                if (isChromatic) {
+                    Text(
+                        text = "АКТИВЕН",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = ElectricAmber,
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            ScrollableTabRow(
+                selectedTabIndex = categories.indexOf(selectedCategory).coerceAtLeast(0),
+                edgePadding = 0.dp,
+                containerColor = StudioDarkBg,
+                contentColor = ElectricAmber,
+            ) {
+                categories.forEach { cat ->
+                    Tab(
+                        selected = cat == selectedCategory,
+                        onClick = { selectedCategory = cat },
+                        text = { Text(cat, fontWeight = FontWeight.SemiBold) },
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            if (filteredTunings.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        "No presets found in this category.",
+                        color = StudioTextSecondary,
+                    )
+                }
+            } else {
+                LazyColumn(modifier = Modifier.height(300.dp)) {
+                    items(filteredTunings) { tuning ->
+                        val isSelected = tuning.id == selectedId
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(
+                                    if (isSelected) Color(0xFF382600) else StudioCardElevated,
+                                )
+                                .border(
+                                    1.dp,
+                                    if (isSelected) ElectricAmber else StudioCardBorder,
+                                    RoundedCornerShape(12.dp),
+                                )
+                                .clickable { onSelect(tuning) }
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = tuning.name,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isSelected) ElectricAmber else StudioTextPrimary,
+                                )
+                                Text(
+                                    text = tuning.notes.joinToString("  ") { it.noteName },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = StudioTextSecondary,
+                                )
+                            }
+                            IconButton(
+                                onClick = { onToggleFavorite(tuning.id) },
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = tuning.name,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (isSelected) ElectricAmber else StudioTextPrimary,
-                                    )
-                                    Text(
-                                        text = tuning.notes.joinToString("  ") { it.noteName },
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = StudioTextSecondary,
-                                    )
-                                }
-                                IconButton(
-                                    onClick = { onToggleFavorite(tuning.id) },
-                                ) {
-                                    Icon(
-                                        imageVector = if (tuning.isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
-                                        contentDescription = "Favorite",
-                                        tint = if (tuning.isFavorite) ElectricAmber else StudioTextMuted,
-                                    )
-                                }
+                                Icon(
+                                    imageVector = if (tuning.isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                                    contentDescription = "Favorite",
+                                    tint = if (tuning.isFavorite) ElectricAmber else StudioTextMuted,
+                                )
                             }
                         }
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Close", color = ElectricAmber, fontWeight = FontWeight.Bold)
-            }
-        },
-    )
+
+            Spacer(Modifier.height(32.dp))
+        }
+    }
 }
 
 @Preview(showBackground = true, backgroundColor = 0xFF121212)
 @Composable
 private fun TuningSelectionDialogPreview() {
     GuitarLabTheme {
-        // Создаем тестовые данные для превью
         val sampleTunings = listOf(
             Tuning(
                 id = "standard",

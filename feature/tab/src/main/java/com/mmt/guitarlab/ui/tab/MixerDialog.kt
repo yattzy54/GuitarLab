@@ -16,15 +16,17 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GraphicEq
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,9 +38,14 @@ import com.mmt.guitarlab.domain.model.InstrumentType
 import com.mmt.guitarlab.domain.model.TabScore
 import com.mmt.guitarlab.domain.model.TabTrack
 import com.mmt.guitarlab.domain.model.TuxGuitarSoundBank
+import com.mmt.guitarlab.core.ui.theme.ElectricAmber
 import com.mmt.guitarlab.core.ui.theme.GuitarLabTheme
+import com.mmt.guitarlab.core.ui.theme.StudioCardBg
 import com.mmt.guitarlab.core.ui.theme.StudioDarkBg
+import com.mmt.guitarlab.core.ui.theme.StudioTextPrimary
+import com.mmt.guitarlab.core.ui.theme.StudioTextSecondary
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
  fun MixerDialog(
     score: TabScore,
@@ -50,10 +57,36 @@ import com.mmt.guitarlab.core.ui.theme.StudioDarkBg
     onSoloToggle: (index: Int) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    AlertDialog(
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = { Text("TuxGuitar Audio Mixer", fontWeight = FontWeight.Bold) },
-        text = {
+        sheetState = sheetState,
+        containerColor = StudioCardBg,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "TuxGuitar Audio Mixer",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = StudioTextPrimary,
+                )
+                TextButton(onClick = onDismiss) {
+                    Text("Close", color = ElectricAmber, fontWeight = FontWeight.Bold)
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -146,13 +179,10 @@ import com.mmt.guitarlab.core.ui.theme.StudioDarkBg
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Close")
-            }
-        },
-    )
+
+            Spacer(Modifier.height(32.dp))
+        }
+    }
 }
 
 @Preview(showBackground = true, backgroundColor = 0xFF121212)

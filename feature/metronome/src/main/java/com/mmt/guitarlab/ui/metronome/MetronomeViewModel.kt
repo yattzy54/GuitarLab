@@ -10,6 +10,7 @@ import com.mmt.guitarlab.domain.model.MetronomeSound
 import com.mmt.guitarlab.domain.model.TimeSignature
 import com.mmt.guitarlab.domain.model.TrainerIntervalKind
 import com.mmt.guitarlab.domain.repository.SettingsRepository
+import com.mmt.guitarlab.domain.usecase.TapTempoUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +23,7 @@ import javax.inject.Inject
 class MetronomeViewModel @Inject constructor(
     private val engine: MetronomeEngine,
     private val settings: SettingsRepository,
+    private val tapTempoUseCase: TapTempoUseCase,
 ) : ViewModel() {
 
     val config: StateFlow<MetronomeConfig> = engine.config
@@ -32,8 +34,6 @@ class MetronomeViewModel @Inject constructor(
 
     val running: StateFlow<Boolean> = engine.isRunning
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
-
-    private val tapTimestamps = mutableListOf<Long>()
 
     init {
         viewModelScope.launch {
@@ -46,21 +46,8 @@ class MetronomeViewModel @Inject constructor(
     fun setBpm(bpm: Int) = engine.updateConfig { it.copy(bpm = bpm.coerceIn(MetronomeConfig.MIN_BPM, MetronomeConfig.MAX_BPM)) }
 
     fun onTapTempo() {
-        val now = System.currentTimeMillis()
-        if (tapTimestamps.isNotEmpty() && now - tapTimestamps.last() > 2500) {
-            tapTimestamps.clear()
-        }
-        tapTimestamps.add(now)
-        if (tapTimestamps.size > 5) {
-            tapTimestamps.removeAt(0)
-        }
-        if (tapTimestamps.size >= 2) {
-            val intervals = tapTimestamps.zipWithNext { a, b -> b - a }
-            val avgInterval = intervals.average()
-            if (avgInterval > 0) {
-                val bpm = (60_000.0 / avgInterval).toInt().coerceIn(MetronomeConfig.MIN_BPM, MetronomeConfig.MAX_BPM)
-                setBpm(bpm)
-            }
+        tapTempoUseCase.recordTap()?.let { bpm ->
+            setBpm(bpm)
         }
     }
 
