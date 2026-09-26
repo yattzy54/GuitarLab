@@ -116,7 +116,7 @@ dependencies {
     implementation(project(":feature:tuxguitar-channels"))
     implementation(project(":feature:tuxguitar-preferences"))
     implementation(project(":feature:tuxguitar-editor"))
-    implementation(project(":tuxguitar-android"))
+    implementation(project(":core:tuxguitar-android"))
     implementation("androidx.multidex:multidex:2.0.1")
     implementation("androidx.appcompat:appcompat:1.8.0")
     implementation("androidx.preference:preference:1.2.1")

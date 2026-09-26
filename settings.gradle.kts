@@ -40,6 +40,7 @@ include(":feature:tuxguitar-browser")
 include(":feature:tuxguitar-channels")
 include(":feature:tuxguitar-preferences")
 include(":feature:tuxguitar-editor")
-include(":tuxguitar-android")
-project(":tuxguitar-android").projectDir =
-    file("third_party/tuxguitar/android/TuxGuitar-android")
+include(":core:tuxguitar-android")
+include(":core:tuxguitar-common")
+project(":core:tuxguitar-android").projectDir =
+    file("core/tuxguitar-android")

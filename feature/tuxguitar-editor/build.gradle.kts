@@ -39,7 +39,7 @@ dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:tuxguitar"))
     implementation(project(":core:tuxguitar-engine"))
-    implementation(project(":tuxguitar-android"))
+    implementation(project(":core:tuxguitar-android"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
