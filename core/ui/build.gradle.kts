@@ -42,6 +42,7 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation("com.google.android.material:material:1.14.0")
     testImplementation(libs.junit)
 }
