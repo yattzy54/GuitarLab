@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
@@ -26,9 +28,12 @@ android {
 
 dependencies {
     implementation(project(":core:ui"))
-    implementation(libs.androidx.compose.material.icons.extended)
+    implementation(project(":core:audio"))
+    implementation(project(":core:model"))
+    implementation(project(":core:database"))
+    implementation(project(":core:parser"))
+    implementation(project(":core:data"))
     implementation(project(":core:tuxguitar-engine"))
-    implementation(project(":core:tuxguitar-android"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
@@ -40,25 +45,11 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.extended)
 }
 
 kotlin {
     compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        jvmTarget.set(JvmTarget.JVM_17)
     }
-}
-dependencies {
-    implementation(project(":core:ui"))
-    implementation(libs.androidx.compose.material.icons.extended)
-    implementation(project(":core:audio"))
-    implementation(project(":core:model"))
-    implementation(project(":core:ui"))
-    implementation(project(":core:audio"))
-    implementation(project(":core:database"))
-    implementation(project(":core:parser"))
-    implementation(project(":core:data"))
-    implementation(libs.androidx.compose.material.icons.extended)
-    implementation(project(":core:database"))
-    implementation(project(":core:parser"))
-    implementation(project(":core:data"))
 }

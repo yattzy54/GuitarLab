@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<app.tuxguitar.android.drawer.main.TGMainDrawer
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent"
+	android:layout_height="wrap_content"
+    style="?attr/mainDrawerStyle">
+
+    <RelativeLayout
+        android:id="@+id/main_drawer_bottom"
+        style="?attr/mainDrawerTransportPanelStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true">
+
+        <ImageButton
+            android:id="@+id/main_drawer_transport_mixer"
+            style="?attr/mainDrawerImageButtonMixerStyle"
+            android:layout_alignParentLeft="true"
+            android:contentDescription="@string/action_view_channel_list"
+            android:gravity="left"/>
+
+        <ImageButton
+            android:id="@+id/main_drawer_song_info"
+            style="?attr/mainDrawerImageButtonInfoStyle"
+            android:layout_alignParentRight="true"
+            android:contentDescription="@string/action_change_properties"
+            android:gravity="right"/>
+    </RelativeLayout>
+
+    <FrameLayout
+        android:id="@+id/main_drawer_compose_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/main_drawer_bottom"
+        android:layout_alignParentTop="true"/>
+
+</app.tuxguitar.android.drawer.main.TGMainDrawer>
