@@ -1,2 +1,5 @@
 -keep class com.mmt.guitarlab.** { *; }
 -dontwarn dagger.**
+-dontwarn com.github.luben.zstd.**
+-dontwarn org.tukaani.xz.**
+-dontwarn org.apache.commons.compress.**

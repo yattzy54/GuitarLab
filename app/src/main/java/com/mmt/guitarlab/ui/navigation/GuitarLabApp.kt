@@ -85,9 +85,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import app.tuxguitar.android.ui.editor.EditorHost
 import com.mmt.guitarlab.config.AppFlavorConfig
-import com.mmt.guitarlab.config.FlavorType
-import com.mmt.guitarlab.ui.components.Studio3DAccent
-import com.mmt.guitarlab.ui.components.Studio3DIconBadge
+import com.mmt.guitarlab.core.ui.components.Studio3DAccent
+import com.mmt.guitarlab.core.ui.components.Studio3DIconBadge
 import com.mmt.guitarlab.ui.drums.DrumsScreen
 import com.mmt.guitarlab.ui.metronome.AutoSpeedTrainerScreen
 import com.mmt.guitarlab.ui.metronome.MetronomeScreen
@@ -141,7 +140,7 @@ enum class AppDest(
     ;
 
     companion object {
-        fun availableDestinations(isTabsFlavor: Boolean = AppFlavorConfig.isTabsFlavor): List<AppDest> {
+        fun availableDestinations(isTabsFlavor: Boolean = AppFlavorConfig().isTabsFlavor): List<AppDest> {
             return if (isTabsFlavor) {
                 // В новом флейворе показывай только эти 3 раздела (Табы, GuitarTabEdit, TabLab)
                 entries.filter { it.isTabFeature }
@@ -156,7 +155,8 @@ enum class AppDest(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GuitarLabApp(editorHost: EditorHost) {
-    var isTabsFlavor by remember { mutableStateOf(AppFlavorConfig.isTabsFlavor) }
+    val flavorConfig = AppFlavorConfig()
+    var isTabsFlavor by remember { mutableStateOf(flavorConfig.isTabsFlavor) }
     val availableDests = remember(isTabsFlavor) { AppDest.availableDestinations(isTabsFlavor) }
     val defaultStartDest = remember(isTabsFlavor) {
         if (isTabsFlavor) AppDest.Tabs.route else AppDest.Tuner.route

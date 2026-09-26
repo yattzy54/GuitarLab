@@ -26,6 +26,7 @@ android {
 
 dependencies {
     implementation(project(":core:ui"))
+    implementation(libs.androidx.compose.material.icons.extended)
     implementation(project(":core:tuxguitar-engine"))
     implementation(project(":tuxguitar-android"))
     implementation(libs.androidx.core.ktx)
@@ -39,4 +40,25 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
+dependencies {
+    implementation(project(":core:ui"))
+    implementation(libs.androidx.compose.material.icons.extended)
+    implementation(project(":core:audio"))
+    implementation(project(":core:model"))
+    implementation(project(":core:ui"))
+    implementation(project(":core:audio"))
+    implementation(project(":core:database"))
+    implementation(project(":core:parser"))
+    implementation(project(":core:data"))
+    implementation(libs.androidx.compose.material.icons.extended)
+    implementation(project(":core:database"))
+    implementation(project(":core:parser"))
+    implementation(project(":core:data"))
 }
