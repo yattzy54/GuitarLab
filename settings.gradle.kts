@@ -23,6 +23,17 @@ dependencyResolutionManagement {
 rootProject.name = "GuitarLab"
 include(":app")
 include(":core:ui")
+include(":core:tuxguitar")
+include(":core:tuxguitar-engine")
+include(":feature:settings")
+include(":feature:tab")
+include(":feature:metronome")
+include(":feature:tuner")
+include(":feature:drums")
+include(":feature:practice")
+include(":feature:tuxguitar-browser")
+include(":feature:tuxguitar-channels")
+include(":feature:tuxguitar-preferences")
 include(":tuxguitar-android")
 project(":tuxguitar-android").projectDir =
     file("third_party/tuxguitar/android/TuxGuitar-android")

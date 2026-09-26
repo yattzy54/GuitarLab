@@ -90,6 +90,7 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.core:core-ktx:1.19.1")
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("androidx.multidex:multidex:2.0.1")
     implementation("androidx.appcompat:appcompat:1.0.0")
     implementation("com.google.android.material:material:1.1.0")

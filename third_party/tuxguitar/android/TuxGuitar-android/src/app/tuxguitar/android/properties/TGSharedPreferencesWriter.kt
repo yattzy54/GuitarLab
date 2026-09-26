@@ -11,10 +11,8 @@ class TGSharedPreferencesWriter(context: Context, module: String, resource: Stri
     @Throws(TGPropertiesException::class)
     override fun writeProperties(properties: TGProperties, module: String) {
         val map = (properties as TGPropertiesImpl).getMap()
-        val editor = getSharedPreferences().edit()
         for ((key, value) in map) {
-            editor.putString(key, value)
+            putString(key, value)
         }
-        editor.commit()
     }
 }

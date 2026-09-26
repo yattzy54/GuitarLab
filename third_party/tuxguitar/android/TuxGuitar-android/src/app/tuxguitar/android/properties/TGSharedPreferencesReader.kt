@@ -24,7 +24,7 @@ class TGSharedPreferencesReader(
     @Throws(TGPropertiesException::class)
     fun readStoredProperties(properties: TGProperties, module: String) {
         val map = (properties as TGPropertiesImpl).getMap()
-        for ((key, value) in getSharedPreferences().all) {
+        for ((key, value) in getAll()) {
             map[key] = value?.toString()
         }
     }

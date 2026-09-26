@@ -1,14 +1,11 @@
 package app.tuxguitar.android.properties
 
 import android.content.Context
-import android.content.SharedPreferences
 
 abstract class TGSharedPreferencesHandler(
-    private val context: Context,
-    private val module: String,
-    private val resource: String,
-) {
-    fun getSharedPreferences(): SharedPreferences {
-        return context.getSharedPreferences(TGSharedPreferencesUtil.getSharedPreferencesName(context, module, resource), 0)
-    }
+    context: Context,
+    module: String,
+    resource: String,
+) : TGDataStoreHandler(context, module, resource) {
+    // Kept for binary/source compatibility with legacy plugins
 }
