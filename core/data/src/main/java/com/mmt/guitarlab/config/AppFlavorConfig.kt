@@ -5,7 +5,12 @@ import javax.inject.Singleton
 
 @Singleton
 class AppFlavorConfig @Inject constructor() {
-    val flavorType: String = "standard"
-    val isTabsFlavor: Boolean = false
-    val appFlavorName: String = "GuitarLab"
+    val isTabsFlavor: Boolean get() = try {
+        val clazz = Class.forName("com.mmt.guitarlab.BuildConfig")
+        val field = clazz.getField("IS_TABS_FLAVOR")
+        @Suppress("ExplicitItLambda", "RedundantExplicitLabel", "AccessStaticViaInstance")
+        (field.get(null) as? Boolean) ?: false
+    } catch (_: Exception) {
+        false
+    }
 }

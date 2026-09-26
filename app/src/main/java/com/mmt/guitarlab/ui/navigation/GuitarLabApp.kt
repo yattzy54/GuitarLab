@@ -95,8 +95,6 @@ import com.mmt.guitarlab.ui.practice.PracticeTrackerScreen
 import com.mmt.guitarlab.ui.practice.ReverseChordFinderScreen
 import com.mmt.guitarlab.ui.practice.RiffRecorderScreen
 import com.mmt.guitarlab.ui.practice.SlowDownerScreen
-import com.mmt.guitarlab.ui.guitartabedit.GuitarTabEditScreen
-import com.mmt.guitarlab.ui.guitartabedit.TuxGuitarReaderScreen
 import com.mmt.guitarlab.ui.guitartabedit.TuxGuitarScreen
 import com.mmt.guitarlab.ui.settings.LanguageScreen
 import com.mmt.guitarlab.ui.tab.TabEditorScreen
@@ -123,10 +121,7 @@ enum class AppDest(
     val isTabFeature: Boolean = false,
 ) {
     Tabs("tabs", R.string.tab_tabs, Icons.Filled.LibraryMusic, Icons.Outlined.LibraryMusic, isTabFeature = true),
-    GuitarTabEdit("guitartabedit", R.string.tab_guitartabedit, Icons.Filled.Edit, Icons.Outlined.Edit, "NEW", isTabFeature = true),
     TuxGuitar("tuxguitar", R.string.tab_tuxguitar, Icons.Filled.MusicNote, Icons.Outlined.MusicNote, "TG", isTabFeature = true),
-    TuxGuitarReader("tuxguitar_reader", R.string.tab_tuxguitar_reader, Icons.Filled.LibraryMusic, Icons.Outlined.LibraryMusic, "VIEW", isTabFeature = true),
-    TabEditor("tab_editor", R.string.tab_tab_editor, Icons.Filled.Tune, Icons.Outlined.Tune, "GP5", isTabFeature = true),
     Tuner("tuner", R.string.tab_tuner, Icons.Filled.GraphicEq, Icons.Outlined.GraphicEq),
     Metronome("metronome", R.string.tab_metronome, Icons.Filled.Timer, Icons.Outlined.Timer),
     Drums("drums", R.string.tab_drums, Icons.Filled.Album, Icons.Outlined.Album),
@@ -142,10 +137,10 @@ enum class AppDest(
     companion object {
         fun availableDestinations(isTabsFlavor: Boolean = AppFlavorConfig().isTabsFlavor): List<AppDest> {
             return if (isTabsFlavor) {
-                // В новом флейворе показывай только эти 3 раздела (Табы, GuitarTabEdit, TabLab)
+                // В новом флейворе показывай только Табы и TabLab (TuxGuitar)
                 entries.filter { it.isTabFeature }
             } else {
-                // В основном флейворе скрой эти 3 раздела (Табы, GuitarTabEdit, TabLab)
+                // В основном флейворе скрой эти разделы
                 entries.filter { !it.isTabFeature }
             }
         }
@@ -325,9 +320,7 @@ fun GuitarLabApp(editorHost: EditorHost) {
     ) {
         val isTabsScreen = isTabsFlavor && (
             currentRoute == AppDest.Tabs.route ||
-                currentRoute == AppDest.GuitarTabEdit.route ||
                 currentRoute == AppDest.TuxGuitar.route
-                || currentRoute == AppDest.TuxGuitarReader.route
             )
         Scaffold(
             topBar = {
@@ -366,7 +359,7 @@ fun GuitarLabApp(editorHost: EditorHost) {
                     TabViewerScreen(
                         onOpenDrawer = { scope.launch { drawerState.open() } },
                         onNavigateToEditor = {
-                            navController.navigate(AppDest.TabEditor.route) {
+                            navController.navigate(AppDest.TuxGuitar.route) {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
                                 }
@@ -376,14 +369,11 @@ fun GuitarLabApp(editorHost: EditorHost) {
                         }
                     )
                 }
-                composable(AppDest.GuitarTabEdit.route) { GuitarTabEditScreen() }
                 composable(AppDest.TuxGuitar.route) { TuxGuitarScreen(onFinish = { navController.popBackStack() }) }
-                composable(AppDest.TuxGuitarReader.route) { TuxGuitarReaderScreen(onFinish = { navController.popBackStack() }) }
                 composable(AppDest.Drums.route) { DrumsScreen() }
                 composable(AppDest.Tuner.route) { TunerScreen() }
                 composable(AppDest.Metronome.route) { MetronomeScreen() }
                 composable(AppDest.Trainer.route) { AutoSpeedTrainerScreen() }
-                composable(AppDest.TabEditor.route) { TabEditorScreen() }
                 composable(AppDest.Fretboard.route) { ChordScaleScreen() }
                 composable(AppDest.ReverseChord.route) { ReverseChordFinderScreen() }
                 composable(AppDest.SlowDowner.route) { SlowDownerScreen() }

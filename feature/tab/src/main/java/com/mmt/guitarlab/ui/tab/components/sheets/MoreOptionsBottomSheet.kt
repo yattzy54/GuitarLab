@@ -74,14 +74,6 @@ fun MoreOptionsBottomSheet(
                 color = Color.White
             )
 
-            // 0. TabLab Studio action button
-            OptionItemRow(
-                icon = Icons.Default.MusicNote,
-                title = "TabLab (TuxGuitar Studio)",
-                subtitle = "Редактор табулатур Guitar Pro (GP3/GP4/GP5), дорожки и синтез",
-                onClick = onOpenEditor
-            )
-
             // 1. Tuner action button
             OptionItemRow(
                 icon = Icons.Default.GraphicEq,
